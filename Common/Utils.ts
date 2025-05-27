@@ -2,7 +2,7 @@ export type SemanticVersion = `${number}.${number}.${number}`;
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace Utils {
-    export function maxEnum(o: unknown) {
+    export function maxEnum(o: object) {
         return Math.max(...Object.keys(o).filter(obj => !isNaN(parseInt(obj))).map(obj => parseInt(obj))) + 1;
     }
 

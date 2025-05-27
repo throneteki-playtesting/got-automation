@@ -4,7 +4,7 @@ import { Joi } from "celebrate";
 import { apiUrl } from "@/index";
 import Project from "./project.js";
 import { dataService } from "@/services.js";
-import { Cards } from "common/models/cards";
+import { Cards } from "common/models/cards.js";
 import { Projects } from "common/models/projects";
 
 const JoiXNumber = Joi.alternatives().try(

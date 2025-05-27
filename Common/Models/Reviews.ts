@@ -1,6 +1,6 @@
-import { SemanticVersion } from "../Utils";
-import { Cards } from "./Cards";
-import { Projects } from "./Projects";
+import { SemanticVersion } from "../utils";
+import { Cards } from "./cards";
+import { Projects } from "./projects";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace Reviews {
