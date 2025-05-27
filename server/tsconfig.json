@@ -11,7 +11,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "common/*": ["../common/*"]
+      "common/*": ["../common/*"],
+      "gas/*": ["../googleAppScript/src/*"]
     },
     "outDir": "dist",
     "strict": false,

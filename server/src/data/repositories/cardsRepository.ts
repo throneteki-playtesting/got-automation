@@ -1,27 +1,28 @@
-import MongoDataSource from "./dataSources/mongoDataSource";
-import GASDataSource from "./dataSources/GASDataSource";
 import { compareBuild } from "semver";
-import { Collection, MongoClient } from "mongodb";
+import { MongoClient } from "mongodb";
 import Card from "../models/card";
 import { IRepository } from "..";
-import { dataService, googleAppScriptService, githubService, logger, renderService } from "@/services";
-import { Utils } from "../../../../common/utils";
-import { Cards } from "common/models/cards";
-import { GASAPI } from "common/models/googleAppScriptAPI";
+import { dataService, githubService, logger, renderService } from "@/services";
+import { condenseId, Id, Matcher, Model } from "common/models/cards";
+import { cleanObject } from "common/utils";
+import * as CardsController from "gas/controllers/cardsController";
+import { CardSheet } from "gas/spreadsheets/serializers/cardSerializer";
+import MongoDataSource from "./dataSources/mongoDataSource";
+import GASDataSource from "./dataSources/GASDataSource";
 
-export default class CardsRepository implements IRepository<Card> {
+export default class CardsRepository implements IRepository<Model, Card> {
     public database: CardMongoDataSource;
-    public spreadsheet: CardGASDataSource;
+    public spreadsheet: CardDataSource;
     constructor(mongoClient: MongoClient) {
         this.database = new CardMongoDataSource(mongoClient);
-        this.spreadsheet = new CardGASDataSource();
+        this.spreadsheet = new CardDataSource();
     }
     public async create({ cards }: { cards: Card[] }) {
         await this.database.create({ cards });
         await this.spreadsheet.create({ cards });
     }
 
-    public async read({ matchers, hard }: { matchers: Cards.Matcher[], hard?: boolean }) {
+    public async read({ matchers, hard }: { matchers: Matcher[], hard?: boolean }) {
         let cards: Card[];
         // Force hard refresh from spreadsheet (slow)
         if (hard) {
@@ -47,7 +48,7 @@ export default class CardsRepository implements IRepository<Card> {
     }
 
     // TODO: Clean up logic here so that "matchers" is ALWAYS required to delete anything (eg. no more "empty matchers = delete all"... thats dangerous!)
-    public async destroy({ matchers }: { matchers: Cards.Matcher[] }) {
+    public async destroy({ matchers }: { matchers: Matcher[] }) {
         await this.database.destroy({ matchers });
         await this.spreadsheet.destroy({ matchers });
     }
@@ -111,11 +112,9 @@ export default class CardsRepository implements IRepository<Card> {
     }
 }
 
-class CardMongoDataSource implements MongoDataSource<Card> {
-    private name = "cards";
-    private collection: Collection<Cards.Model>;
+class CardMongoDataSource extends MongoDataSource<Model, Card> {
     constructor(client: MongoClient) {
-        this.collection = client.db().collection<Cards.Model>(this.name);
+        super(client, "cards");
     }
 
     public async create({ cards }: { cards: Card[] }) {
@@ -131,8 +130,8 @@ class CardMongoDataSource implements MongoDataSource<Card> {
         return cards.filter((card) => insertedIds.includes(card._id));
     }
 
-    public async read({ matchers }: { matchers: Cards.Matcher[] }) {
-        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(Utils.cleanObject) }) };
+    public async read({ matchers }: { matchers: Matcher[] }) {
+        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(cleanObject) }) };
         const result = await this.collection.find(query).toArray();
 
         logger.verbose(`Read ${result.length} values from ${this.name} collection`);
@@ -158,8 +157,8 @@ class CardMongoDataSource implements MongoDataSource<Card> {
         return cards.filter((card) => updatedIds.includes(card._id));
     }
 
-    public async destroy({ matchers }: { matchers?: Cards.Matcher[] }) {
-        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(Utils.cleanObject) }) };
+    public async destroy({ matchers }: { matchers?: Matcher[] }) {
+        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(cleanObject) }) };
         // Collect all which are to be deleted
         const deleting = await Card.fromModels(...(await this.collection.find(query).toArray()));
         const results = await this.collection.deleteMany(query);
@@ -169,7 +168,7 @@ class CardMongoDataSource implements MongoDataSource<Card> {
     }
 }
 
-class CardGASDataSource implements GASDataSource<Card> {
+class CardDataSource extends GASDataSource<Card> {
     public async create({ cards }: { cards: Card[] }) {
         const groups = Map.groupBy(cards, (card) => card.project);
         const created: Card[] = [];
@@ -178,29 +177,29 @@ class CardGASDataSource implements GASDataSource<Card> {
             const models = await Card.toModels(...pCards);
             const body = JSON.stringify(models);
 
-            const response = await googleAppScriptService.post<GASAPI.Cards.CreateResponse>(url, body);
+            const response = await this.client.post<CardsController.CreateResponse>(url, body);
             created.push(...await Card.fromModels(...response.created));
             logger.verbose(`${created.length} card(s) created in Google App Script (${project.name})`);
         }
         return created;
     }
 
-    public async read({ matchers }: { matchers: Cards.Matcher[] }) {
-        const groups = Map.groupBy(matchers.map(Utils.cleanObject), (matcher) => matcher.projectId);
+    public async read({ matchers }: { matchers: Matcher[] }) {
+        const groups = Map.groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
         const read: Card[] = [];
         for (const [projectId, pModels] of groups.entries()) {
-            const project = await googleAppScriptService.getProject(projectId);
-            const ids = pModels.filter((has) => has.number).map((pm) => !pm.version ? `${pm.number}` : `${pm.number}@${pm.version}` as Cards.Id);
+            const project = await this.client.getProject(projectId);
+            const ids = pModels.filter((has) => has.number).map((pm) => !pm.version ? `${pm.number}` : `${pm.number}@${pm.version}` as Id);
             const url = `${project.script}/cards${ids.length > 0 ? `?ids=${ids.join(",")}` : ""}`;
 
-            const response = await googleAppScriptService.get<GASAPI.Cards.ReadResponse>(url);
+            const response = await this.client.get<CardsController.ReadResponse>(url);
             read.push(...await Card.fromModels(...response.cards));
             logger.verbose(`${read.length} card(s) read from Google App Script (${project.name})`);
         }
         return read;
     }
 
-    public async update({ cards, upsert = false, sheets }: { cards: Card[], upsert?: boolean, sheets?: GASAPI.Cards.CardSheet[] }) {
+    public async update({ cards, upsert = false, sheets }: { cards: Card[], upsert?: boolean, sheets?: CardSheet[] }) {
         const groups = Map.groupBy(cards, (card) => card.project);
         const updated: Card[] = [];
         for (const [project, pCards] of groups.entries()) {
@@ -208,23 +207,23 @@ class CardGASDataSource implements GASDataSource<Card> {
             const models = await Card.toModels(...pCards);
             const body = JSON.stringify(models);
 
-            const response = await googleAppScriptService.post<GASAPI.Cards.UpdateResponse>(url, body);
+            const response = await this.client.post<CardsController.UpdateResponse>(url, body);
             updated.push(...await Card.fromModels(...response.updated));
             logger.verbose(`${updated.length} card(s) updated in Google App Script (${project.name})`);
         }
         return updated;
     }
 
-    public async destroy({ matchers }: { matchers: Cards.Matcher[] }) {
-        const groups = Map.groupBy(matchers.map(Utils.cleanObject), (matcher) => matcher.projectId);
+    public async destroy({ matchers }: { matchers: Matcher[] }) {
+        const groups = Map.groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
         const destroyed: Card[] = [];
         for (const [projectId, pModels] of groups.entries()) {
-            const project = await googleAppScriptService.getProject(projectId);
+            const project = await this.client.getProject(projectId);
             // TODO: Alter parameters to allow for any CardModel values to be provided & filtered
-            const ids = pModels.filter((has) => has.number && has.version).map((pm) => Cards.condenseId({ projectId, number: pm.number, version: pm.version }));
+            const ids = pModels.filter((has) => has.number && has.version).map((pm) => condenseId({ projectId, number: pm.number, version: pm.version }));
             const url = `${project.script}/cards/destroy${ids ? `?ids=${ids.join(",")}` : ""}`;
 
-            const response = await googleAppScriptService.post<GASAPI.Cards.DestroyResponse>(url);
+            const response = await this.client.post<CardsController.DestroyResponse>(url);
             if (response.destroyed.length > 0) {
                 destroyed.push(...await Card.fromModels(...response.destroyed));
             }

@@ -1,8 +1,10 @@
-import { Utils } from "common/utils";
-import { GooglePropertiesType, Settings } from "../../settings";
-import { Cards } from "common/models/cards";
+import { maxEnum } from "common/utils";
+import { getProperty, GooglePropertiesType } from "../../settings";
 import { DataSerializer } from "./dataSerializer";
+import * as Cards from "common/models/cards";
 
+
+export type CardSheet = "archive" | "latest";
 class CardSerializer extends DataSerializer<Cards.Model> {
     public richTextColumns = [CardColumn.Textbox, CardColumn.Flavor, CardColumn.NoteText, CardColumn.GithubIssue];
     private deserializeTypedNumber<T>(value: string) {
@@ -15,7 +17,7 @@ class CardSerializer extends DataSerializer<Cards.Model> {
     }
 
     public deserialize(values: string[]): Cards.Model {
-        const projectId = parseInt(Settings.getProperty(GooglePropertiesType.Script, "code"));
+        const projectId = parseInt(getProperty(GooglePropertiesType.Script, "code"));
         const number = parseInt(values[CardColumn.Number]);
         const version = values[CardColumn.Version];
         const id = `${projectId.toString()}${(number + 500).toString()}@${version}`;
@@ -76,7 +78,7 @@ class CardSerializer extends DataSerializer<Cards.Model> {
 
     public serialize(model: Cards.Model) {
         // Initialise "empty" values, with dashes for all dashable columns (eg. Loyal, Unique, ...)
-        const values: string[] = Array.from({ length: Utils.maxEnum(CardColumn) }, (v, i) => [CardColumn.Loyal, CardColumn.Unique, CardColumn.Cost, CardColumn.Strength, CardColumn.Icons, CardColumn.Traits].includes(i) ? "-" : "");
+        const values: string[] = Array.from({ length: maxEnum(CardColumn) }, (v, i) => [CardColumn.Loyal, CardColumn.Unique, CardColumn.Cost, CardColumn.Strength, CardColumn.Icons, CardColumn.Traits].includes(i) ? "-" : "");
         values[CardColumn.Number] = model.number.toString();
         values[CardColumn.Version] = model.version;
         values[CardColumn.Faction] = model.faction;

@@ -1,22 +1,17 @@
-import { API } from "./API";
 import { Log } from "./cloudLogger";
-import { GooglePropertiesType, Settings } from "./settings";
-import { DataSheet } from "./spreadsheets/dataSheets";
-import { Trigger } from "./spreadsheets/listeners";
+import * as Router from "./router";
+import * as Spreadsheet from "./spreadsheets/spreadsheet";
+import * as Form from "./forms/form";
+import { getProjectDetails, getProperty, GooglePropertiesType } from "./settings";
+import { post, setAPIKey } from "./restClient";
 
 
 // Simple Triggers (does not need additional setup)
-global.onOpen = (e: GoogleAppsScript.Events.SheetsOnOpen) => {
-    return Trigger.open(e);
-};
+global.onOpen = Spreadsheet.onOpen;
 ///////////////////////////////////////////////////
 // Complex Triggers (requires setup on Apps Script end)
-global.onEdited = (e: GoogleAppsScript.Events.SheetsOnEdit) => {
-    return Trigger.edit(e);
-};
-global.onFormSubmit = (e: GoogleAppsScript.Events.FormsOnFormSubmit) => {
-    return Trigger.submit(e);
-};
+global.onEdited = Spreadsheet.onEdit;
+global.onFormSubmit = Form.onSubmit;
 ///////////////////////////////////////////////////
 
 // Runnable functions
@@ -25,7 +20,7 @@ global.initialiseProject = () => {
     const existing = ScriptApp.getProjectTriggers();
     if (!existing.some((trigger) => trigger.getHandlerFunction() === "onFormSubmit")) {
         ScriptApp.newTrigger("onFormSubmit")
-            .forForm(Settings.getProperty(GooglePropertiesType.Script, "formId"))
+            .forForm(getProperty(GooglePropertiesType.Script, "formId"))
             .onFormSubmit()
             .create();
     }
@@ -35,20 +30,20 @@ global.initialiseProject = () => {
             .onEdit()
             .create();
     }
-    return API.postProjectDetails();
+    const project = getProjectDetails();
+    post("projects", [project]);
+    Log.information(`Project initialised: ${project.name} (${project.code})`);
 };
-global.setAPIKey = () => {
-    return API.setAPIKey();
-};
+global.setAPIKey = setAPIKey;
 
 global.processPendingEdits = () => {
-    for (const sheet of Object.values(DataSheet.sheets)) {
-        Log.information(`Manually processing pending edits for ${sheet.sheet.getName()}...`);
+    for (const sheet of Object.values(Spreadsheet.DataSheet.sheets)) {
         sheet.processPendingEdits();
     }
 };
 
-global.processAllLatest = () => {
-    Log.information("Manually processing all latest...");
-    DataSheet.sheets.latest.processAll();
-};
+global.processAllLatest = Spreadsheet.DataSheet.sheets.latest.processAll;
+
+// Router doGet & doPost
+global.doGet = Router.doGet;
+global.doPost = Router.doPost;

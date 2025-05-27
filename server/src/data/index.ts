@@ -1,14 +1,14 @@
 import CardsRepository from "./repositories/cardsRepository";
 import { MongoClient } from "mongodb";
-import MongoDataSource from "./repositories/dataSources/mongoDataSource";
-import GASDataSource from "./repositories/dataSources/GASDataSource";
 import ProjectsRepository from "./repositories/projectsRepository";
 import { logger } from "@/services";
 import ReviewsRepository from "./repositories/reviewRepository";
+import MongoDataSource from "./repositories/dataSources/mongoDataSource";
+import GASDataSource from "./repositories/dataSources/GASDataSource";
 
-export interface IRepository<Model> {
-    database?: MongoDataSource<Model>
-    spreadsheet?: GASDataSource<Model>
+export interface IRepository<C, R> {
+    database?: MongoDataSource<C, R>
+    spreadsheet?: GASDataSource<R>
 }
 
 class DataService {

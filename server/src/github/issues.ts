@@ -6,7 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import Project from "../data/models/project";
 import { apiUrl } from "@/index";
-import { Cards } from "common/models/cards";
+import { NoteType } from "common/models/cards";
 
 export type GeneratedIssue = {
     title: string,
@@ -86,8 +86,8 @@ export class Issue {
             return null;
         }
         const milestone = project.milestone;
-        const noteTypeOrdered = ["Replaced", "Reworked", "Updated", "Implemented"] as Cards.NoteType[];
-        const notesUsed = new Set<Cards.NoteType>();
+        const noteTypeOrdered = ["Replaced", "Reworked", "Updated", "Implemented"] as NoteType[];
+        const notesUsed = new Set<NoteType>();
         const notesMap = cards.reduce((map, card) => {
             const noteType = card.note?.type;
             // Only collate cards which have notes on them
@@ -110,7 +110,7 @@ export class Issue {
                 icons.forEach(notesUsed.add, notesUsed);
             }
             return map;
-        }, new Map<Cards.NoteType, NotePackage[]>());
+        }, new Map<NoteType, NotePackage[]>());
 
         const notesLegend = noteTypeOrdered.filter((nt) => notesUsed.has(nt)).map((nt) => `${nt} = ${emojis[nt]}`).join(" | ");
         const notes = noteTypeOrdered.map((nt) => notesMap.get(nt)).flat().filter((n) => n);

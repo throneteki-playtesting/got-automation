@@ -3,7 +3,7 @@ import { celebrate, Joi, Segments } from "celebrate";
 import asyncHandler from "express-async-handler";
 import Project from "@/data/models/project";
 import { dataService } from "@/services";
-import { Projects } from "common/models/projects";
+import * as Projects from "common/models/projects";
 
 const router = express.Router();
 

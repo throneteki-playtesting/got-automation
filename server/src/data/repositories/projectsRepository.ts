@@ -1,14 +1,14 @@
-import MongoDataSource from "./dataSources/mongoDataSource";
 import Project from "../models/project";
 import { IRepository } from "..";
-import { Collection, MongoClient } from "mongodb";
 import { logger } from "@/services";
-import { Projects } from "common/models/projects";
+import { Model } from "common/models/projects";
+import MongoDataSource from "./dataSources/mongoDataSource";
+import { MongoClient } from "mongodb";
 
-export default class ProjectsRepository implements IRepository<Project> {
-    public database: ProjectMongoDataSource;
+export default class ProjectsRepository implements IRepository<Model, Project> {
+    public database: ProjectDataSource;
     constructor(mongoClient: MongoClient) {
-        this.database = new ProjectMongoDataSource(mongoClient);
+        this.database = new ProjectDataSource(mongoClient);
     }
 
     public async create({ projects }: { projects: Project[] }) {
@@ -28,11 +28,9 @@ export default class ProjectsRepository implements IRepository<Project> {
     }
 }
 
-class ProjectMongoDataSource implements MongoDataSource<Project> {
-    private name = "projects";
-    private collection: Collection<Projects.Model>;
+class ProjectDataSource extends MongoDataSource<Model, Project> {
     constructor(client: MongoClient) {
-        this.collection = client.db().collection<Projects.Model>(this.name);
+        super(client, "projects");
     }
 
     public async create({ projects }: { projects: Project[] }) {

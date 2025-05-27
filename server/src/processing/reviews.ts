@@ -1,7 +1,8 @@
-import { Projects } from "common/models/projects";
-import { dataService, discordService, googleAppScriptService, logger } from "@/services";
+import { dataService, discordService, logger } from "@/services";
 import { groupCardHistory } from "../data/repositories/cardsRepository";
-import { GASAPI } from "common/models/googleAppScriptAPI";
+import * as Projects from "common/models/projects";
+import * as FormController from "gas/controllers/formController";
+import GasClient from "@/google/gasClient";
 
 // TODO: Maybe more this into a more clean area; for now, just a floating function is fine
 export async function updateFormData(...projectIds: Projects.Id[]) {
@@ -17,7 +18,8 @@ export async function updateFormData(...projectIds: Projects.Id[]) {
         const cardNames = latest.map((card) => `${card.number} - ${card.toString()}`);
 
         const body = JSON.stringify({ reviewers, cards: cardNames });
-        const response = await googleAppScriptService.post<GASAPI.Forms.SetValuesResponse>(`${project.script}/form`, body);
+        const client = new GasClient();
+        const response = await client.post<FormController.SetValuesResponse>(`${project.script}/form`, body);
         logger.info(`Successfully updated ${project.name} form data with ${response.cards} cards and ${response.reviewers} reviewers`);
     }
 }

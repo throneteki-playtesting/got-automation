@@ -6,9 +6,9 @@ import Card from "../data/models/card";
 import Project from "../data/models/project";
 import { emojis, icons, discordify, colors, cardAsAttachment } from "./utilities";
 import { fileURLToPath } from "url";
-import { Cards } from "common/models/cards";
 import { groupCardHistory } from "../data/repositories/cardsRepository";
 import { discordService, logger } from "@/services";
+import { factions } from "common/models/cards";
 
 export default class CardThreads {
     public static async sync(guild: Guild, canCreate: boolean, ...cards: Card[]) {
@@ -193,7 +193,7 @@ export default class CardThreads {
         }
 
         const factionTags = {} as { [faction: string]: GuildForumTag };
-        for (const faction of Cards.factions) {
+        for (const faction of factions) {
             const factionTag = channel?.availableTags.find((t) => t.name === faction);
             if (!factionTag) {
                 errors.push(`"${faction}" tag is missing on Forum channel "${channel?.name}"`);

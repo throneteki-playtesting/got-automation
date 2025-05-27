@@ -1,14 +1,14 @@
-import { Projects } from "common/models/projects";
 import { Joi } from "celebrate";
+import { condenseId, Id, Model, Type } from "common/models/projects";
 
 class Project {
-    public _id: Projects.Id;
+    public _id: Id;
     constructor(
         public active: boolean,
         public name: string,
         public short: string,
         public code: number,
-        public type: Projects.Type,
+        public type: Type,
         public perFaction: number,
         public neutral: number,
         public script: string,
@@ -17,14 +17,14 @@ class Project {
         public formUrl: string,
         public emoji?: string
     ) {
-        this._id = Projects.condenseId({ code });
+        this._id = condenseId({ code });
     }
 
     get cards() {
         return (this.perFaction * 8) + this.neutral;
     }
 
-    static async fromModels(...models: Projects.Model[]) {
+    static async fromModels(...models: Model[]) {
         return models.map((model) => new Project(model.active, model.name, model.short, model.code, model.type, model.perFaction, model.neutral, model.script, model.releases, model.milestone, model.formUrl, model.emoji));
     }
 
@@ -43,7 +43,7 @@ class Project {
             milestone: project.milestone,
             formUrl: project.formUrl,
             emoji: project.emoji
-        }) as Projects.Model);
+        }) as Model);
     }
 
     clone() {

@@ -1,10 +1,11 @@
 import { Log } from "../cloudLogger";
-import { API } from "../API";
 import { CardSerializer } from "./serializers/cardSerializer";
-import { Utils } from "common/utils";
-import { GooglePropertiesType, Settings } from "../settings";
+import { getProperty, GooglePropertiesType } from "../settings";
 import { ReviewSerializer } from "./serializers/reviewSerializer";
 import { DataSerializer } from "./serializers/dataSerializer";
+import { titleCase } from "common/utils";
+import { post } from "../restClient";
+import { safelyGetUI } from "./userInput";
 
 export class DataSheet<Model> {
     public static sheets = {
@@ -63,7 +64,7 @@ export class DataSheet<Model> {
             templateRange.copyTo(insertedRange, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
         }
 
-        const richTextValues = models.map((model) => DataParser.toRichTextValues(this.serializer.serialize(model)));
+        const richTextValues = models.map((model) => toRichTextValues(this.serializer.serialize(model)));
         this.sheet.getRange(lastRow + 1, this.firstColumn, richTextValues.length, this.maxColumns).setRichTextValues(richTextValues);
 
         Log.information(`Created ${richTextValues.length} rows in ${this.sheet.getName()}`);
@@ -96,7 +97,7 @@ export class DataSheet<Model> {
                         const value = values[j];
                         rowValues.push(value);
                     } else {
-                        rowValues.push(DataParser.toString(richTextValue));
+                        rowValues.push(toString(richTextValue));
                     }
                 }
 
@@ -150,7 +151,7 @@ export class DataSheet<Model> {
                         if (!this.serializer.richTextColumns.includes(j) || value === null || value === "") {
                             rowRichTextValues.push(SpreadsheetApp.newRichTextValue().setText(value || "").build());
                         } else {
-                            rowRichTextValues.push(DataParser.toRichTextValue(value));
+                            rowRichTextValues.push(toRichTextValue(value));
                         }
                     }
                     return rowRichTextValues;
@@ -202,7 +203,7 @@ export class DataSheet<Model> {
                         const value = values[j];
                         rowValues.push(value);
                     } else {
-                        rowValues.push(DataParser.toString(richTextValue));
+                        rowValues.push(toString(richTextValue));
                     }
                 }
                 deleted.push(this.serializer.deserialize(rowValues, i));
@@ -256,7 +257,7 @@ export class DataSheet<Model> {
         cache.put(cacheKey, value);
 
         // Wait...
-        const cooldown = parseInt(Settings.getProperty(GooglePropertiesType.Script, "editCooldown")) * 1000;
+        const cooldown = parseInt(getProperty(GooglePropertiesType.Script, "editCooldown")) * 1000;
         Utilities.sleep(cooldown);
 
         // Then check if edits should be pushed
@@ -270,6 +271,7 @@ export class DataSheet<Model> {
     }
 
     public processPendingEdits() {
+        Log.information(`Manually processing pending edits for ${this.sheet.getName()}...`);
         const cache = CacheService.getDocumentCache();
         const cacheKey = `editBatch_${this.sheet.getName()}`;
         const latestBatchEdit = cache.get(cacheKey);
@@ -283,156 +285,223 @@ export class DataSheet<Model> {
             const edited = this.read((values: unknown[], index: number) => editRanges.some(({ from, to }) => (index + 1) >= from && (index + 1) <= to));
             if (edited.length > 0) {
                 const subUrl = this.resource;
-                const response = API.post(subUrl, edited);
-                Log.information(`${Utils.titleCase(this.resource)} - Posted ${response.updated} update(s)`);
+                const response = post(subUrl, edited);
+                Log.information(`${titleCase(this.resource)} - Posted ${response.updated} update(s)`);
             }
         }
     }
 
     public processAll() {
+        Log.information(`Manually processing all ${this.sheet.getName()}...`);
         const processing = this.read(() => true);
         const subUrl = this.resource;
-        const response = API.post(subUrl, processing);
-        Log.information(`${Utils.titleCase(this.resource)} - Posted ${response.updated} rows(s)`);
+        const response = post(subUrl, processing);
+        Log.information(`${titleCase(this.resource)} - Posted ${response.updated} rows(s)`);
     }
 }
 
-class DataParser {
-    public static toStrings(values: GoogleAppsScript.Spreadsheet.RichTextValue[]): string[] {
-        return values.map((value) => this.toString(value));
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function toStrings(values: GoogleAppsScript.Spreadsheet.RichTextValue[]): string[] {
+    return values.map((value) => toString(value));
+}
+
+function toRichTextValues(values: string[]): GoogleAppsScript.Spreadsheet.RichTextValue[] {
+    return values.map((value) => toRichTextValue(value));
+}
+
+function toString(value: GoogleAppsScript.Spreadsheet.RichTextValue): string {
+    try {
+        return parseToHTML(value);
+    } catch (err) {
+        throw Error(`Failed to serialise column with value "${value.getText()}": ${err}`);
+    }
+}
+
+function toRichTextValue(value: string): GoogleAppsScript.Spreadsheet.RichTextValue {
+    const richTextValue = parseFromHTML(value);
+    return richTextValue;
+}
+
+function parseToHTML(richTextValue: GoogleAppsScript.Spreadsheet.RichTextValue): string {
+    let htmlString = "";
+
+    const isTrait = (ts: GoogleAppsScript.Spreadsheet.TextStyle) =>
+        ts.isBold()
+    && ts.isItalic()
+    && !ts.isStrikethrough()
+    && !ts.isUnderline();
+
+    const isTriggeredAbility = (ts: GoogleAppsScript.Spreadsheet.TextStyle) =>
+        ts.isBold()
+    && !ts.isItalic()
+    && !ts.isStrikethrough()
+    && !ts.isUnderline();
+
+    const hasLink = (rtv: GoogleAppsScript.Spreadsheet.RichTextValue) =>
+        rtv.getLinkUrl() !== null;
+
+    for (const run of richTextValue.getRuns() ?? []) {
+        let text = run.getText();
+        const style = run.getTextStyle();
+
+        // Regex to gather only the text portion of the string, whilst leaving the trim/newlines untouched
+        const regex = /([^ \n]+(?: [^ \n]+)*)/g;
+        if (isTrait(style)) {
+            text = text.replace(regex, "<i>$1</i>");
+        } else if (isTriggeredAbility(style)) {
+            text = text.replace(regex, "<b>$1</b>");
+        }
+        // Adding link (alongside styling)
+        if (hasLink(run)) {
+            text = text.replace(regex, `<a href="${run.getLinkUrl()}">$1</a>`);
+        }
+
+        // // Replacing new-line with break
+        // text = text.replace(/\n/g, "<br>");
+        // Replacing icons
+        text = text.replace(/:(\w+):/g, "[$1]");
+        // Replacing citing
+        text = text.replace(/(?<=" )[-~]\s+([\w ]+)/g, "<cite>$1</cite>");
+        htmlString += text;
     }
 
-    public static toRichTextValues(values: string[]): GoogleAppsScript.Spreadsheet.RichTextValue[] {
-        return values.map((value) => this.toRichTextValue(value));
-    }
+    return htmlString;
+}
 
-    public static toString(value: GoogleAppsScript.Spreadsheet.RichTextValue): string {
-        try {
-            return this.parseToHTML(value);
-        } catch (err) {
-            throw Error(`Failed to serialise column with value "${value.getText()}": ${err}`);
+function parseFromHTML(value: string): GoogleAppsScript.Spreadsheet.RichTextValue {
+    const regex = /(?:<\s*([^\s>]+)(?:\s+href="([^"]+)")?\s*>)?(?<!<)([^<>]+)?(?!>)(?:<\s*\/[^>]+\s*>)?/gm;
+    const textStyles: {
+        startOffset: number,
+        endOffset: number,
+        textStyle: GoogleAppsScript.Spreadsheet.TextStyle | null,
+        link: string | null
+    }[] = [];
+    let fullText = "";
+
+    let groups: RegExpExecArray | null;
+    while ((groups = regex.exec(value)) !== null) {
+        if (groups.index === regex.lastIndex) {
+            regex.lastIndex++;
+        }
+
+        const element = groups[1];
+        const href = groups[2];
+        const text = groups[3] || "";
+        switch (element) {
+            case "a":
+                textStyles.push({
+                    startOffset: fullText.length,
+                    endOffset: fullText.length + text.length,
+                    textStyle: null,
+                    link: href
+                });
+                fullText += text;
+                break;
+            case "i":
+                textStyles.push({
+                    startOffset: fullText.length,
+                    endOffset: fullText.length + text.length,
+                    textStyle: SpreadsheetApp.newTextStyle().setBold(true).setItalic(true).build(),
+                    link: null
+                });
+                fullText += text;
+                break;
+            case "b":
+                textStyles.push({
+                    startOffset: fullText.length,
+                    endOffset: fullText.length + text.length,
+                    textStyle: SpreadsheetApp.newTextStyle().setBold(true).build(),
+                    link: null
+                });
+                fullText += text;
+                break;
+            case "cite":
+                fullText += "- " + text;
+                break;
+            default:
+                fullText += text;
         }
     }
 
-    public static toRichTextValue(value: string): GoogleAppsScript.Spreadsheet.RichTextValue {
-        const richTextValue = this.parseFromHTML(value);
-        return richTextValue;
+    // Converts all [icons] into :icons:
+    fullText = fullText.replace(/\[([^\]]+)\]/g, ":$1:");
+
+    let builder = SpreadsheetApp.newRichTextValue().setText(fullText);
+    for (const ts of textStyles) {
+        if (ts.textStyle) {
+            builder = builder.setTextStyle(ts.startOffset, ts.endOffset, ts.textStyle);
+        }
+        if (ts.link) {
+            builder = builder.setLinkUrl(ts.startOffset, ts.endOffset, ts.link);
+        }
     }
 
-    private static parseToHTML(richTextValue: GoogleAppsScript.Spreadsheet.RichTextValue): string {
-        let htmlString = "";
+    return builder.build();
+}
 
-        const isTrait = (ts: GoogleAppsScript.Spreadsheet.TextStyle) =>
-            ts.isBold()
-        && ts.isItalic()
-        && !ts.isStrikethrough()
-        && !ts.isUnderline();
-
-        const isTriggeredAbility = (ts: GoogleAppsScript.Spreadsheet.TextStyle) =>
-            ts.isBold()
-        && !ts.isItalic()
-        && !ts.isStrikethrough()
-        && !ts.isUnderline();
-
-        const hasLink = (rtv: GoogleAppsScript.Spreadsheet.RichTextValue) =>
-            rtv.getLinkUrl() !== null;
-
-        for (const run of richTextValue.getRuns() ?? []) {
-            let text = run.getText();
-            const style = run.getTextStyle();
-
-            // Regex to gather only the text portion of the string, whilst leaving the trim/newlines untouched
-            const regex = /([^ \n]+(?: [^ \n]+)*)/g;
-            if (isTrait(style)) {
-                text = text.replace(regex, "<i>$1</i>");
-            } else if (isTriggeredAbility(style)) {
-                text = text.replace(regex, "<b>$1</b>");
-            }
-            // Adding link (alongside styling)
-            if (hasLink(run)) {
-                text = text.replace(regex, `<a href="${run.getLinkUrl()}">$1</a>`);
-            }
-
-            // // Replacing new-line with break
-            // text = text.replace(/\n/g, "<br>");
-            // Replacing icons
-            text = text.replace(/:(\w+):/g, "[$1]");
-            // Replacing citing
-            text = text.replace(/(?<=" )[-~]\s+([\w ]+)/g, "<cite>$1</cite>");
-            htmlString += text;
-        }
-
-        return htmlString;
+export function onEdit(e: GoogleAppsScript.Events.SheetsOnEdit) {
+    const sheet = e.range.getSheet();
+    const dataSheet = Array.from(Object.values(DataSheet.sheets)).find((ds) => ds.isFor(sheet));
+    if (dataSheet) {
+        dataSheet.onEdit(e);
     }
-
-    private static parseFromHTML(value: string): GoogleAppsScript.Spreadsheet.RichTextValue {
-        const regex = /(?:<\s*([^\s>]+)(?:\s+href="([^"]+)")?\s*>)?(?<!<)([^<>]+)?(?!>)(?:<\s*\/[^>]+\s*>)?/gm;
-        const textStyles: {
-            startOffset: number,
-            endOffset: number,
-            textStyle: GoogleAppsScript.Spreadsheet.TextStyle | null,
-            link: string | null
-        }[] = [];
-        let fullText = "";
-
-        let groups: RegExpExecArray | null;
-        while ((groups = regex.exec(value)) !== null) {
-            if (groups.index === regex.lastIndex) {
-                regex.lastIndex++;
-            }
-
-            const element = groups[1];
-            const href = groups[2];
-            const text = groups[3] || "";
-            switch (element) {
-                case "a":
-                    textStyles.push({
-                        startOffset: fullText.length,
-                        endOffset: fullText.length + text.length,
-                        textStyle: null,
-                        link: href
-                    });
-                    fullText += text;
-                    break;
-                case "i":
-                    textStyles.push({
-                        startOffset: fullText.length,
-                        endOffset: fullText.length + text.length,
-                        textStyle: SpreadsheetApp.newTextStyle().setBold(true).setItalic(true).build(),
-                        link: null
-                    });
-                    fullText += text;
-                    break;
-                case "b":
-                    textStyles.push({
-                        startOffset: fullText.length,
-                        endOffset: fullText.length + text.length,
-                        textStyle: SpreadsheetApp.newTextStyle().setBold(true).build(),
-                        link: null
-                    });
-                    fullText += text;
-                    break;
-                case "cite":
-                    fullText += "- " + text;
-                    break;
-                default:
-                    fullText += text;
-            }
-        }
-
-        // Converts all [icons] into :icons:
-        fullText = fullText.replace(/\[([^\]]+)\]/g, ":$1:");
-
-        let builder = SpreadsheetApp.newRichTextValue().setText(fullText);
-        for (const ts of textStyles) {
-            if (ts.textStyle) {
-                builder = builder.setTextStyle(ts.startOffset, ts.endOffset, ts.textStyle);
-            }
-            if (ts.link) {
-                builder = builder.setLinkUrl(ts.startOffset, ts.endOffset, ts.link);
-            }
-        }
-
-        return builder.build();
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function onOpen(e: GoogleAppsScript.Events.SheetsOnOpen) {
+    // Add UI (if able)
+    const ui = safelyGetUI();
+    if (ui) {
+        ui.createMenu("Admin Tools")
+            .addItem("Set API key", "setAPIKey")
+            .addItem("Initialise/Sync Project", "initialiseProject")
+            .addSubMenu(
+                ui.createMenu("Changes/Editing")
+                    .addItem("Push spreadsheet changes", "processPendingEdits")
+                    .addItem("Push all latest", "processAllLatest")
+            )
+        //     // .addSubMenu(
+        //     //     ui.createMenu("Development")
+        //     //         .addSubMenu(
+        //     //             ui.createMenu("Finalize Dev Update")
+        //     //                 .addItem("1. Sync Github Issues", "finalizeIssues")
+        //     //                 .addItem("2. Sync Pull Requests", "finalizePullRequest")
+        //     //                 .addItem("3. Generate JSON Data", "openJSONDevDialog")
+        //     //                 .addItem("4. Generate Update Notes (Unimplemented)", "openUpdateNotesDialog")
+        //     //                 .addItem("5. Archive Cards", "archivePlaytestingUpdateCards")
+        //     //                 .addItem("6. Increment Project Version", "incrementProjectVersion")
+        //     //         )
+        //     //         .addSubMenu(
+        //     //             ui.createMenu("Individual Tasks")
+        //     //                 .addItem("Generate JSON Data", "openJSONDevDialog")
+        //     //                 .addItem("Sync Reviews", "syncReviews")
+        //     //                 .addItem("Sync Github Issues", "syncIssues")
+        //     //                 .addItem("Sync Pull Requests", "syncPullRequests")
+        //     //                 .addItem("Archive Cards", "archivePlaytestingUpdateCards")
+        //     //                 .addItem("Update Form Cards", "updateFormCards")
+        //     //                 .addItem("Increment Project Version", "incrementProjectVersion")
+        //     //                 .addSubMenu(
+        //     //                     ui.createMenu("Generate Card Images")
+        //     //                         .addItem("All Digital Images (PNG)", "syncDigitalCardImages")
+        //     //                         .addItem("Some Digital Images (PNG)", "syncSomeDigitalCardImages")
+        //     //                         .addItem("Print Sheet (PDF)", "openPDFSheetsDialog")
+        //     //                 )
+        //     //                 .addItem("Generate Update Notes", "openUpdateNotesDialog")
+        //     //                 .addItem("Test", "testMulti")
+        //     //         ).addSubMenu(
+        //     //             ui.createMenu("Edit Stored Data")
+        //     //                 .addItem("Script Data", "editScriptProperties")
+        //     //                 .addItem("Document Data", "editDocumentProperties")
+        //     //                 .addItem("User Data", "editUserProperties")
+        //     //         )
+        //     // )
+        //     // .addSubMenu(
+        //     //     ui.createMenu("Release Tools")
+        //     //         .addItem("Validate & Export JSON", "openJSONReleaseDialog")
+        //     // )
+        //     // .addSubMenu(
+        //     //     ui.createMenu("Config")
+        //     //         .addItem("WebApp API Credentials", "updateWebAppCredentials")
+        //     // )
+            .addToUi();
     }
 }

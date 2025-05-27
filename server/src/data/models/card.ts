@@ -1,11 +1,11 @@
 import * as Ver from "semver";
-import { SemanticVersion, Utils } from "../../../../common/utils.js";
 import { Joi } from "celebrate";
 import { apiUrl } from "@/index";
-import Project from "./project.js";
-import { dataService } from "@/services.js";
-import { Cards } from "common/models/cards.js";
-import { Projects } from "common/models/projects";
+import Project from "./project";
+import { dataService } from "@/services";
+import { Id as ProjectId } from "common/models/projects";
+import { Code, condenseId, DefaultDeckLimit, Faction, factions, GithubStatus, githubStatuses, Id, Model, NoteType, noteTypes, Type, types } from "common/models/cards";
+import { distinct, Regex, SemanticVersion } from "common/utils";
 
 const JoiXNumber = Joi.alternatives().try(
     Joi.number(),
@@ -17,20 +17,20 @@ const JoiXDashNumber = Joi.alternatives().try(
 );
 
 class Card {
-    public _id: Cards.Id;
-    public code: Cards.Code;
+    public _id: Id;
+    public code: Code;
     public quantity: 1 | 2 | 3;
     constructor(
         public project: Project,
         public number: number,
         public version: SemanticVersion,
-        public faction: Cards.Faction,
+        public faction: Faction,
         public name: string,
-        public type: Cards.Type,
+        public type: Type,
         public traits: string[],
         public text: string,
         public illustrator: string,
-        public deckLimit: number = Cards.DefaultDeckLimit[type],
+        public deckLimit: number = DefaultDeckLimit[type],
         public loyal?: boolean,
         public flavor?: string,
         public designer?: string,
@@ -49,12 +49,12 @@ class Card {
             reserve: number | "X"
         },
         public note?: {
-            type: Cards.NoteType,
+            type: NoteType,
             text: string
         },
         public playtesting?: SemanticVersion,
         public github?: {
-            status: Cards.GithubStatus,
+            status: GithubStatus,
             issueUrl: string
         },
         public release?: {
@@ -63,8 +63,8 @@ class Card {
         }
     ) {
         if (this.project) {
-            this._id = Cards.condenseId({ projectId: this.project.code, number, version });
-            this.code = this._id.split("@")[0] as Cards.Code;
+            this._id = condenseId({ projectId: this.project.code, number, version });
+            this.code = this._id.split("@")[0] as Code;
         }
         this.quantity = 3;
     }
@@ -99,11 +99,11 @@ class Card {
         return obj;
     }
 
-    static async fromModels(...models: Cards.Model[]) {
+    static async fromModels(...models: Model[]) {
         if (models.length === 0) {
             return [];
         }
-        const projects = await dataService.projects.read({ codes: Utils.distinct(models.map((model) => model.projectId)) });
+        const projects = await dataService.projects.read({ codes: distinct(models.map((model) => model.projectId)) });
         return models.map((model) => {
             const project = projects.find((p) => p._id === model.projectId);
             return new Card(project, model.number, model.version, model.faction, model.name, model.type, model.traits, model.text, model.illustrator, model.deckLimit, model.loyal, model.flavor,
@@ -137,7 +137,7 @@ class Card {
             playtesting: card.playtesting,
             github: card.github,
             release: card.release
-        }) as Cards.Model);
+        }) as Model);
     }
 
     toString() {
@@ -194,7 +194,7 @@ class Card {
         return clone;
     }
 
-    static generateDevImageUrl(projectId: Projects.Id, number: number, version: string) {
+    static generateDevImageUrl(projectId: ProjectId, number: number, version: string) {
         return encodeURI(`${apiUrl}/img/${projectId}/${number}@${version}.png`);
     }
 
@@ -290,9 +290,9 @@ class Card {
     }
 
     public static schema = {
-        faction: Joi.string().required().valid(...Cards.factions),
+        faction: Joi.string().required().valid(...factions),
         name: Joi.string().required(),
-        type: Joi.string().required().valid(...Cards.types),
+        type: Joi.string().required().valid(...types),
         loyal: Joi.when("faction", {
             is: Joi.not("Neutral"),
             then: Joi.boolean().required()
@@ -337,20 +337,20 @@ class Card {
 
     public static playtestingSchema = {
         ...Card.schema,
-        _id: Joi.string().regex(Utils.Regex.Card.id.full),
+        _id: Joi.string().regex(Regex.Card.id.full),
         projectId: Joi.number().required(),
         number: Joi.number().required(),
-        version: Joi.string().required().regex(Utils.Regex.SemanticVersion),
+        version: Joi.string().required().regex(Regex.SemanticVersion),
         note: Joi.object({
-            type: Joi.string().required().valid(...Cards.noteTypes),
+            type: Joi.string().required().valid(...noteTypes),
             text: Joi.string().when("type", {
                 is: Joi.not("Implemented"),
                 then: Joi.required()
             })
         }),
-        playtesting: Joi.string().regex(Utils.Regex.SemanticVersion),
+        playtesting: Joi.string().regex(Regex.SemanticVersion),
         github: Joi.object({
-            status: Joi.string().required().valid(...Cards.githubStatuses),
+            status: Joi.string().required().valid(...githubStatuses),
             issueUrl: Joi.string().required()
         }),
         release: Joi.object({

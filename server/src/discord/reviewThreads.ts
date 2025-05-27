@@ -1,14 +1,14 @@
 import { BaseMessageOptions, EmbedBuilder, ForumChannel, Guild, GuildForumTag, GuildMember, Message } from "discord.js";
 import Review from "../data/models/review";
 import Project from "../data/models/project";
-import { Cards } from "common/models/cards";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { cardAsAttachment, colors, discordify, emojis, icons } from "./utilities";
 import ejs from "ejs";
 import { discordService, logger } from "@/services";
-import { Reviews } from "common/models/reviews";
+import { factions } from "common/models/cards";
+import { StatementQuestions } from "common/models/reviews";
 
 export default class ReviewThreads {
     public static async sync(guild: Guild, canCreate: boolean, ...reviews: Review[]) {
@@ -135,7 +135,7 @@ export default class ReviewThreads {
         }
 
         const factionTags = {} as { [faction: string]: GuildForumTag };
-        for (const faction of Cards.factions) {
+        for (const faction of factions) {
             const factionTag = channel?.availableTags.find((t) => t.name === faction);
             if (!factionTag) {
                 errors.push(`"${faction}" tag is missing on Forum channel "${channel?.name}"`);
@@ -181,7 +181,7 @@ export default class ReviewThreads {
                         },
                         {
                             name: "✦ Statements (agree/disagree)",
-                            value: discordify(Object.entries(review.statements).map(([statement, answer]) => `- <b>${Reviews.StatementQuestions[statement]}</b>: <i>${answer}</i> ${emojis[answer]}`).join("\n")),
+                            value: discordify(Object.entries(review.statements).map(([statement, answer]) => `- <b>${StatementQuestions[statement]}</b>: <i>${answer}</i> ${emojis[answer]}`).join("\n")),
                             inline: true
                         }
                     ])

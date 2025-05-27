@@ -2,7 +2,7 @@ import express from "express";
 import { celebrate, Joi, Segments } from "celebrate";
 import asyncHandler from "express-async-handler";
 import { dataService, discordService } from "@/services";
-import { Reviews } from "common/models/reviews";
+import * as Reviews from "common/models/reviews";
 import Review from "@/data/models/review";
 import ReviewThreads from "@/discord/reviewThreads";
 

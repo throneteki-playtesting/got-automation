@@ -4,8 +4,8 @@ import asyncHandler from "express-async-handler";
 import Card from "@/data/models/card";
 import { inc } from "semver";
 import { dataService, logger, renderService } from "@/services";
-import { SemanticVersion, Utils } from "../../../../../common/utils";
-import { Cards } from "common/models/cards";
+import { Regex, SemanticVersion } from "common/utils";
+import * as Cards from "common/models/cards";
 
 export type ResourceFormat = "JSON" | "HTML" | "TXT" | "PNG" | "PDF";
 
@@ -22,8 +22,8 @@ router.get("/:project", celebrate({
         format: Joi.string().insensitive().valid("JSON", "HTML", "PDF", "TXT").default("JSON"),
         hard: Joi.boolean().default(false),
         id: Joi.alternatives().try(
-            Joi.array().items(Joi.string().regex(Utils.Regex.Card.id.optional)),
-            Joi.string().regex(Utils.Regex.Card.id.optional)
+            Joi.array().items(Joi.string().regex(Regex.Card.id.optional)),
+            Joi.string().regex(Regex.Card.id.optional)
         ),
         copies: Joi.number().default(3),
         perPage: Joi.number().default(9)

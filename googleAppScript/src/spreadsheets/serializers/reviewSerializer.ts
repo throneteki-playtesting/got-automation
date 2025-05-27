@@ -1,7 +1,7 @@
-import { SemanticVersion, Utils } from "common/utils";
-import { Reviews } from "common/models/reviews";
-import { Cards } from "common/models/cards";
-import { GooglePropertiesType, Settings } from "../../settings";
+import { maxEnum, SemanticVersion } from "common/utils";
+import * as Reviews from "common/models/reviews";
+import * as Cards from "common/models/cards";
+import { getProperty, GooglePropertiesType } from "../../settings";
 import { DataSerializer } from "./dataSerializer";
 
 class ReviewSerializer extends DataSerializer<Reviews.Model> {
@@ -9,7 +9,7 @@ class ReviewSerializer extends DataSerializer<Reviews.Model> {
     public deserialize(values: string[]): Reviews.Model {
         const model = {
             reviewer: values[ReviewColumn.Reviewer],
-            projectId: parseInt(Settings.getProperty(GooglePropertiesType.Script, "code")),
+            projectId: parseInt(getProperty(GooglePropertiesType.Script, "code")),
             number: parseInt(values[ReviewColumn.Number]),
             version: values[ReviewColumn.Version] as SemanticVersion,
             faction: values[ReviewColumn.Faction] as Cards.Faction,
@@ -31,7 +31,7 @@ class ReviewSerializer extends DataSerializer<Reviews.Model> {
     }
 
     public serialize(model: Reviews.Model) {
-        const values: string[] = Array.from({ length: Utils.maxEnum(ReviewColumn) });
+        const values: string[] = Array.from({ length: maxEnum(ReviewColumn) });
         values[ReviewColumn.Number] = model.number.toString();
         values[ReviewColumn.Version] = model.version;
         values[ReviewColumn.Faction] = model.faction;

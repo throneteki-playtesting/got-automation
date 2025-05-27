@@ -1,8 +1,14 @@
-interface GASDataSource<Model> {
-    create(model?: object): Promise<Model[]>;
-    read(model?: object): Promise<Model[]>;
-    update(model?: object): Promise<Model[]>;
-    destroy(model?: object): Promise<Model[]>;
+import GasClient from "@/google/gasClient";
+
+abstract class GASDataSource<T> {
+    protected client: GasClient;
+    constructor() {
+        this.client = new GasClient();
+    }
+    abstract create(model?: object): Promise<T[]>
+    abstract read(model?: object): Promise<T[]>
+    abstract update(model?: object): Promise<T[]>
+    abstract destroy(model?: object): Promise<T[]>
 }
 
 export default GASDataSource;

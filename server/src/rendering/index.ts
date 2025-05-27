@@ -8,7 +8,7 @@ import { BufferCollection } from "buffer-collection";
 import Project from "../data/models/project";
 import { dataService, logger } from "@/services";
 import { groupCardHistory } from "../data/repositories/cardsRepository";
-import { Cards } from "common/models/cards";
+import * as Cards from "common/models/cards";
 
 export type RenderType = "single" | "batch";
 

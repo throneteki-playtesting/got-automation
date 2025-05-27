@@ -1,12 +1,13 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction, GuildMember, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import { Command } from "../deployCommands";
-import { dataService, githubService, googleAppScriptService, logger, renderService } from "@/services";
+import { dataService, githubService, logger, renderService } from "@/services";
 import { AutoCompleteHelper, FollowUpHelper } from ".";
 import CardThreads from "../cardThreads";
 import Review from "@/data/models/review";
 import ReviewThreads from "../reviewThreads";
 import { updateFormData } from "@/processing/reviews";
-import { GASAPI } from "common/models/googleAppScriptAPI";
+import * as FormController from "gas/controllers/formController";
+import GasClient from "@/google/gasClient";
 
 const sync = {
     async data() {
@@ -319,7 +320,8 @@ const command = {
 
             const [project] = await dataService.projects.read({ codes: [projectId] });
             // Get reviews from the form, not from the spreadsheet (as it contains all responses)
-            const response = await googleAppScriptService.get(`${project.script}/form${params.length > 0 ? `?${params.join("&")}` : ""}`) as GASAPI.Forms.ReadReviewsResponse;
+            const client = new GasClient();
+            const response = await client.get(`${project.script}/form${params.length > 0 ? `?${params.join("&")}` : ""}`) as FormController.ReadReviewsResponse;
 
             // Sort reviews by date (latest first), then distinct the list (keeping first reviews, thus the "latest")
             // This ensures that only the latest version of that review (by _id) is being saved

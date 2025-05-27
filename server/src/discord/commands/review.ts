@@ -2,7 +2,7 @@ import { Command } from "../deployCommands";
 import { ActionRowBuilder, AutocompleteInteraction, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, CollectedInteraction, ComponentType, InteractionCollector, InteractionResponse, InteractionUpdateOptions, MessageComponentInteraction, SlashCommandBuilder } from "discord.js";
 import { dataService, logger } from "@/services";
 import { AutoCompleteHelper, FollowUpHelper } from ".";
-import { SemanticVersion } from "../../../../common/utils";
+import { SemanticVersion } from "common/utils";
 import { cardAsAttachment } from "../utilities";
 import Review from "@/data/models/review";
 import ReviewPages from "../reviewPages";

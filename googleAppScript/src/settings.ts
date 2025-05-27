@@ -1,107 +1,97 @@
-import { Projects } from "common/models/projects";
-import { UIHelper } from "./spreadsheets/userInput";
+import { openMultiWindow, safelyGetUI } from "./spreadsheets/userInput";
+import * as Projects from "common/models/projects";
 
-enum GooglePropertiesType {
+export enum GooglePropertiesType {
     Script,
     Document,
     User
 }
 
-class Settings {
-    private static getPropertiesService(type: GooglePropertiesType) {
-        switch (type) {
-            case GooglePropertiesType.Script:
-                return PropertiesService.getScriptProperties();
-            case GooglePropertiesType.Document:
-                return PropertiesService.getDocumentProperties();
-            case GooglePropertiesType.User:
-                return PropertiesService.getUserProperties();
-        }
+function getPropertiesService(type: GooglePropertiesType) {
+    switch (type) {
+        case GooglePropertiesType.Script:
+            return PropertiesService.getScriptProperties();
+        case GooglePropertiesType.Document:
+            return PropertiesService.getDocumentProperties();
+        case GooglePropertiesType.User:
+            return PropertiesService.getUserProperties();
     }
+}
 
-    static editProperties(type: GooglePropertiesType) {
-        const service = Settings.getPropertiesService(type);
-        let properties = service.getProperties();
-        properties = UIHelper.openMultiWindow(properties, "Edit " + GooglePropertiesType[type] + " Properties");
-        if (properties) {
-            service.setProperties(properties);
-        }
+export function editProperties(type: GooglePropertiesType) {
+    const service = getPropertiesService(type);
+    let properties = service.getProperties();
+    properties = openMultiWindow(properties, "Edit " + GooglePropertiesType[type] + " Properties");
+    if (properties) {
+        service.setProperties(properties);
     }
+}
 
-    static getProperties(type: GooglePropertiesType) {
-        const service = Settings.getPropertiesService(type);
-        return service.getProperties();
+export function getProperties(type: GooglePropertiesType) {
+    const service = getPropertiesService(type);
+    return service.getProperties();
+}
+
+export function getProperty(type: GooglePropertiesType, key: string) {
+    const service = getPropertiesService(type);
+    let value = service.getProperty(key);
+    const ui = safelyGetUI();
+    if (!value && ui) {
+        const response = ui.prompt("Please provide value for " + key + ":");
+        value = response.getResponseText();
+        service.setProperty(key, value);
     }
+    return value;
+}
 
-    static getProperty(type: GooglePropertiesType, key: string) {
-        const service = Settings.getPropertiesService(type);
-        let value = service.getProperty(key);
-        const ui = UIHelper.safelyGet();
-        if (!value && ui) {
-            const response = ui.prompt("Please provide value for " + key + ":");
-            value = response.getResponseText();
-            service.setProperty(key, value);
-        }
-        return value;
-    }
-
-    static setProperty(type: GooglePropertiesType, key: string, value: string | undefined) {
-        const service = Settings.getPropertiesService(type);
-        if (!value) {
-            service.deleteProperty(key);
-        } else {
-            service.setProperty(key, value);
-        }
-    }
-
-    static deleteProperty(type: GooglePropertiesType, key: string) {
-        const service = Settings.getPropertiesService(type);
+export function setProperty(type: GooglePropertiesType, key: string, value: string | undefined) {
+    const service = getPropertiesService(type);
+    if (!value) {
         service.deleteProperty(key);
+    } else {
+        service.setProperty(key, value);
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
-namespace Project {
-    export function get() {
-        const releases = Settings.getProperty(GooglePropertiesType.Script, "releases");
-        const emoji = Settings.getProperty(GooglePropertiesType.Script, "emoji");
-        const project = {
-            active: Settings.getProperty(GooglePropertiesType.Script, "active") === "true",
-            script: Settings.getProperty(GooglePropertiesType.Script, "script"),
-            name: Settings.getProperty(GooglePropertiesType.Script, "name"),
-            short: Settings.getProperty(GooglePropertiesType.Script, "short"),
-            code: parseInt(Settings.getProperty(GooglePropertiesType.Script, "code")),
-            type: Settings.getProperty(GooglePropertiesType.Script, "type"),
-            perFaction: parseInt(Settings.getProperty(GooglePropertiesType.Script, "perFaction")),
-            neutral: parseInt(Settings.getProperty(GooglePropertiesType.Script, "neutral")),
-            releases: releases ? parseInt(releases) : 0,
-            milestone: parseInt(Settings.getProperty(GooglePropertiesType.Script, "milestone")),
-            formUrl: Settings.getProperty(GooglePropertiesType.Script, "formUrl"),
-            emoji: emoji || undefined
-        } as Projects.Model;
-        return project;
-    }
-
-    export function set(project: Projects.Model) {
-        Settings.setProperty(GooglePropertiesType.Script, "active", `${project.active}`);
-        Settings.setProperty(GooglePropertiesType.Script, "script", project.script);
-        Settings.setProperty(GooglePropertiesType.Script, "name", project.name);
-        Settings.setProperty(GooglePropertiesType.Script, "short", project.short);
-        Settings.setProperty(GooglePropertiesType.Script, "code", `${project.code}`);
-        Settings.setProperty(GooglePropertiesType.Script, "type", project.type);
-        Settings.setProperty(GooglePropertiesType.Script, "perFaction", `${project.perFaction}`);
-        Settings.setProperty(GooglePropertiesType.Script, "neutral", `${project.neutral}`);
-        Settings.setProperty(GooglePropertiesType.Script, "releases", `${project.releases}`);
-        Settings.setProperty(GooglePropertiesType.Script, "milestone", `${project.milestone}`);
-        Settings.setProperty(GooglePropertiesType.Script, "formUrl", `${project.formUrl}`);
-        if (project.emoji) {
-            Settings.setProperty(GooglePropertiesType.Script, "emoji", `${project.emoji}`);
-        }
-    }
+export function deleteProperty(type: GooglePropertiesType, key: string) {
+    const service = getPropertiesService(type);
+    service.deleteProperty(key);
 }
 
-export {
-    GooglePropertiesType,
-    Settings,
-    Project
-};
+// Project Settings
+export function getProjectDetails() {
+    const releases = getProperty(GooglePropertiesType.Script, "releases");
+    const emoji = getProperty(GooglePropertiesType.Script, "emoji");
+    const project = {
+        active: getProperty(GooglePropertiesType.Script, "active") === "true",
+        script: getProperty(GooglePropertiesType.Script, "script"),
+        name: getProperty(GooglePropertiesType.Script, "name"),
+        short: getProperty(GooglePropertiesType.Script, "short"),
+        code: parseInt(getProperty(GooglePropertiesType.Script, "code")),
+        type: getProperty(GooglePropertiesType.Script, "type"),
+        perFaction: parseInt(getProperty(GooglePropertiesType.Script, "perFaction")),
+        neutral: parseInt(getProperty(GooglePropertiesType.Script, "neutral")),
+        releases: releases ? parseInt(releases) : 0,
+        milestone: parseInt(getProperty(GooglePropertiesType.Script, "milestone")),
+        formUrl: getProperty(GooglePropertiesType.Script, "formUrl"),
+        emoji: emoji || undefined
+    } as Projects.Model;
+    return project;
+}
+
+export function setProjectDetails(project: Projects.Model) {
+    setProperty(GooglePropertiesType.Script, "active", `${project.active}`);
+    setProperty(GooglePropertiesType.Script, "script", project.script);
+    setProperty(GooglePropertiesType.Script, "name", project.name);
+    setProperty(GooglePropertiesType.Script, "short", project.short);
+    setProperty(GooglePropertiesType.Script, "code", `${project.code}`);
+    setProperty(GooglePropertiesType.Script, "type", project.type);
+    setProperty(GooglePropertiesType.Script, "perFaction", `${project.perFaction}`);
+    setProperty(GooglePropertiesType.Script, "neutral", `${project.neutral}`);
+    setProperty(GooglePropertiesType.Script, "releases", `${project.releases}`);
+    setProperty(GooglePropertiesType.Script, "milestone", `${project.milestone}`);
+    setProperty(GooglePropertiesType.Script, "formUrl", `${project.formUrl}`);
+    if (project.emoji) {
+        setProperty(GooglePropertiesType.Script, "emoji", `${project.emoji}`);
+    }
+}

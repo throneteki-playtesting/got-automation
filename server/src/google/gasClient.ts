@@ -1,12 +1,17 @@
+import config from "config";
 import { JWT } from "google-auth-library";
-import { Projects } from "common/models/projects";
 import { dataService } from "@/services";
-import { GASAPI } from "common/models/googleAppScriptAPI";
+import { Response } from "gas/restClient";
+import * as Projects from "common/models/projects";
 
 
-export default class GoogleAppsScriptClient {
+export default class GasClient {
     private readonly scriptSuffix: string;
-    constructor(private clientEmail: string, private privateKey: string) {
+    private clientEmail: string;
+    private privateKey: string;
+    constructor() {
+        this.clientEmail = config.get("google.clientEmail");
+        this.privateKey = config.get("google.privateKey");
         this.scriptSuffix = process.env.NODE_ENV !== "production" ? "dev" : "exec";
     }
 
@@ -38,7 +43,7 @@ export default class GoogleAppsScriptClient {
             throw Error(`Google App Script ${request.method} request failed`, { cause: { status: response.status, message: response.statusText } });
         }
 
-        const json = await response.json() as GASAPI.Response<T>;
+        const json = await response.json() as Response<T>;
 
         if (json.error) {
             throw Error(`Google App Script ${request.method} request successful, but returned error(s)`, { cause: json.error });

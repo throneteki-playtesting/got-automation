@@ -1,26 +1,26 @@
 import MongoDataSource from "./dataSources/mongoDataSource";
-import GASDataSource from "./dataSources/GASDataSource";
-import { Collection, MongoClient } from "mongodb";
+import { MongoClient } from "mongodb";
 import { IRepository } from "..";
-import { googleAppScriptService, logger } from "@/services";
-import { Utils } from "../../../../common/utils";
+import { logger } from "@/services";
 import Review from "../models/review";
-import { Reviews } from "common/models/reviews";
-import { GASAPI } from "common/models/googleAppScriptAPI";
+import { Id, Matcher, Model } from "common/models/reviews";
+import { cleanObject } from "common/utils";
+import * as ReviewsController from "gas/controllers/reviewsController";
+import GASDataSource from "./dataSources/GASDataSource";
 
-export default class ReviewsRepository implements IRepository<Review> {
+export default class ReviewsRepository implements IRepository<Model, Review> {
     public database: ReviewMongoDataSource;
-    public spreadsheet: ReviewGASDataSource;
+    public spreadsheet: ReviewDataSource;
     constructor(mongoClient: MongoClient) {
         this.database = new ReviewMongoDataSource(mongoClient);
-        this.spreadsheet = new ReviewGASDataSource();
+        this.spreadsheet = new ReviewDataSource();
     }
     public async create({ reviews }: { reviews: Review[] }) {
         await this.database.create({ reviews });
         await this.spreadsheet.create({ reviews });
     }
 
-    public async read({ matchers, hard }: { matchers: Reviews.Matcher[], hard?: boolean }) {
+    public async read({ matchers, hard }: { matchers: Matcher[], hard?: boolean }) {
         let reviews: Review[];
         // Force hard refresh from spreadsheet (slow)
         if (hard) {
@@ -50,17 +50,15 @@ export default class ReviewsRepository implements IRepository<Review> {
         await this.spreadsheet.update({ reviews, upsert });
     }
 
-    public async destroy({ matchers }: { matchers: Reviews.Matcher[] }) {
+    public async destroy({ matchers }: { matchers: Matcher[] }) {
         await this.database.destroy({ matchers });
         await this.spreadsheet.destroy({ matchers });
     }
 }
 
-class ReviewMongoDataSource implements MongoDataSource<Review> {
-    private name = "reviews";
-    private collection: Collection<Reviews.Model>;
+class ReviewMongoDataSource extends MongoDataSource<Model, Review> {
     constructor(client: MongoClient) {
-        this.collection = client.db().collection<Reviews.Model>(this.name);
+        super(client, "reviews");
     }
     public async create({ reviews }: { reviews: Review[] }) {
         if (reviews.length === 0) {
@@ -73,8 +71,8 @@ class ReviewMongoDataSource implements MongoDataSource<Review> {
         const insertedIds = Object.values(results.insertedIds);
         return reviews.filter((review) => insertedIds.includes(review._id));
     }
-    public async read({ matchers }: { matchers: Reviews.Matcher[] }) {
-        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(Utils.cleanObject) }) };
+    public async read({ matchers }: { matchers: Matcher[] }) {
+        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(cleanObject) }) };
         const result = await this.collection.find(query).toArray();
 
         logger.verbose(`Read ${result.length} values from ${this.name} collection`);
@@ -99,8 +97,8 @@ class ReviewMongoDataSource implements MongoDataSource<Review> {
         return reviews.filter((review) => updatedIds.includes(review._id));
     }
 
-    public async destroy({ matchers }: { matchers: Reviews.Matcher[] }) {
-        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(Utils.cleanObject) }) };
+    public async destroy({ matchers }: { matchers: Matcher[] }) {
+        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(cleanObject) }) };
         // Collect all which are to be deleted
         const deleting = await Review.fromModels(...(await this.collection.find(query).toArray()));
         const results = await this.collection.deleteMany(query);
@@ -110,7 +108,7 @@ class ReviewMongoDataSource implements MongoDataSource<Review> {
     }
 }
 
-class ReviewGASDataSource implements GASDataSource<Review> {
+class ReviewDataSource extends GASDataSource<Review> {
     public async create({ reviews }: { reviews: Review[] }) {
         const groups = Map.groupBy(reviews, (review) => review.card.project);
         const created: Review[] = [];
@@ -119,22 +117,22 @@ class ReviewGASDataSource implements GASDataSource<Review> {
             const models = await Review.toModels(...pReviews);
             const body = JSON.stringify(models);
 
-            const response = await googleAppScriptService.post<GASAPI.Reviews.CreateResponse>(url, body);
+            const response = await this.client.post<ReviewsController.CreateResponse>(url, body);
             created.push(...await Review.fromModels(...response.created));
             logger.verbose(`${created.length} review(s) created in Google App Script (${project.name})`);
         }
         return created;
     }
 
-    public async read({ matchers }: { matchers: Reviews.Matcher[] }) {
-        const groups = Map.groupBy(matchers.map(Utils.cleanObject), (matcher) => matcher.projectId);
+    public async read({ matchers }: { matchers: Matcher[] }) {
+        const groups = Map.groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
         const read: Review[] = [];
         for (const [projectId, pModels] of groups.entries()) {
-            const project = await googleAppScriptService.getProject(projectId);
-            const ids = pModels.filter((has) => has.number).map((pm) => `${pm.reviewer}@${pm.number}@${pm.version}` as Reviews.Id);
+            const project = await this.client.getProject(projectId);
+            const ids = pModels.filter((has) => has.number).map((pm) => `${pm.reviewer}@${pm.number}@${pm.version}` as Id);
             const url = `${project.script}/reviews${ids.length > 0 ? `?ids=${ids.join(",")}` : ""}`;
 
-            const response = await googleAppScriptService.get<GASAPI.Reviews.ReadResponse>(url);
+            const response = await this.client.get<ReviewsController.ReadResponse>(url);
             read.push(...await Review.fromModels(...response.reviews));
             logger.verbose(`${read.length} review(s) read from Google App Script (${project.name})`);
         }
@@ -149,22 +147,22 @@ class ReviewGASDataSource implements GASDataSource<Review> {
             const models = await Review.toModels(...pReviews);
             const body = JSON.stringify(models);
 
-            const response = await googleAppScriptService.post<GASAPI.Reviews.UpdateResponse>(url, body);
+            const response = await this.client.post<ReviewsController.UpdateResponse>(url, body);
             updated.push(...await Review.fromModels(...response.updated));
             logger.verbose(`${updated.length} review(s) updated in Google App Script (${project.name})`);
         }
         return updated;
     }
 
-    public async destroy({ matchers }: { matchers: Reviews.Matcher[] }) {
-        const groups = Map.groupBy(matchers.map(Utils.cleanObject), (matcher) => matcher.projectId);
+    public async destroy({ matchers }: { matchers: Matcher[] }) {
+        const groups = Map.groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
         const destroyed: Review[] = [];
         for (const [projectId, pModels] of groups.entries()) {
-            const project = await googleAppScriptService.getProject(projectId);
-            const ids = pModels.filter((has) => has.number).map((pm) => `${pm.reviewer}@${pm.number}@${pm.version}` as Reviews.Id);
+            const project = await this.client.getProject(projectId);
+            const ids = pModels.filter((has) => has.number).map((pm) => `${pm.reviewer}@${pm.number}@${pm.version}` as Id);
             const url = `${project.script}/reviews/destroy${ids ? `?ids=${ids.join(",")}` : ""}`;
 
-            const response = await googleAppScriptService.get<GASAPI.Reviews.DestroyResponse>(url);
+            const response = await this.client.get<ReviewsController.DestroyResponse>(url);
             destroyed.push(...await Review.fromModels(...response.destroyed));
             logger.verbose(`${destroyed.length} review(s) deleted in Google App Script (${project.name})`);
         }

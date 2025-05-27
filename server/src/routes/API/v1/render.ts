@@ -2,7 +2,7 @@ import express from "express";
 import { celebrate, Joi, Segments } from "celebrate";
 import asyncHandler from "express-async-handler";
 import Card from "@/data/models/card";
-import { Cards } from "common/models/cards";
+import * as Cards from "common/models/cards";
 import { renderService } from "@/services";
 
 export type ResourceFormat = "JSON" | "HTML" | "TXT" | "PNG" | "PDF";

@@ -1,5 +1,5 @@
-import { Forms } from "./forms/form";
-import { Trigger } from "./spreadsheets/listeners";
+import * as Form from "./forms/form";
+import * as Spreadsheet from "./spreadsheets/spreadsheet";
 //TODO: Improve these to run tests automatically from a single function (ie. testAll)
 const defaultDoGet = {
     parameters: {},
@@ -81,7 +81,7 @@ function onEditTest() {
     const e = {
         range: SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Latest Cards").getRange(5, 13)
     } as GoogleAppsScript.Events.SheetsOnEdit;
-    Trigger.edit(e);
+    Spreadsheet.onEdit(e);
 }
 
 function updateReviewsTest() {
@@ -106,8 +106,10 @@ function updateReviewsTest() {
 }
 
 function submitReviewTest() {
-    const response = Forms.get().getResponses()[0];
-    Forms.submit(response);
+    const e = {
+        response: Form.get().getResponses()[0]
+    } as GoogleAppsScript.Events.FormsOnFormSubmit;
+    Form.onSubmit(e);
 }
 
 export {

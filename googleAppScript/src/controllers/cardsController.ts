@@ -1,64 +1,62 @@
-import { DataSheet } from "../spreadsheets/dataSheets";
-import { Controller } from "./controller";
-import { CardSerializer } from "../spreadsheets/serializers/cardSerializer";
-import { Cards } from "common/models/cards";
-import { GASAPI } from "common/models/googleAppScriptAPI";
+import { DataSheet } from "../spreadsheets/spreadsheet";
+import { CardSerializer, CardSheet } from "../spreadsheets/serializers/cardSerializer";
+import * as Cards from "common/models/cards";
+import * as RestClient from "../restClient";
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
-namespace CardsController {
-    export function doGet(path: string[], e: GoogleAppsScript.Events.DoGet) {
-        // TODO: Allow lists of any Cards.Model value, then & them all in the get query to GAS
-        const { latest, ids } = e.parameter;
 
-        // Reads content from archive, or latest if specified
-        const models = ids?.split(",").map((id: Cards.Id) => Cards.expandId(id) as Cards.Model);
-        const readFunc = models ? (values: string[], index: number) => models.some((model) => CardSerializer.instance.filter(values, index, model)) : undefined;
-        // Defaults to "archive" if latest is not given
-        const sheet = latest ? "latest" : "archive";
-        const cards = DataSheet.sheets[sheet].read(readFunc);
-        const response = { request: e, data: { cards } } as GASAPI.Response<GASAPI.Cards.ReadResponse>;
-        return Controller.sendResponse(response);
-    }
-    export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
-        const { sheets, upsert, ids } = e.parameter;
-        const cards: Cards.Model[] = e.postData ? JSON.parse(e.postData.contents) : undefined;
+export function doGet(path: string[], e: GoogleAppsScript.Events.DoGet) {
+    // TODO: Allow lists of any Cards.Model value, then & them all in the get query to GAS
+    const { latest, ids } = e.parameter;
 
-        const action = path.shift();
-        switch (action) {
-            case "create": {
-                // Creates cards in archive
-                const created = DataSheet.sheets.archive.create(cards);
-                const response = { request: e, data: { created } } as GASAPI.Response<GASAPI.Cards.CreateResponse>;
-                return Controller.sendResponse(response);
-            }
-            case "update": {
-                const isUpsert = upsert === "true";
-                // Update specified sheet(s), or all sheets if none are specified
-                const cardSheets = sheets?.split(",").map((sheet) => sheet as GASAPI.Cards.CardSheet) || ["archive"];
-                const updated = [];
-                for (const sheet of cardSheets) {
-                    const sheetUpdates = DataSheet.sheets[sheet].update(cards, false, isUpsert);
-                    // Concat any cards that were updated & not already on updated list (by _id)
-                    const newUpdates = sheetUpdates.filter((tc) => !updated.some((uc) => uc._id === tc._id));
-                    updated.concat(newUpdates);
-                }
-                const response = { request: e, data: { updated } } as GASAPI.Response<GASAPI.Cards.UpdateResponse>;
-                return Controller.sendResponse(response);
-            }
-            case "destroy": {
-                // Destroys cards from archive
-                const models = ids?.split(",").map((id: Cards.Id) => Cards.expandId(id) as Cards.Model);
-                const deleteFunc = models ? (values: string[], index: number) => models.some((model) => CardSerializer.instance.filter(values, index, model)) : undefined;
-                const destroyed = DataSheet.sheets.archive.delete(deleteFunc);
-                const response = { request: e, data: { destroyed } } as GASAPI.Response<GASAPI.Cards.DestroyResponse>;
-                return Controller.sendResponse(response);
-            }
-            default:
-                throw Error(`"${action}" is not a valid card post action`);
+    // Reads content from archive, or latest if specified
+    const models = ids?.split(",").map((id: Cards.Id) => Cards.expandId(id) as Cards.Model);
+    const readFunc = models ? (values: string[], index: number) => models.some((model) => CardSerializer.instance.filter(values, index, model)) : undefined;
+    // Defaults to "archive" if latest is not given
+    const sheet = latest ? "latest" : "archive";
+    const cards = DataSheet.sheets[sheet].read(readFunc);
+    const response = { request: e, data: { cards } } as RestClient.Response<ReadResponse>;
+    return RestClient.generateResponse(response);
+}
+export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
+    const { sheets, upsert, ids } = e.parameter;
+    const cards: Cards.Model[] = e.postData ? JSON.parse(e.postData.contents) : undefined;
+
+    const action = path.shift();
+    switch (action) {
+        case "create": {
+            // Creates cards in archive
+            const created = DataSheet.sheets.archive.create(cards);
+            const response = { request: e, data: { created } } as RestClient.Response<CreateResponse>;
+            return RestClient.generateResponse(response);
         }
+        case "update": {
+            const isUpsert = upsert === "true";
+            // Update specified sheet(s), or all sheets if none are specified
+            const cardSheets = sheets?.split(",").map((sheet) => sheet as CardSheet) || ["archive"];
+            const updated = [];
+            for (const sheet of cardSheets) {
+                const sheetUpdates = DataSheet.sheets[sheet].update(cards, false, isUpsert);
+                // Concat any cards that were updated & not already on updated list (by _id)
+                const newUpdates = sheetUpdates.filter((tc) => !updated.some((uc) => uc._id === tc._id));
+                updated.concat(newUpdates);
+            }
+            const response = { request: e, data: { updated } } as RestClient.Response<UpdateResponse>;
+            return RestClient.generateResponse(response);
+        }
+        case "destroy": {
+            // Destroys cards from archive
+            const models = ids?.split(",").map((id: Cards.Id) => Cards.expandId(id) as Cards.Model);
+            const deleteFunc = models ? (values: string[], index: number) => models.some((model) => CardSerializer.instance.filter(values, index, model)) : undefined;
+            const destroyed = DataSheet.sheets.archive.delete(deleteFunc);
+            const response = { request: e, data: { destroyed } } as RestClient.Response<DestroyResponse>;
+            return RestClient.generateResponse(response);
+        }
+        default:
+            throw Error(`"${action}" is not a valid card post action`);
     }
 }
 
-export {
-    CardsController
-};
+export interface CreateResponse { created: Cards.Model[] }
+export interface ReadResponse { cards: Cards.Model[] }
+export interface UpdateResponse { updated: Cards.Model[] }
+export interface DestroyResponse { destroyed: Cards.Model[] }

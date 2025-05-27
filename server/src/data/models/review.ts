@@ -1,25 +1,25 @@
 import Card from "./card";
 import { Joi } from "celebrate";
-import { Utils } from "../../../../common/utils";
 import { dataService } from "@/services";
-import { Reviews } from "common/models/reviews";
-import { Cards } from "common/models/cards";
+import { condenseId, Id, Model, playedRange, PlayedRange, statementAnswer, Statements } from "common/models/reviews";
+import { Regex } from "common/utils";
+import { factions } from "common/models/cards";
 
 class Review {
-    public _id: Reviews.Id;
+    public _id: Id;
     constructor(
         public reviewer: string,
         public card: Card,
         public decks: string[],
-        public played: Reviews.PlayedRange,
-        public statements: Reviews.Statements,
+        public played: PlayedRange,
+        public statements: Statements,
         public additional: string,
         public date: Date
     ) {
-        this._id = Reviews.condenseId({ reviewer, projectId: card.project._id, number: card.number, version: card.version });
+        this._id = condenseId({ reviewer, projectId: card.project._id, number: card.number, version: card.version });
     }
 
-    static async fromModels(...models: Reviews.Model[]) {
+    static async fromModels(...models: Model[]) {
         if (models.length === 0) {
             return [];
         }
@@ -46,25 +46,25 @@ class Review {
             statements: review.statements,
             additional: review.additional,
             epoch: review.date.getTime()
-        }) as Reviews.Model);
+        }) as Model);
     }
 
     public static schema = {
-        _id: Joi.string().regex(Utils.Regex.Review.id.full),
+        _id: Joi.string().regex(Regex.Review.id.full),
         reviewer: Joi.string().required(),
         projectId: Joi.number().required(),
         number: Joi.number().required(),
-        version: Joi.string().required().regex(Utils.Regex.SemanticVersion),
-        faction: Joi.string().valid(...Cards.factions),
+        version: Joi.string().required().regex(Regex.SemanticVersion),
+        faction: Joi.string().valid(...factions),
         name: Joi.string(),
         decks: Joi.array().items(Joi.string()),
-        played: Joi.string().required().valid(...Reviews.playedRange),
+        played: Joi.string().required().valid(...playedRange),
         statements: Joi.object({
-            boring: Joi.string().required().valid(...Reviews.statementAnswer),
-            competitive: Joi.string().required().valid(...Reviews.statementAnswer),
-            creative: Joi.string().required().valid(...Reviews.statementAnswer),
-            balanced: Joi.string().required().valid(...Reviews.statementAnswer),
-            releasable: Joi.string().required().valid(...Reviews.statementAnswer)
+            boring: Joi.string().required().valid(...statementAnswer),
+            competitive: Joi.string().required().valid(...statementAnswer),
+            creative: Joi.string().required().valid(...statementAnswer),
+            balanced: Joi.string().required().valid(...statementAnswer),
+            releasable: Joi.string().required().valid(...statementAnswer)
         }).required(),
         additional: Joi.string(),
         epoch: Joi.number().required()
