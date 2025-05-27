@@ -1,5 +1,7 @@
 import { Collection, MongoClient } from "mongodb";
 
+// C: Collection Model
+// R: Returned Model
 abstract class MongoDataSource<C, R> {
     protected collection: Collection<C>;
     constructor(client: MongoClient, protected name: string) {
