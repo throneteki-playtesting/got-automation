@@ -4,7 +4,7 @@ import { IRepository } from "..";
 import { logger } from "@/services";
 import Review from "../models/review";
 import { Id, Matcher, Model } from "common/models/reviews";
-import { cleanObject } from "common/utils";
+import { cleanObject, groupBy } from "common/utils";
 import * as ReviewsController from "gas/controllers/reviewsController";
 import GASDataSource from "./dataSources/GASDataSource";
 
@@ -110,7 +110,7 @@ class ReviewMongoDataSource extends MongoDataSource<Model, Review> {
 
 class ReviewDataSource extends GASDataSource<Review> {
     public async create({ reviews }: { reviews: Review[] }) {
-        const groups = Map.groupBy(reviews, (review) => review.card.project);
+        const groups = groupBy(reviews, (review) => review.card.project);
         const created: Review[] = [];
         for (const [project, pReviews] of groups.entries()) {
             const url = `${project.script}/reviews/create`;
@@ -125,7 +125,7 @@ class ReviewDataSource extends GASDataSource<Review> {
     }
 
     public async read({ matchers }: { matchers: Matcher[] }) {
-        const groups = Map.groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
+        const groups = groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
         const read: Review[] = [];
         for (const [projectId, pModels] of groups.entries()) {
             const project = await this.client.getProject(projectId);
@@ -140,7 +140,7 @@ class ReviewDataSource extends GASDataSource<Review> {
     }
 
     public async update({ reviews, upsert = true }: { reviews: Review[], upsert?: boolean }) {
-        const groups = Map.groupBy(reviews, (review) => review.card.project);
+        const groups = groupBy(reviews, (review) => review.card.project);
         const updated: Review[] = [];
         for (const [project, pReviews] of groups.entries()) {
             const url = `${project.script}/reviews/update?upsert=${upsert ? "true" : "false"}`;
@@ -155,7 +155,7 @@ class ReviewDataSource extends GASDataSource<Review> {
     }
 
     public async destroy({ matchers }: { matchers: Matcher[] }) {
-        const groups = Map.groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
+        const groups = groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
         const destroyed: Review[] = [];
         for (const [projectId, pModels] of groups.entries()) {
             const project = await this.client.getProject(projectId);

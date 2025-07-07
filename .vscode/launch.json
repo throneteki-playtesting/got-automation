@@ -11,6 +11,31 @@
             "program": "${workspaceFolder}/Service/index.ts",
             "preLaunchTask": "tsc: build - tsconfig.json",
             "outFiles": ["${workspaceFolder}/out/**/*.js"]
+        },
+        {
+            "name": "Launch Client",
+            "type": "msedge",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/src",
+            "preLaunchTask": "npm: client dev",
+            "sourceMaps": true,
+            "smartStep": true
+        },
+        {
+            "name": "Launch Server",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npx",
+            "runtimeArgs": [
+                "tsx",
+                "watch",
+                "src/app.ts"
+            ],
+            "skipFiles": ["<node_internals>/**"],
+            "cwd": "${workspaceFolder}/server",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
         }
     ]
 }

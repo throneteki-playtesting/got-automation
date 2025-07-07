@@ -35,6 +35,16 @@ export function cleanObject<T>(object: T) {
     return object;
 }
 
+export function groupBy<V, O>(objects: O[], groupFunc: (object: O) => V) {
+    return objects.reduce((groups, object) => {
+        const value = groupFunc(object);
+        const group = groups.get(value) || [];
+        group.push(object);
+        groups.set(value, group);
+        return groups;
+    }, new Map<V, O[]>());
+}
+
 export function distinct<T>(values: T[]) {
     return values.filter((value, index, array) => array.indexOf(value) === index);
 }

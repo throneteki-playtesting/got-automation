@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2024",
-    "module": "ES2022",
+    "target": "es2024",
+    "module": "esnext",
     "moduleResolution": "node",
+    "sourceMap": true,
     "allowJs": false,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

@@ -14,7 +14,7 @@ router.post("/", celebrate({
         format: Joi.string().insensitive().valid("JSON", "HTML", "PDF", "PNG").default("PNG")
     },
     // TODO: Update API schema to match the JSON API schema (eg. "martell" instead of "House Martell")
-    [Segments.BODY]: Joi.alternatives(Joi.object(Card.schema), Joi.array().items(Card.schema))
+    [Segments.BODY]: Joi.alternatives(Card.schema, Joi.array().items(Card.schema))
 }), asyncHandler(async (req, res) => {
     const format = req.query.format as ResourceFormat;
 

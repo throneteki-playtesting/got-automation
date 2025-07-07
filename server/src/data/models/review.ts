@@ -49,7 +49,7 @@ class Review {
         }) as Model);
     }
 
-    public static schema = {
+    public static schema = Joi.object({
         _id: Joi.string().regex(Regex.Review.id.full),
         reviewer: Joi.string().required(),
         projectId: Joi.number().required(),
@@ -68,7 +68,7 @@ class Review {
         }).required(),
         additional: Joi.string(),
         epoch: Joi.number().required()
-    };
+    });
 }
 
 export default Review;

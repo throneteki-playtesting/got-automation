@@ -4,7 +4,7 @@ import Card from "../models/card";
 import { IRepository } from "..";
 import { dataService, githubService, logger, renderService } from "@/services";
 import { condenseId, Id, Matcher, Model } from "common/models/cards";
-import { cleanObject } from "common/utils";
+import { cleanObject, groupBy } from "common/utils";
 import * as CardsController from "gas/controllers/cardsController";
 import { CardSheet } from "gas/spreadsheets/serializers/cardSerializer";
 import MongoDataSource from "./dataSources/mongoDataSource";
@@ -170,7 +170,7 @@ class CardMongoDataSource extends MongoDataSource<Model, Card> {
 
 class CardDataSource extends GASDataSource<Card> {
     public async create({ cards }: { cards: Card[] }) {
-        const groups = Map.groupBy(cards, (card) => card.project);
+        const groups = groupBy(cards, (card) => card.project);
         const created: Card[] = [];
         for (const [project, pCards] of groups.entries()) {
             const url = `${project.script}/cards/create`;
@@ -185,7 +185,7 @@ class CardDataSource extends GASDataSource<Card> {
     }
 
     public async read({ matchers }: { matchers: Matcher[] }) {
-        const groups = Map.groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
+        const groups = groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
         const read: Card[] = [];
         for (const [projectId, pModels] of groups.entries()) {
             const project = await this.client.getProject(projectId);
@@ -200,7 +200,7 @@ class CardDataSource extends GASDataSource<Card> {
     }
 
     public async update({ cards, upsert = false, sheets }: { cards: Card[], upsert?: boolean, sheets?: CardSheet[] }) {
-        const groups = Map.groupBy(cards, (card) => card.project);
+        const groups = groupBy(cards, (card) => card.project);
         const updated: Card[] = [];
         for (const [project, pCards] of groups.entries()) {
             const url = `${project.script}/cards/update?upsert=${upsert ? "true" : "false"}${sheets ? `&sheets=${sheets.join(",")}` : ""}`;
@@ -215,7 +215,7 @@ class CardDataSource extends GASDataSource<Card> {
     }
 
     public async destroy({ matchers }: { matchers: Matcher[] }) {
-        const groups = Map.groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
+        const groups = groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
         const destroyed: Card[] = [];
         for (const [projectId, pModels] of groups.entries()) {
             const project = await this.client.getProject(projectId);
@@ -235,7 +235,7 @@ class CardDataSource extends GASDataSource<Card> {
 
 // TODO: Update everything to return a "CardCollection" to mimic this methods behaviour
 export function groupCardHistory(cards: Card[]) {
-    const groups = Map.groupBy(cards, (card) => card.number);
+    const groups = groupBy(cards, (card) => card.number);
 
     return Array.from(groups.entries()).map(([number, c]) => {
         const previous = c.sort((a, b) => -compareBuild(a.version, b.version));

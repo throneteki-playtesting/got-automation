@@ -1,6 +1,6 @@
 import * as Ver from "semver";
 import { Joi } from "celebrate";
-import { apiUrl } from "@/index";
+import { apiUrl } from "@/app";
 import Project from "./project";
 import { dataService } from "@/services";
 import { Id as ProjectId } from "common/models/projects";
@@ -289,7 +289,7 @@ class Card {
         return !!this.release;
     }
 
-    public static schema = {
+    public static schema = Joi.object({
         faction: Joi.string().required().valid(...factions),
         name: Joi.string().required(),
         type: Joi.string().required().valid(...types),
@@ -305,19 +305,19 @@ class Card {
         deckLimit: Joi.number(),
         quantity: Joi.number(),
         cost: Joi.when("type", {
-            is: Joi.equal("Character", "Location", "Attachment", "Event"),
+            is: Joi.valid("Character", "Location", "Attachment", "Event"),
             then: JoiXDashNumber.required()
         }),
         unique: Joi.when("type", {
-            is: Joi.equal("Character", "Location", "Attachment"),
+            is: Joi.valid("Character", "Location", "Attachment"),
             then: Joi.boolean().required()
         }),
         strength: Joi.when("type", {
-            is: Joi.equal("Character"),
+            is: Joi.valid("Character"),
             then: JoiXNumber.required()
         }),
         icons: Joi.when("type", {
-            is: Joi.equal("Character"),
+            is: Joi.valid("Character"),
             then: Joi.object({
                 military: Joi.boolean().required(),
                 intrigue: Joi.boolean().required(),
@@ -325,7 +325,7 @@ class Card {
             }).required()
         }),
         plotStats: Joi.when("type", {
-            is: Joi.equal("Plot"),
+            is: Joi.valid("Plot"),
             then: Joi.object({
                 income: JoiXNumber.required(),
                 initiative: JoiXNumber.required(),
@@ -333,10 +333,9 @@ class Card {
                 reserve: JoiXNumber.required()
             }).required()
         })
-    };
+    });
 
-    public static playtestingSchema = {
-        ...Card.schema,
+    public static playtestingSchema = Card.schema.keys({
         _id: Joi.string().regex(Regex.Card.id.full),
         projectId: Joi.number().required(),
         number: Joi.number().required(),
@@ -357,7 +356,7 @@ class Card {
             short: Joi.string().required(),
             number: Joi.number().required()
         })
-    };
+    });
 }
 
 export default Card;

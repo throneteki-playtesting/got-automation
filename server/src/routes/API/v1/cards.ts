@@ -11,9 +11,7 @@ export type ResourceFormat = "JSON" | "HTML" | "TXT" | "PNG" | "PDF";
 
 const router = express.Router();
 
-/**
- * Fetch a range of cards from a specific project, in a format (defaults to JSON)
- */
+
 router.get("/:project", celebrate({
     [Segments.PARAMS]: {
         project: Joi.number().required()
@@ -102,6 +100,21 @@ router.get("/:project/:number", celebrate({
     }
 }));
 
+/**
+ * @openapi
+ * /api/v1/cards:
+ *   post:
+ *     summary: Adds a list of cards
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Card'
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 router.post("/", celebrate({
     [Segments.BODY]: Joi.array().items(Card.playtestingSchema)
 }), asyncHandler(async (req, res) => {

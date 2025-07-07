@@ -5,7 +5,7 @@ import { emojis, githubify } from "./utils";
 import path from "path";
 import { fileURLToPath } from "url";
 import Project from "../data/models/project";
-import { apiUrl } from "@/index";
+import { apiUrl } from "@/app";
 import { NoteType } from "common/models/cards";
 
 export type GeneratedIssue = {

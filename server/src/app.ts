@@ -4,9 +4,10 @@ import partials from "express-partials";
 import compression from "compression";
 import cors from "cors";
 import { errors } from "celebrate";
-import api from "./routes/API";
+import api from "./routes/API/index";
 import basicAuth from "express-basic-auth";
 import { logger } from "@/services";
+import swaggerRouter from "./swagger";
 
 export const apiUrl = config.get("server.host") || `http://localhost:${config.get("server.ports.api")}`;
 function initialise(apiHost: string, serverPort: number, clientPort: number) {
@@ -32,7 +33,7 @@ function initialise(apiHost: string, serverPort: number, clientPort: number) {
         unauthorizedResponse: "Unauthorized access. Please provide valid credentials."
     }), api);
 
-    app.use(errors());
+    app.use(swaggerRouter);
     app.use((req, res) => {
         res.status(404).send("Route does not exist");
     });

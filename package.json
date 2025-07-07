@@ -2,10 +2,7 @@
   "name": "got-automation",
   "version": "1.0.0",
   "description": "README is under construction...",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "scripts": {},
   "author": "Stephen Patane",
   "license": "ISC",
   "devDependencies": {
@@ -14,5 +11,8 @@
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.2.0",
     "typescript-eslint": "^8.32.1"
+  },
+  "dependencies": {
+    "joi-to-swagger": "^6.2.0"
   }
 }

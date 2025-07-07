@@ -66,7 +66,7 @@ class Project {
         return this.name;
     }
 
-    public static schema = {
+    public static schema = Joi.object({
         _id: Joi.number(),
         code: Joi.number().required(),
         active: Joi.boolean().required(),
@@ -80,7 +80,7 @@ class Project {
         milestone: Joi.number().required(),
         formUrl: Joi.string().required(),
         emoji: Joi.string()
-    };
+    });
 }
 
 export default Project;
