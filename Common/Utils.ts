@@ -1,6 +1,16 @@
 import * as Cards from "./models/cards";
 
 export type SemanticVersion = `${number}.${number}.${number}`;
+// TODO: Replace "Partial" with "Filterable", with the advantage that it also partials inner child objects!
+// type Filter<T> =
+//   T extends (...args: unknown[]) => unknown
+//     ? T
+//     : T extends Array<infer U>
+//       ? Array<Filter<U>>
+//       : T extends object
+//         ? { [P in keyof T]?: Filter<T[P]> }
+//         : T;
+// export type Filterable<T> = Filter<T> | Filter<T>[];
 
 export function maxEnum(o: object) {
     return Math.max(...Object.keys(o).filter(obj => !isNaN(parseInt(obj))).map(obj => parseInt(obj))) + 1;

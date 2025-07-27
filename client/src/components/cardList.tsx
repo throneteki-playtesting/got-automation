@@ -12,7 +12,7 @@ const CardList = () => {
         <div className={className}>
             <ul>
                 {cards?.map((card) => (
-                    <li key={`${card.Code}|${card.version}`}>{card.name} {card.version} ({card._id})</li>
+                    <li key={`${card.code}|${card.version}`}>{card.name} {card.version}</li>
                 ))}
             </ul>
         </div>
