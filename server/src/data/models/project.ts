@@ -1,86 +1,57 @@
-import { Joi } from "celebrate";
-import { condenseId, Id, Model, Type } from "common/models/projects";
+import { JsonProject, Type } from "common/models/projects";
 
-class Project {
-    public _id: Id;
-    constructor(
-        public active: boolean,
-        public name: string,
-        public short: string,
-        public code: number,
-        public type: Type,
-        public perFaction: number,
-        public neutral: number,
-        public script: string,
-        public releases: number,
-        public milestone: number,
-        public formUrl: string,
-        public emoji?: string
-    ) {
-        this._id = condenseId({ code });
-    }
+class Project implements JsonProject {
+    // octgnId?: string;
+    public number: number;
+    public name: string;
+    public code: string;
+    public active: boolean;
+    public type: Type;
+    public script: string;
+    public perFaction: number;
+    public neutral: number;
+    public version: number;
+    public milestone: number;
+    public formUrl: string;
+    public emoji?: string;
 
-    get cards() {
-        return (this.perFaction * 8) + this.neutral;
-    }
-
-    static async fromModels(...models: Model[]) {
-        return models.map((model) => new Project(model.active, model.name, model.short, model.code, model.type, model.perFaction, model.neutral, model.script, model.releases, model.milestone, model.formUrl, model.emoji));
-    }
-
-    static async toModels(...projects: Project[]) {
-        return projects.map((project) => ({
-            _id: project._id,
-            active: project.active,
-            script: project.script,
-            name: project.name,
-            short: project.short,
-            code: project.code,
-            type: project.type,
-            perFaction: project.perFaction,
-            neutral: project.neutral,
-            releases: project.releases,
-            milestone: project.milestone,
-            formUrl: project.formUrl,
-            emoji: project.emoji
-        }) as Model);
+    constructor(data: JsonProject) {
+        this.number = data.number;
+        this.name = data.name;
+        this.code = data.code;
+        this.active = data.active;
+        this.type = data.type;
+        this.script = data.script;
+        this.perFaction = data.perFaction;
+        this.neutral = data.neutral;
+        this.version = data.version;
+        this.milestone = data.milestone;
+        this.formUrl = data.formUrl;
+        this.emoji = data.emoji;
     }
 
     clone() {
-        const active = this.active;
-        const name = this.name;
-        const short = this.short;
-        const code = this.code;
-        const type = this.type;
-        const perFaction = this.perFaction;
-        const neutral = this.neutral;
-        const script = this.script;
-        const releases = this.releases;
-        const milestone = this.milestone;
-        const emoji = this.emoji;
+        const clonedJsonData = {
+            number: this.number,
+            name: this.name,
+            code: this.code,
+            active: this.active,
+            type: this.type,
+            script: this.script,
+            perFaction: this.perFaction,
+            neutral: this.neutral,
+            version: this.version,
+            milestone: this.milestone,
+            formUrl: this.formUrl,
+            emoji: this.emoji
+        } as JsonProject;
 
-        return new Project(active, name, short, code, type, perFaction, neutral, script, releases, milestone, emoji);
+        return new Project(clonedJsonData);
     }
 
     toString() {
         return this.name;
     }
-
-    public static schema = Joi.object({
-        _id: Joi.number(),
-        code: Joi.number().required(),
-        active: Joi.boolean().required(),
-        script: Joi.string().required(),
-        name: Joi.string().required(),
-        short: Joi.string().required(),
-        type: Joi.string().required().valid("Cycle", "Expansion"),
-        perFaction: Joi.number().required(),
-        neutral: Joi.number().required(),
-        releases: Joi.number().required(),
-        milestone: Joi.number().required(),
-        formUrl: Joi.string().required(),
-        emoji: Joi.string()
-    });
 }
 
 export default Project;

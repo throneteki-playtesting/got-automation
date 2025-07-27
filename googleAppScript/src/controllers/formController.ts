@@ -1,12 +1,32 @@
 import * as RestClient from "../restClient";
 import * as Forms from "../forms/form";
-import * as Reviews from "common/models/reviews";
+import { JsonPlaytestingReview } from "common/models/reviews";
 
 export function doGet(path: string[], e: GoogleAppsScript.Events.DoGet) {
-    const { reviewer, number, version } = e.parameter;
-    const reviews = Forms.toReviews(...Forms.get().getResponses()).filter((review) => (!reviewer || reviewer === review.reviewer) && (!number || parseInt(number) === review.number) && (!version || version === review.version));
+    const { filter } = e.parameter;
+    // Assume filter is in a valid partial format (eg. no error checking here!!!)
+    const partial = JSON.parse(filter || "{}") as Partial<JsonPlaytestingReview>;
+    const responses = Forms.get().getResponses();
+    const reviews = Forms.toReviews(...responses).filter((review) => matches(review, partial));
     const response = { request: e, data: { reviews } } as RestClient.Response<ReadReviewsResponse>;
     return RestClient.generateResponse(response);
+}
+
+function matches(review: JsonPlaytestingReview, partial: Partial<JsonPlaytestingReview>) {
+    return (
+        (!partial.number || partial.number === review.number)
+            && (!partial.version || partial.version === review.version)
+            && (!partial.reviewer || partial.reviewer === review.reviewer)
+            && (!partial.played || partial.played === review.played)
+            && (!partial.statements?.boring || partial.statements.boring === review.statements.boring)
+            && (!partial.statements?.competitive || partial.statements.competitive === review.statements.competitive)
+            && (!partial.statements?.creative || partial.statements.creative === review.statements.creative)
+            && (!partial.statements?.balanced || partial.statements.balanced === review.statements.balanced)
+            && (!partial.statements?.releasable || partial.statements.releasable === review.statements.releasable)
+            && (!partial.additional || partial.additional === review.additional)
+            && (!partial.epoch || partial.epoch === review.epoch)
+            && (!partial.decks || review.decks.some((deck) => partial.decks.some((fdeck) => deck === fdeck)))
+    );
 }
 
 export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
@@ -16,5 +36,5 @@ export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
     return RestClient.generateResponse(response);
 }
 
-export interface ReadReviewsResponse { reviews: Reviews.Model[] }
+export interface ReadReviewsResponse { reviews: JsonPlaytestingReview[] }
 export interface SetValuesResponse { cards: number, reviewers: number }

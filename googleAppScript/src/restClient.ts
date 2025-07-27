@@ -1,5 +1,4 @@
 import { getProperty, GooglePropertiesType, setProperty } from "./settings";
-import { Log } from "./cloudLogger";
 import { CardSheet } from "./spreadsheets/serializers/cardSerializer";
 import { safelyGetUI } from "./spreadsheets/userInput";
 
@@ -35,8 +34,12 @@ export function post(subUrl: string, data: unknown) {
 
     const json = JSON.parse(response.getContentText());
     if (json.statusCode == 400) {
-        Log.error(response.getContentText());
-        throw Error("Request failed: Refer to previously logged error(r)");
+        // Currently configured to match "celebrate" validation from server
+        if (json.message === "Validation failed") {
+            throw Error("Failed server validation:\n" + JSON.stringify(json.validation));
+        } else {
+            throw Error("Failed request to server:\n" + response.getContentText());
+        }
     }
     return json;
 }

@@ -3,21 +3,23 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import puppeteer, { Viewport } from "puppeteer";
-import Card from "../data/models/card";
 import { BufferCollection } from "buffer-collection";
 import Project from "../data/models/project";
-import { dataService, logger } from "@/services";
-import { groupCardHistory } from "../data/repositories/cardsRepository";
 import * as Cards from "common/models/cards";
+import PlaytestingCard from "@/data/models/cards/playtestingCard";
+import RenderedCard from "@/data/models/cards/renderedCard";
+import CardCollection from "@/data/models/cards/cardCollection";
+import { logger } from "@/services";
 
 export type RenderType = "single" | "batch";
+type RenderHtmlOptions = { copies?: number, perPage?: number, includeCSS?: boolean, includeJS?: boolean };
 
 class RenderingService {
-    public async syncImages(cards: Card[], override = false) {
-        const filePathFunc = (card: Card) => `./public/img/${card.project._id}/${card.number}@${card.version}.png`;
-        const syncing = override ? [...cards] : cards.filter((card) => !fs.existsSync(filePathFunc(card)));
+    public async syncImages(cards: CardCollection, override = false) {
+        const filePathFunc = (card: PlaytestingCard) => `./public/img/${card.project}/${card.number}@${card.version}.png`;
+        const syncing = override ? [...cards.all] : cards.all.filter((card) => !fs.existsSync(filePathFunc(card)));
 
-        const imgBuffers = await this.asPNG(syncing);
+        const imgBuffers = await this.asPNG(syncing.map((card) => card.toRenderedCard()));
 
         const promises: Promise<unknown>[] = [];
         while (syncing.length > 0)
@@ -37,11 +39,10 @@ class RenderingService {
 
         await Promise.allSettled(promises);
     }
-    public async syncPDFs(project: Project, cards?: Card[], override = false) {
-        cards = cards || await dataService.cards.read({ matchers: [{ projectId: project.code }] });
-        const all = groupCardHistory(cards).map((group) => group.latest);
-        const updated = all.filter((card) => card.isChanged);
-        const filePathFunc = (collection: "all"|"updated") => `./public/pdf/${project.code}/${project.releases + 1}_${collection}.pdf`;
+    public async syncPDFs(project: Project, cards: CardCollection, override = false) {
+        const all = cards.latest;
+        const updated = cards.latest.filter((card) => card.isChanged);
+        const filePathFunc = (collection: "all"|"updated") => `./public/pdf/${project.number}/${project.version + 1}_${collection}.pdf`;
 
         const allFilePath = filePathFunc("all");
 
@@ -51,20 +52,21 @@ class RenderingService {
         }
 
         if (override || !fs.existsSync(allFilePath)) {
-            const allPdfBuffer = await this.asPDF(all);
+            const allPdfBuffer = await this.asPDF(all.map((card) => card.toRenderedCard()));
             await fs.promises.writeFile(allFilePath, allPdfBuffer);
         }
 
         if (updated.length > 0) {
             const updatedFilePath = filePathFunc("updated");
             if (override || !fs.existsSync(updatedFilePath)) {
-                const updatedPdfBuffer = await this.asPDF(updated);
+                const updatedPdfBuffer = await this.asPDF(updated.map((card) => card.toRenderedCard()));
                 await fs.promises.writeFile(updatedFilePath, updatedPdfBuffer);
             }
         }
     }
-
-    public async asPNG(cards: Card[]) {
+    public async asPNG(data: RenderedCard): Promise<Buffer>;
+    public async asPNG(data: RenderedCard[]): Promise<BufferCollection>;
+    public async asPNG(cards: RenderedCard | RenderedCard[]) {
         const width = 240;
         const height = 333;
         const browser = await this.launchPuppeteer();
@@ -77,24 +79,34 @@ class RenderingService {
             document.getElementsByTagName("head")[0].appendChild(style);
             document.getElementsByTagName("head")[0].appendChild(script);
         });
-        const buffers = new BufferCollection();
-        for (const card of cards) {
+        const cardToBuffer = async (card: RenderedCard) => {
             page.setViewport({
-                width: card.type === "Plot" ? height : width,
-                height: card.type === "Plot" ? width : height,
+                width: card.type === "plot" ? height : width,
+                height: card.type === "plot" ? width : height,
                 deviceScaleFactor: 1.25
             });
             const htmlContent = await this.asHtml("single", card, { includeCSS: true, includeJS: true });
             await page.setContent(htmlContent);
-            const buffer = await page.screenshot({ optimizeForSpeed: true, type: "png" });
-            buffers.push(buffer);
+            return await page.screenshot({ optimizeForSpeed: true, type: "png" });
+        };
+        let result = null;
+        if (Array.isArray(cards)) {
+            const buffers = new BufferCollection();
+            for (const card of cards) {
+                const buffer = await cardToBuffer(card);
+                buffers.push(buffer);
+            }
+            result = buffers;
+        } else {
+            result = await cardToBuffer(cards);
         }
         await page.close();
         await browser.close();
-        return buffers;
+        return result;
     }
 
-    public async asPDF(cards: Card[], options? : { copies: number, perPage: number }) {
+    public async asPDF(data: RenderedCard | RenderedCard[], options? : { copies: number, perPage: number }) {
+        const cards = Array.isArray(data) ? data as [] : [data];
         if (cards.length === 0) {
             throw Error("Cannot render PDF with no cards");
         }
@@ -102,7 +114,7 @@ class RenderingService {
             width: 794,
             height: 1124 // For some reason, puppeteer wants this as 1124, rather than the 1122 that it SHOULD be for A4 *shrug*
         });
-        const htmlContent = await this.asHtml("batch", cards, { ...options, includeCSS: true, includeJS: true });
+        const htmlContent = await this.asHtml("batch", cards.map((card) => card), { ...options, includeCSS: true, includeJS: true });
         const page = await browser.newPage();
         await page.addStyleTag({ path: "./public/css/render.css" });
         await page.addScriptTag({ path: "./public/js/render.js" });
@@ -113,10 +125,10 @@ class RenderingService {
         return buffer;
     }
 
-    public async asHtml(mode: RenderType, cards: Card | Card[], options?: { copies?: number, perPage?: number, includeCSS?: boolean, includeJS?: boolean }) {
+    public async asHtml(mode: RenderType, cards: RenderedCard | RenderedCard[], options?: RenderHtmlOptions) {
         switch (mode) {
             case "single":
-                const single = Array.isArray(cards) ? cards[0] : cards as Card;
+                const single = Array.isArray(cards) ? cards[0] : cards as RenderedCard;
                 options = { ...{ includeCSS: false, includeJS: false }, ...options };
                 return RenderingService.renderTemplate({ type: mode, card: this.prepareCard(single), ...options });
             case "batch":
@@ -126,7 +138,7 @@ class RenderingService {
         }
     }
 
-    private prepareCard(card: Card) {
+    private prepareCard(card: RenderedCard) {
         const jCard = card.toJSON();
         return {
             ...jCard,
@@ -145,13 +157,7 @@ class RenderingService {
                     // ... and wrap each line in li
                     .replace(/<br>-\s*(.*?\.)(?=<br>|<\/ul>)/g, "<li>$1</li>"),
                 deckLimit: jCard.deckLimit !== Cards.DefaultDeckLimit[jCard.type] ? `Deck Limit: ${jCard.deckLimit}` : ""
-            },
-            ...(!card.isConcept ? {
-                project: {
-                    short: card.project.short || "?",
-                    code: card.project.code || "?"
-                }
-            } : undefined)
+            }
         } as ejs.Data;
     }
 

@@ -5,9 +5,7 @@ import express from "express";
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import j2s from "joi-to-swagger";
-import Card from "@/data/models/card";
-import Project from "./data/models/project";
-import Review from "./data/models/review";
+import * as Schemas from "@/data/schemas";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,19 +23,40 @@ const apiVersions = fs.readdirSync(apiBasePath, { withFileTypes: true })
 apiVersions.forEach((apiVersion) => {
     const spec = swaggerJSDoc({
         definition: {
-            openapi: "3.0.0",
+            openapi: "3.0.3",
             info: {
-                title: `GOT Automation API ${apiVersion}`,
-                version: apiVersion.replace(/^v/, "")
+                title: "GOT Automation API",
+                description: "Automation for the Global Operations Team for the Game of Thrones Card Game LCG 2nd edition Community",
+                version: apiVersion
             },
+            servers: [ { url: "http://localhost:8080/api/v1" }],
+            consumes: [ "application/json" ],
+            produces: [ "application/json" ],
             components: {
                 schemas: {
-                    Card: j2s(Card.schema).swagger,
-                    PlaytestingCard: j2s(Card.playtestingSchema).swagger,
-                    Project: j2s(Project.schema).swagger,
-                    Review: j2s(Review.schema).swagger
+                    card: {
+                        body: j2s(Schemas.Card.Body).swagger,
+                        query: j2s(Schemas.Card.Query).swagger
+                    },
+                    playtestingCard: {
+                        body: j2s(Schemas.PlaytestingCard.Body).swagger,
+                        query: j2s(Schemas.PlaytestingCard.Query).swagger
+                    },
+                    project: {
+                        body: j2s(Schemas.Project.Body).swagger
+                    },
+                    review: {
+                        body: j2s(Schemas.PlaytestingReview.Body).swagger
+                    }
                 }
-            }
+            },
+            tags: [
+                { name: "cards", description: "Create, add and update cards" },
+                { name: "projects", description: "Manage projects" },
+                { name: "reviews", description: "Manage playtesting reviews of cards" },
+                { name: "packs", description: "Generate card packs for json data repository" },
+                { name: "custom", description: "Generate custom cards, unrelated to existing projects" }
+            ]
         },
         apis: [path.join(apiBasePath, apiVersion, "**", "*.ts")]
     });

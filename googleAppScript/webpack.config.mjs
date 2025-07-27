@@ -13,7 +13,7 @@ export default {
     optimization: {
         minimize: false
     },
-    entry: "./src/index.ts", // Adjust if your entry point differs
+    entry: "./src/index.ts",
     output: {
         filename: "code.js",
         path: path.resolve(__dirname, "dist")
@@ -35,7 +35,7 @@ export default {
     },
     plugins: [
         new GasPlugin({
-            autoGlobalExportsFiles: ["**/*.ts"]
+            autoGlobalExportsFiles: ["src/index.ts"]
         }),
         new CopyPlugin({
             patterns: [

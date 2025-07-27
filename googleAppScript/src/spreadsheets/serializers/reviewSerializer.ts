@@ -1,41 +1,37 @@
 import { maxEnum, SemanticVersion } from "common/utils";
-import * as Reviews from "common/models/reviews";
-import * as Cards from "common/models/cards";
+import * as Review from "common/models/reviews";
 import { getProperty, GooglePropertiesType } from "../../settings";
 import { DataSerializer } from "./dataSerializer";
 
-class ReviewSerializer extends DataSerializer<Reviews.Model> {
+class ReviewSerializer extends DataSerializer<Review.JsonPlaytestingReview> {
     richTextColumns: number[] = [ReviewColumn.Decks, ReviewColumn.Additional];
-    public deserialize(values: string[]): Reviews.Model {
+    public deserialize(values: string[]) {
+        const project = parseInt(getProperty(GooglePropertiesType.Script, "number"));
         const model = {
             reviewer: values[ReviewColumn.Reviewer],
-            projectId: parseInt(getProperty(GooglePropertiesType.Script, "code")),
+            project,
             number: parseInt(values[ReviewColumn.Number]),
             version: values[ReviewColumn.Version] as SemanticVersion,
-            faction: values[ReviewColumn.Faction] as Cards.Faction,
-            name: values[ReviewColumn.Name],
             decks: values[ReviewColumn.Decks].split("\n").map((deck) => this.extractLinkText(deck, (link) => link)),
-            played: parseInt(values[ReviewColumn.Played]) as Reviews.PlayedRange,
+            played: parseInt(values[ReviewColumn.Played]) as Review.PlayedRange,
             statements: {
-                boring: values[ReviewColumn.Boring] as Reviews.StatementAnswer,
-                competitive: values[ReviewColumn.Competitive] as Reviews.StatementAnswer,
-                creative: values[ReviewColumn.Creative] as Reviews.StatementAnswer,
-                balanced: values[ReviewColumn.Balanced] as Reviews.StatementAnswer,
-                releasable: values[ReviewColumn.Releasable] as Reviews.StatementAnswer
+                boring: values[ReviewColumn.Boring] as Review.StatementAnswer,
+                competitive: values[ReviewColumn.Competitive] as Review.StatementAnswer,
+                creative: values[ReviewColumn.Creative] as Review.StatementAnswer,
+                balanced: values[ReviewColumn.Balanced] as Review.StatementAnswer,
+                releasable: values[ReviewColumn.Releasable] as Review.StatementAnswer
             },
             additional: values[ReviewColumn.Additional] || undefined,
             epoch: new Date(values[ReviewColumn.Date]).getTime()
-        } as Reviews.Model;
+        } as Review.JsonPlaytestingReview;
 
         return model;
     }
 
-    public serialize(model: Reviews.Model) {
+    public serialize(model: Review.JsonPlaytestingReview) {
         const values: string[] = Array.from({ length: maxEnum(ReviewColumn) });
         values[ReviewColumn.Number] = model.number.toString();
         values[ReviewColumn.Version] = model.version;
-        values[ReviewColumn.Faction] = model.faction;
-        values[ReviewColumn.Name] = model.name;
         values[ReviewColumn.Date] = new Date(model.epoch).toLocaleString();
         values[ReviewColumn.Reviewer] = model.reviewer;
         values[ReviewColumn.Decks] = model.decks.map((deck, index) => `<a href="${deck}">Deck ${index + 1}</a>`).join("\n");
@@ -50,15 +46,49 @@ class ReviewSerializer extends DataSerializer<Reviews.Model> {
         return values;
     }
 
-    public filter(values: string[], index: number, model?: Reviews.Model) {
-        if (!model) {
+    public matches(values: string[], index: number, filter: Partial<Review.JsonPlaytestingReview>) {
+        const compare = (a: number | string | boolean | undefined, b: number | string | boolean) => {
+            if (!a) {
+                return false;
+            }
+            return a.toString().toLowerCase() === b.toString().toLowerCase();
+        };
+
+        return (
+            compare(filter.number, parseInt(values[ReviewColumn.Number]))
+            && compare(filter.version, values[ReviewColumn.Version])
+            && compare(filter.reviewer, values[ReviewColumn.Reviewer])
+        );
+    }
+    public filter(values: string[], index: number, filter?: Partial<Review.JsonPlaytestingReview>) {
+        if (!filter || Object.keys(filter).length === 0) {
             return true;
         }
 
-        const { reviewer, number, version } = model._id ? Reviews.expandId(model._id) : { reviewer: model.reviewer, number: model.number, version: model.version };
-        return (!reviewer || values[ReviewColumn.Reviewer] === model.reviewer)
-            && (!number || values[ReviewColumn.Number].toString() === model.number.toString())
-            && (!version || values[ReviewColumn.Version] === model.version);
+        const compare = (a: number | string | boolean | undefined, b: number | string | boolean) => {
+            if (!a) {
+                return true;
+            }
+            if (typeof b === "boolean") {
+                return a === b;
+            }
+            return a.toString().toLowerCase() === b.toString().toLowerCase();
+        };
+        return (
+            compare(filter.number, parseInt(values[ReviewColumn.Number]))
+            && compare(filter.version, values[ReviewColumn.Version])
+            && compare(filter.reviewer, values[ReviewColumn.Reviewer])
+            && compare(filter.played, parseInt(values[ReviewColumn.Played]))
+            && compare(filter.statements?.boring, values[ReviewColumn.Boring])
+            && compare(filter.statements?.competitive, values[ReviewColumn.Competitive])
+            && compare(filter.statements?.creative, values[ReviewColumn.Creative])
+            && compare(filter.statements?.balanced, values[ReviewColumn.Balanced])
+            && compare(filter.statements?.releasable, values[ReviewColumn.Releasable])
+            && compare(filter.additional, values[ReviewColumn.Additional])
+            // More expensive checks at the end
+            && (!filter.epoch || new Date(filter.epoch).toLocaleString() === values[ReviewColumn.Date])
+            && (!filter.decks || values[ReviewColumn.Decks].split("\n").length === filter.decks.length) // TODO: Compare url's instead somehow
+        );
     }
 }
 

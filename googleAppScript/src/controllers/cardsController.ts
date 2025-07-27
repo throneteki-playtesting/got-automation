@@ -1,25 +1,23 @@
 import { DataSheet } from "../spreadsheets/spreadsheet";
 import { CardSerializer, CardSheet } from "../spreadsheets/serializers/cardSerializer";
-import * as Cards from "common/models/cards";
 import * as RestClient from "../restClient";
-
+import { JsonPlaytestingCard } from "common/models/cards";
 
 export function doGet(path: string[], e: GoogleAppsScript.Events.DoGet) {
-    // TODO: Allow lists of any Cards.Model value, then & them all in the get query to GAS
-    const { latest, ids } = e.parameter;
+    const { latest, filter } = e.parameter;
+    // Assume filter is in a valid partial format (eg. no error checking here!!!)
+    const partial = JSON.parse(filter || "{}") as Partial<JsonPlaytestingCard>;
+    const readFunc = (values: string[], index: number) => CardSerializer.instance.filter(values, index, partial);
 
-    // Reads content from archive, or latest if specified
-    const models = ids?.split(",").map((id: Cards.Id) => Cards.expandId(id) as Cards.Model);
-    const readFunc = models ? (values: string[], index: number) => models.some((model) => CardSerializer.instance.filter(values, index, model)) : undefined;
     // Defaults to "archive" if latest is not given
-    const sheet = latest ? "latest" : "archive";
+    const sheet = latest?.toLowerCase() === "true" ? "latest" : "archive";
     const cards = DataSheet.sheets[sheet].read(readFunc);
     const response = { request: e, data: { cards } } as RestClient.Response<ReadResponse>;
     return RestClient.generateResponse(response);
 }
 export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
-    const { sheets, upsert, ids } = e.parameter;
-    const cards: Cards.Model[] = e.postData ? JSON.parse(e.postData.contents) : undefined;
+    const { sheets, upsert, filter } = e.parameter;
+    const cards: JsonPlaytestingCard[] = e.postData ? JSON.parse(e.postData.contents) : undefined;
 
     const action = path.shift();
     switch (action) {
@@ -33,11 +31,11 @@ export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
             const isUpsert = upsert === "true";
             // Update specified sheet(s), or all sheets if none are specified
             const cardSheets = sheets?.split(",").map((sheet) => sheet as CardSheet) || ["archive"];
-            const updated = [];
+            const updated: JsonPlaytestingCard[] = [];
             for (const sheet of cardSheets) {
                 const sheetUpdates = DataSheet.sheets[sheet].update(cards, false, isUpsert);
-                // Concat any cards that were updated & not already on updated list (by _id)
-                const newUpdates = sheetUpdates.filter((tc) => !updated.some((uc) => uc._id === tc._id));
+                // Concat any cards that were updated & not already on updated list (by number/version)
+                const newUpdates = sheetUpdates.filter((a) => !updated.some((b) => a.number === b.number && a.version === b.version));
                 updated.concat(newUpdates);
             }
             const response = { request: e, data: { updated } } as RestClient.Response<UpdateResponse>;
@@ -45,8 +43,10 @@ export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
         }
         case "destroy": {
             // Destroys cards from archive
-            const models = ids?.split(",").map((id: Cards.Id) => Cards.expandId(id) as Cards.Model);
-            const deleteFunc = models ? (values: string[], index: number) => models.some((model) => CardSerializer.instance.filter(values, index, model)) : undefined;
+            // Assume filter is in a valid partial format (eg. no error checking here!!!)
+            const partial = JSON.parse(filter || "{}") as Partial<JsonPlaytestingCard>;
+            const deleteFunc = (values: string[], index: number) => CardSerializer.instance.filter(values, index, partial);
+
             const destroyed = DataSheet.sheets.archive.delete(deleteFunc);
             const response = { request: e, data: { destroyed } } as RestClient.Response<DestroyResponse>;
             return RestClient.generateResponse(response);
@@ -56,7 +56,7 @@ export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
     }
 }
 
-export interface CreateResponse { created: Cards.Model[] }
-export interface ReadResponse { cards: Cards.Model[] }
-export interface UpdateResponse { updated: Cards.Model[] }
-export interface DestroyResponse { destroyed: Cards.Model[] }
+export interface CreateResponse { created: JsonPlaytestingCard[] }
+export interface ReadResponse { cards: JsonPlaytestingCard[] }
+export interface UpdateResponse { updated: JsonPlaytestingCard[] }
+export interface DestroyResponse { destroyed: JsonPlaytestingCard[] }

@@ -3,9 +3,10 @@ import { OctokitResponse } from "@octokit/types";
 import { components } from "@octokit/openapi-types";
 import { Octokit } from "@octokit/core";
 import { Issue } from "./issues";
-import Card from "@/data/models/card";
 import { dataService, logger } from "@/services";
 import Project from "@/data/models/project";
+import CardCollection from "@/data/models/cards/cardCollection";
+import PlaytestingCard from "@/data/models/cards/playtestingCard";
 
 export type IssueDetail = { number: number, state: string, html_url: string, body: string };
 export type PullRequestDetail = { number: number, state: string, html_url: string, body: string };
@@ -31,12 +32,12 @@ class GithubService {
         return app.getInstallationOctokit(installation.id);
     }
 
-    public async syncIssues(project: Project, cards: Card[]): Promise<IssueDetail[]> {
+    public async syncIssues(project: Project, cards: CardCollection): Promise<IssueDetail[]> {
         const issues = await this.getIssues(project);
 
-        const promises: { card: Card, promise: Promise<IssueDetail> }[] = [];
+        const promises: { card: PlaytestingCard, promise: Promise<IssueDetail> }[] = [];
 
-        for (const card of cards) {
+        for (const card of cards.all) {
             try {
                 const generated = Issue.forCard(project, card);
                 if (!generated) {
@@ -107,10 +108,10 @@ class GithubService {
         // Send all promises (update, create, existing); keeps all bound to original card
         const responses = await Promise.all(promises.map(({ card, promise }) => promise.then((response) => ({ card, response }))));
 
-        const needsUpdate = [];
+        const needsUpdate: PlaytestingCard[] = [];
         for (const { card, response } of responses) {
             // Response threw an error, which was already caught & logged OR if card is already marked as implemented (eg. "complete"), then continue
-            if (!response || card.implementStatus === "Implemented") {
+            if (!response || card.implementStatus === "implemented") {
                 continue;
             }
             let updated = false;
@@ -121,7 +122,7 @@ class GithubService {
             }
 
             // Mark card as "complete" if already in playtesting (from prior update) & recently implemented
-            if (card.isPlaytesting && card.implementStatus === "Recently Implemented") {
+            if (card.isPlaytesting && card.implementStatus === "recently implemented") {
                 card.github.status = "complete";
                 updated = true;
             }
@@ -133,9 +134,9 @@ class GithubService {
 
         if (needsUpdate.length > 0) {
             // Update to archives
-            await dataService.cards.update({ cards: needsUpdate });
+            await dataService.cards.update(needsUpdate);
             // Update to latest
-            await dataService.cards.spreadsheet.update({ cards: needsUpdate, sheets:["latest"] });
+            await dataService.cards.spreadsheet.update(needsUpdate, { sheets: ["latest"] });
         }
 
         return responses.map((r) => r.response).filter((r) => r);
@@ -148,7 +149,7 @@ class GithubService {
             "is:issue",
             "label:automated",
             `milestone:"${project.name} Development"`,
-            `${project.short} in:title`
+            `${project.code} in:title`
         ];
 
         const perPage = 100;
@@ -167,10 +168,9 @@ class GithubService {
         return results;
     }
 
-    public async syncPullRequest(project: Project, cards?: Card[]): Promise<PullRequestDetail> {
-        cards = cards || await dataService.cards.read({ matchers: [{ projectId: project.code }] });
+    public async syncPullRequest(project: Project, cards: CardCollection): Promise<PullRequestDetail> {
         // Filter cards which either have changes, or have been implemented in the latest update
-        const changes = cards.filter((card) => card.isChanged || (card.implementStatus === "Recently Implemented"));
+        const changes = cards.latest.filter((card) => card.isChanged || (card.implementStatus === "recently implemented"));
         const prs = await this.getPullRequests(project);
 
         const generated = Issue.forUpdate(project, changes);
@@ -240,7 +240,7 @@ class GithubService {
         ];
 
         if (includeTitle) {
-            queryList.push(`${project.short} | Playtesting Update ${project.releases + 1}`);
+            queryList.push(`${project.code} | Playtesting Update ${project.version}`);
         }
 
         const perPage = 100;

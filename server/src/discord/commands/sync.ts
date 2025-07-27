@@ -3,11 +3,11 @@ import { Command } from "../deployCommands";
 import { dataService, githubService, logger, renderService } from "@/services";
 import { AutoCompleteHelper, FollowUpHelper } from ".";
 import CardThreads from "../cardThreads";
-import Review from "@/data/models/review";
 import ReviewThreads from "../reviewThreads";
 import { updateFormData } from "@/processing/reviews";
 import * as FormController from "gas/controllers/formController";
 import GasClient from "@/google/gasClient";
+import { JsonPlaytestingReview } from "common/models/reviews";
 
 const sync = {
     async data() {
@@ -203,11 +203,11 @@ const command = {
             const number = parseInt(interaction.options.getString("card")) || undefined;
 
             if (number === undefined) {
-                await dataService.cards.database.destroy({ matchers: [{ projectId }] });
+                await dataService.cards.database.destroy({ project: projectId });
             }
-            const cards = await dataService.cards.read({ matchers: [{ projectId, number }], hard: true });
+            const cards = await dataService.cards.read({ project: projectId, number }, true);
 
-            const content = `Successfully synced ${cards.length} card(s)`;
+            const content = `Successfully synced ${cards.all.length} card(s)`;
 
             await FollowUpHelper.success(interaction, content);
         }
@@ -219,18 +219,18 @@ const command = {
             const number = parseInt(interaction.options.getString("card")) || undefined;
             const canCreate = interaction.options.getBoolean("create") || true;
 
-            const cards = await dataService.cards.read({ matchers: [{ projectId, number }] });
-            const { created, updated, failed } = await CardThreads.sync(guild, canCreate, ...cards);
+            const cards = await dataService.cards.read({ project: projectId, number });
+            const { created, updated, failed } = await CardThreads.sync(guild, canCreate, cards);
 
             const results = [];
             if (created.length > 0) {
-                results.push(`:asterisk: Created: ${created.map((card) => card._id).join(", ")}`);
+                results.push(`:asterisk: Created: ${created.map((card) => card.code).join(", ")}`);
             }
             if (updated.length > 0) {
-                results.push(`:arrow_double_up: Updated: ${updated.map((card) => card._id).join(", ")}`);
+                results.push(`:arrow_double_up: Updated: ${updated.map((card) => card.code).join(", ")}`);
             }
             if (failed.length > 0) {
-                results.push(`:exclamation: Failed: ${failed.map((card) => card._id).join(", ")}`);
+                results.push(`:exclamation: Failed: ${failed.map((card) => card.code).join(", ")}`);
             }
             await FollowUpHelper.information(interaction, results.join("\n") || "No actions made");
         }
@@ -240,8 +240,8 @@ const command = {
             const projectId = parseInt(interaction.options.getString("project"));
             const number = parseInt(interaction.options.getString("card")) || undefined;
 
-            const cards = await dataService.cards.read({ matchers: [{ projectId, number }] });
-            const [project] = await dataService.projects.read({ codes: [projectId] });
+            const cards = await dataService.cards.read({ project: projectId, number });
+            const [project] = await dataService.projects.read({ number: projectId });
             const issues = await githubService.syncIssues(project, cards);
 
             const content = issues.length === 1 ? `Successfully synced issue: [#${issues[0].number}](${issues[0].html_url})` : `${issues.length} open card issues synced.`;
@@ -252,8 +252,8 @@ const command = {
         async execute(interaction: ChatInputCommandInteraction) {
             const projectId = parseInt(interaction.options.getString("project"));
 
-            const cards = await dataService.cards.read({ matchers: [{ projectId }] });
-            const [project] = await dataService.projects.read({ codes: [projectId] });
+            const cards = await dataService.cards.read({ project: projectId });
+            const [project] = await dataService.projects.read({ number: projectId });
             await renderService.syncPDFs(project, cards, true);
             try {
                 const pullRequest = await githubService.syncPullRequest(project, cards);
@@ -271,11 +271,11 @@ const command = {
             const number = parseInt(interaction.options.getString("card")) || undefined;
             const override = interaction.options.getBoolean("override") || true;
 
-            const cards = await dataService.cards.read({ matchers: [{ projectId, number }] });
+            const cards = await dataService.cards.read({ project: projectId, number });
 
             await renderService.syncImages(cards, override);
 
-            const content = `Successfully synced ${cards.length} card images`;
+            const content = `Successfully synced ${cards.latest.length} card images`;
             await FollowUpHelper.success(interaction, content);
         }
     },
@@ -284,8 +284,8 @@ const command = {
             const projectId = parseInt(interaction.options.getString("project"));
             const override = interaction.options.getBoolean("override") || true;
 
-            const [project] = await dataService.projects.read({ codes: [projectId] });
-            const cards = await dataService.cards.read({ matchers: [{ projectId }] });
+            const [project] = await dataService.projects.read({ number: projectId });
+            const cards = await dataService.cards.read({ project: projectId });
 
             await renderService.syncPDFs(project, cards, override);
 
@@ -311,36 +311,44 @@ const command = {
             const number = parseInt(interaction.options.getString("card")) || undefined;
             const version = interaction.options.getString("version") || undefined;
 
-            const params = [
-                // TODO: reviewer may need to be changed to be discord id or name string, as if a users nickname or displayname changes, it won't pick up their reviews anymore
-                ...(reviewer ? [`reviewer=${reviewer.nickname || reviewer.displayName}`] : []),
-                ...(number ? [`number=${number}`] : []),
-                ...(version ? [`version=${version}`] : [])
-            ];
+            const partial = {
+                ...(reviewer && { reviewer: reviewer.nickname || reviewer.displayName }),
+                ...(number && { number }),
+                ...(version && { version })
+            } as Partial<JsonPlaytestingReview>;
 
-            const [project] = await dataService.projects.read({ codes: [projectId] });
+            const [project] = await dataService.projects.read({ number: projectId });
             // Get reviews from the form, not from the spreadsheet (as it contains all responses)
             const client = new GasClient();
-            const response = await client.get(`${project.script}/form${params.length > 0 ? `?${params.join("&")}` : ""}`) as FormController.ReadReviewsResponse;
+            const url = `${project.script}/form`;
+            const query = { filter: partial };
+            const response = await client.get<FormController.ReadReviewsResponse>(url, query);
 
             // Sort reviews by date (latest first), then distinct the list (keeping first reviews, thus the "latest")
-            // This ensures that only the latest version of that review (by _id) is being saved
-            const reviews = await Review.fromModels(...response.reviews);
-            const distinct = reviews.sort((r1, r2) => r2.date.getTime() - r1.date.getTime()).filter((r, i, a) => a.findIndex((rv) => rv._id === r._id) === i);
+            // This ensures that only the latest version of that review (by number, version & reviewer) is being saved
+            const distinct = response.reviews
+                .sort((r1, r2) => r2.epoch - r1.epoch)
+                .filter((r, i, a) =>
+                    a.findIndex((rv) =>
+                        rv.number === r.number
+                        && rv.version === r.version
+                        && rv.reviewer === r.reviewer
+                    ) === i
+                );
 
-            await dataService.reviews.update({ reviews: distinct, upsert: true });
+            await dataService.reviews.update(distinct, true);
 
             const { created, updated, failed } = await ReviewThreads.sync(guild, true, ...distinct);
 
             const results = [];
             if (created.length > 0) {
-                results.push(`:asterisk: Created: ${created.map((card) => card._id).join(", ")}`);
+                results.push(`:asterisk: Created: ${created.map((review) => review.toString()).join(", ")}`);
             }
             if (updated.length > 0) {
-                results.push(`:arrow_double_up: Updated: ${updated.map((card) => card._id).join(", ")}`);
+                results.push(`:arrow_double_up: Updated: ${updated.map((review) => review.toString()).join(", ")}`);
             }
             if (failed.length > 0) {
-                results.push(`:exclamation: Failed: ${failed.map((card) => card._id).join(", ")}`);
+                results.push(`:exclamation: Failed: ${failed.map((review) => review.toString()).join(", ")}`);
             }
             await FollowUpHelper.information(interaction, results.join("\n") || "No actions made");
         }

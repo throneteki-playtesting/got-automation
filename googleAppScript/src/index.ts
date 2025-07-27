@@ -4,7 +4,10 @@ import * as Spreadsheet from "./spreadsheets/spreadsheet";
 import * as Form from "./forms/form";
 import { getProjectDetails, getProperty, GooglePropertiesType } from "./settings";
 import { post, setAPIKey } from "./restClient";
+import { runTests } from "./test/tests";
 
+// Set up tests as first function
+global.runTests = runTests;
 
 // Simple Triggers (does not need additional setup)
 global.onOpen = Spreadsheet.onOpen;
@@ -32,7 +35,7 @@ global.initialiseProject = () => {
     }
     const project = getProjectDetails();
     post("projects", [project]);
-    Log.information(`Project initialised: ${project.name} (${project.code})`);
+    Log.information(`Project initialised: ${project.name} (${project.number})`);
 };
 global.setAPIKey = setAPIKey;
 
@@ -42,7 +45,9 @@ global.processPendingEdits = () => {
     }
 };
 
-global.processAllLatest = Spreadsheet.DataSheet.sheets.latest.processAll;
+global.processAllLatest = () => {
+    Spreadsheet.DataSheet.sheets.latest.processAll();
+};
 
 // Router doGet & doPost
 global.doGet = Router.doGet;

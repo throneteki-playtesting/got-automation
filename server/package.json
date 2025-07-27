@@ -23,8 +23,10 @@
     "express-async-handler": "^1.2.0",
     "express-basic-auth": "^1.2.1",
     "express-partials": "^0.3.0",
+    "flat": "^6.0.1",
     "google-auth-library": "^9.11.0",
     "googleapis": "^105.0.0",
+    "joi-to-swagger": "^6.2.0",
     "mongodb": "^6.8.0",
     "next": "^14.2.5",
     "octokit": "^4.0.2",
@@ -35,7 +37,8 @@
     "semver": "^7.6.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "winston": "^3.13.1"
+    "winston": "^3.17.0",
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.2",
@@ -52,6 +55,8 @@
     "@types/express-partials": "^0.0.35",
     "@types/google-apps-script": "^1.0.83",
     "@types/node": "^22.10.2",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",

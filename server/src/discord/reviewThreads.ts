@@ -6,40 +6,43 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { cardAsAttachment, colors, discordify, emojis, icons } from "./utilities";
 import ejs from "ejs";
-import { discordService, logger } from "@/services";
-import { factions } from "common/models/cards";
+import { dataService, discordService, logger } from "@/services";
 import { StatementQuestions } from "common/models/reviews";
+import { factions } from "common/models/cards";
+import PlaytestingCard from "@/data/models/cards/playtestingCard";
 
 export default class ReviewThreads {
     public static async sync(guild: Guild, canCreate: boolean, ...reviews: Review[]) {
         const created: Review[] = [];
         const updated: Review[] = [];
         const failed: Review[] = [];
-        const titleFunc = (review: Review) => `${review.card.number} | ${review.card.toString()} - ${review.reviewer}`;
-        try {
-            const { channel, projectTags, factionTags } = await ReviewThreads.validateGuild(guild, ...reviews.map((review) => review.card.project));
 
-            const findReviewThreadFor = async (review: Review) => await discordService.findForumThread(channel, (thread) => thread.appliedTags.some((tag) => projectTags[review.card.project._id].id === tag) && thread.name === titleFunc(review));
+        const titleFunc = (card: PlaytestingCard, review: Review) => `${card.number} | ${card.toString()} - ${review.reviewer}`;
+        try {
+            const projects = await dataService.projects.read(reviews.map((review) => ({ number: review.number })));
+            const { channel, projectTags, factionTags } = await ReviewThreads.validateGuild(guild, ...projects);
+
+            const findReviewThreadFor = async (card: PlaytestingCard, review: Review) => await discordService.findForumThread(channel, (thread) => thread.appliedTags.some((tag) => projectTags[review.project].id === tag) && thread.name === titleFunc(card, review));
             const autoArchiveDuration = channel.defaultAutoArchiveDuration;
 
             for (const review of reviews) {
-                const project = review.card.project;
-
                 try {
-                    let thread = await findReviewThreadFor(review);
-                    const threadTitle = titleFunc(review);
-                    const tags = [projectTags[project._id].id, factionTags[review.card.faction].id];
+                    const [card] = await dataService.cards.read({ number: review.number, version: review.version });
+                    const project = projects.find((p) => p.number === card.number);
+                    let thread = await findReviewThreadFor(card, review);
+                    const threadTitle = titleFunc(card, review);
+                    const tags = [projectTags[review.project].id, factionTags[card.faction].id];
                     const member = await discordService.findMemberByName(guild, review.reviewer);
 
                     if (!thread) {
                         // Prevent review thread from being created, but warn it was attempted
                         if (!canCreate) {
-                            logger.warning(`Review thread missing for ${review._id}, but thread creation not allowed`);
+                            logger.warning(`Review thread missing for ${review.toString()}, but thread creation not allowed`);
                             continue;
                         }
 
-                        const reason = `Playtesting Review by ${review.reviewer} for ${review.card.toString()}`;
-                        const message = ReviewThreads.generateInitial(review, member);
+                        const reason = `Playtesting Review by ${review.reviewer} for ${card.toString()}`;
+                        const message = ReviewThreads.generateInitial(review, card, project, member);
                         thread = await channel.threads.create({
                             name: threadTitle,
                             reason,
@@ -55,7 +58,7 @@ export default class ReviewThreads {
                         created.push(review);
                     } else {
                         const starter = await thread.fetchStarterMessage();
-                        const message = ReviewThreads.generateInitial(review, member);
+                        const message = ReviewThreads.generateInitial(review, card, project, member);
 
                         const promises: Map<string, Promise<unknown>> = new Map();
                         const changedAnswers = this.getChangedAnswers(starter, message);
@@ -94,11 +97,11 @@ export default class ReviewThreads {
                             }
 
                             if (changedAnswers.length > 0) {
-                                const updatedMessage = ReviewThreads.generateUpdated(review, changedAnswers, member);
+                                const updatedMessage = ReviewThreads.generateUpdated(review, card, project, changedAnswers, member);
                                 await thread.send(updatedMessage);
                             }
                             updated.push(review);
-                            logger.verbose(`Updated the following for ${review._id} review thread: ${Array.from(promises.keys()).join(", ")}`);
+                            logger.verbose(`Updated the following for ${review.toString()} review thread: ${Array.from(promises.keys()).join(", ")}`);
                         }
                     }
                 } catch (err) {
@@ -126,11 +129,11 @@ export default class ReviewThreads {
         const projectTags = {} as { [projectId: string]: GuildForumTag };
         for (const project of projects) {
             // Check project tag exists
-            const projectTag = channel?.availableTags.find((t) => t.name === project.short);
+            const projectTag = channel?.availableTags.find((t) => t.name === project.code);
             if (!projectTag) {
-                errors.push(`"${project.short}" tag is missing on forum "${channel?.name}"`);
+                errors.push(`"${project.code}" tag is missing on forum "${channel?.name}"`);
             } else {
-                projectTags[project._id] = projectTag;
+                projectTags[project.code] = projectTag;
             }
         }
 
@@ -151,11 +154,11 @@ export default class ReviewThreads {
         return { channel, projectTags, factionTags };
     }
 
-    private static generateInitial(review: Review, member?: GuildMember) {
+    private static generateInitial(review: Review, card: PlaytestingCard, project: Project, member?: GuildMember) {
         try {
-            const content = ReviewThreads.renderTemplate({ review, project: review.card.project, member, template: "Initial" });
+            const content = ReviewThreads.renderTemplate({ review, card, project, member, template: "initial" });
             const allowedMentions = { parse: ["users"] };
-            const image = cardAsAttachment(review.card);
+            const image = cardAsAttachment(card);
             // Segments the decks string into rows of 3, separated by ", "
             const decksString = review.decks.map((deck, index, decks) => `[Deck ${index + 1}](${deck})${(index + 1) === decks.length ? "" : ((index + 1) % 3 ? ", " : "\n")}`).join("");
             // IMPORTANT: If the structure of these embeds is to change, review/update "getChangedAnswers" function
@@ -176,7 +179,7 @@ export default class ReviewThreads {
                         },
                         {
                             name: "✦ Submit your own!",
-                            value: `[Click here](${review.card.project.formUrl})`,
+                            value: `[Click here](${project.formUrl})`,
                             inline: true
                         },
                         {
@@ -200,7 +203,7 @@ export default class ReviewThreads {
             }
 
             // Put timestamp on last embed
-            embeds[embeds.length - 1].setTimestamp(review.date);
+            embeds[embeds.length - 1].setTimestamp(new Date(review.epoch));
 
             return {
                 content,
@@ -209,21 +212,21 @@ export default class ReviewThreads {
                 embeds
             } as BaseMessageOptions;
         } catch (err) {
-            throw new Error(`Failed to generate initial discord review message for ${review._id}`, { cause: err });
+            throw new Error(`Failed to generate initial discord review message for ${review.toString()}`, { cause: err });
         }
     }
 
-    private static generateUpdated(review: Review, changed: string[], member: GuildMember) {
+    private static generateUpdated(review: Review, card: PlaytestingCard, project: Project, changed: string[], member: GuildMember) {
 
         try {
-            const content = ReviewThreads.renderTemplate({ review, project: review.card.project, member, changed, template: "Updated" });
+            const content = ReviewThreads.renderTemplate({ review, card, project, member, changed, template: "updated" });
             const allowedMentions = { parse: ["users"] };
             return {
                 content,
                 allowedMentions
             } as BaseMessageOptions;
         } catch (err) {
-            throw new Error(`Failed to generate update discord review message for ${review._id}`, { cause: err });
+            throw new Error(`Failed to generate update discord review message for ${review.toString()}`, { cause: err });
         }
     }
 
@@ -265,7 +268,7 @@ export default class ReviewThreads {
     private static renderTemplate(data: ejs.Data) {
         const { template, ...restData } = data;
         const __dirname = path.dirname(fileURLToPath(import.meta.url));
-        const filePath = `${__dirname}/Templates/ReviewThreads/${template}.ejs`;
+        const filePath = `${__dirname}/templates/reviewThreads/${template}.ejs`;
         const file = fs.readFileSync(filePath).toString();
 
         const render = ejs.render(file, { filename: filePath, emojis, icons, ...restData });

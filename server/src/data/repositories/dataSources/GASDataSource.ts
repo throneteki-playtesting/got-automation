@@ -5,10 +5,10 @@ abstract class GASDataSource<T> {
     constructor() {
         this.client = new GasClient();
     }
-    abstract create(model?: object): Promise<T[]>
-    abstract read(model?: object): Promise<T[]>
-    abstract update(model?: object): Promise<T[]>
-    abstract destroy(model?: object): Promise<T[]>
+    abstract create(creating: T | T[], options?: object): Promise<T[]>
+    abstract read(reading?: Partial<T> | Partial<T>[], options?: object): Promise<T[]>
+    abstract update(updating: T | T[], options?: object): Promise<T[]>
+    abstract destroy(deleting: Partial<T> | Partial<T>[], options?: object): Promise<number>
 }
 
 export default GASDataSource;

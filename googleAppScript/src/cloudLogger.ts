@@ -1,9 +1,23 @@
 export class Log {
+    static supress = false;
+
     static information(message: string) {
-        console.log("[Info]: " + message);
+        if (!Log.supress) {
+            this.write("[Info]: " + message);
+        }
     }
 
     static error(message: string) {
-        console.log("[Error]: " + message);
+        if (!Log.supress) {
+            this.write("[Error]: " + message);
+        }
+    }
+
+    static write(message: string) {
+        if (typeof Logger !== "undefined" && Logger.log) {
+            Logger.log(message);
+        } else {
+            console.log(message);
+        }
     }
 }

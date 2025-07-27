@@ -1,27 +1,18 @@
-export const types = ["Cycle", "Expansion"] as const;
+export const types = ["cycle", "expansion"] as const;
 export type Type = typeof types[number];
-// Id = Code
-export type Id = number;
-export interface Model {
-    _id?: Id,
-    code: number,
-    active: boolean,
-    script: string,
+export type Code = `${number}`;
+
+export interface JsonProject {
+    number: number,
     name: string,
-    short: string,
+    code: string,
+    active: boolean,
     type: Type,
+    script: string,
     perFaction: number,
     neutral: number,
-    releases: number,
+    version: number,
     milestone: number,
     formUrl: string,
     emoji?: string
-}
-
-export function expandId(id: Id) {
-    return { code: id };
-}
-
-export function condenseId({ code }: { code: number }) {
-    return code as Id;
 }

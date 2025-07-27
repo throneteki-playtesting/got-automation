@@ -1,3 +1,9 @@
 {
-  "type": "module"
+  "name": "common",
+  "version": "1.0.0",
+  "description": "Common tools & models for all sibling projects",
+  "scripts": {},
+  "author": "Stephen Patane",
+  "type": "module",
+  "license": "ISC"
 }

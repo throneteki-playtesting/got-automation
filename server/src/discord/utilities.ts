@@ -1,6 +1,6 @@
+import BaseCard from "@/data/models/cards/baseCard";
 import { AttachmentBuilder, ColorResolvable } from "discord.js";
 import path from "path";
-import Card from "../data/models/card";
 
 export const emojis = {
     unique: "<:unique:701045474332770385>",
@@ -71,7 +71,7 @@ export function discordify(text: string) {
     return result;
 }
 
-export function cardAsAttachment(card: Card) {
+export function cardAsAttachment(card: BaseCard) {
     return new AttachmentBuilder(card.imageUrl)
         .setName(path.basename(card.imageUrl))
         .setDescription(`${card.toString()}`);

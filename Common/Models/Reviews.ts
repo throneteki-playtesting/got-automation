@@ -1,11 +1,9 @@
 import { SemanticVersion } from "../utils";
-import * as Cards from "./cards";
-import * as Projects from "./projects";
 
-export const statementAnswer = ["Strongly agree", "Somewhat agree", "Neither agree nor disagree", "Somewhat disagree", "Strongly disagree"];
-export type StatementAnswer = typeof statementAnswer[number];
-export const playedRange = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
-export type PlayedRange = typeof playedRange[number];
+export const statementAnswers = ["strongly agree", "somewhat agree", "neither agree nor disagree", "somewhat disagree", "strongly disagree"];
+export type StatementAnswer = typeof statementAnswers[number];
+export const playedRanges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+export type PlayedRange = typeof playedRanges[number];
 export type Statements = {
     boring: StatementAnswer,
     competitive: StatementAnswer,
@@ -14,34 +12,16 @@ export type Statements = {
     releasable: StatementAnswer
 };
 
-// Id = "Reviewer@code@version"
-export type Id = `${string}@${Cards.Id}`;
-export type Matcher = Cards.Matcher & { reviewer?: string };
-
-export interface Model {
-    _id?: Id,
+export interface JsonPlaytestingReview {
     reviewer: string,
-    projectId: number,
+    project: number,
     number: number,
     version: SemanticVersion,
-    faction?: Cards.Faction,
-    name?: string,
     decks: string[],
     played: PlayedRange,
     statements: Statements,
     additional?: string,
     epoch: number
-};
-
-export function expandId(id: Id) {
-    const [reviewer, code, version] = id.split("@") as [string, Cards.Code, SemanticVersion];
-    const { projectId, number } = Cards.expandId(`${code}@${version}`);
-    return { reviewer, projectId, number, version };
-}
-
-export function condenseId({ reviewer, projectId, number, version }: { reviewer: string, projectId: Projects.Id, number: number, version: SemanticVersion }) {
-    const cardId = Cards.condenseId({ projectId, number, version });
-    return `${reviewer}@${cardId}` as Id;
 }
 
 export enum StatementQuestions {

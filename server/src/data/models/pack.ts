@@ -1,8 +1,17 @@
-import Card from "./card";
+import { JsonCard, JsonPlaytestingCard } from "common/models/cards";
+import BaseCard from "./cards/baseCard";
+import PlaytestingCard from "./cards/playtestingCard";
 
 class Pack {
-    constructor(public short: string, public name: string, public cards: Card[], public releaseDate?: Date) {
-        // Empty
+    public short: string;
+    public name: string;
+    public cards: JsonCard[];
+    public releaseDate?: Date;
+    constructor(short: string, name: string, cards: JsonCard[], releaseDate?: Date) {
+        this.short = short;
+        this.name = name;
+        this.cards = cards;
+        this.releaseDate = releaseDate;
     }
 
     validate() {
@@ -12,15 +21,17 @@ class Pack {
         return true;
     }
 
-    toJSON() {
+    toPackData() {
         const releaseDate = this.releaseDate ? new Date(this.releaseDate.getTime() - (this.releaseDate.getTimezoneOffset() * 60000)).toISOString().split("T")[0] : null;
+        // TODO: Pull "Pack" into two separate classes; one for development, one for releases!
+        const cards = this.cards.map((card) => releaseDate ? new BaseCard(card) : new PlaytestingCard(card as JsonPlaytestingCard));
         return {
             cgdbId: null,
-            code: this.short,
+            Code: this.short,
             name: !releaseDate ? `${this.name} (Unreleased)` : this.name,
             releaseDate,
             ...(!releaseDate && { workInProgress: true }),
-            cards: this.cards.map(card => card.toJSON())
+            cards: cards.map((card) => card.toPackData())
         };
     }
 }

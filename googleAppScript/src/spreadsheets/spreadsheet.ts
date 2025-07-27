@@ -127,7 +127,7 @@ export class DataSheet<Model> {
                 const values = valueMatrix[i];
 
                 let startRow: number;
-                const matched = models.find((model) => this.serializer.filter(values, i, model));
+                const matched = models.find((model) => this.serializer.matches(values, i, model));
                 if (matched && (!firstOnly || !updated.includes(matched))) {
                     startRow = startRow || (this.firstRow + i);
                     const group: string[][] = setMap[startRow] || [];

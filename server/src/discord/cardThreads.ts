@@ -2,49 +2,49 @@ import { BaseMessageOptions, EmbedBuilder, ForumChannel, ForumThreadChannel, Gui
 import fs from "fs";
 import path from "path";
 import ejs from "ejs";
-import Card from "../data/models/card";
 import Project from "../data/models/project";
 import { emojis, icons, discordify, colors, cardAsAttachment } from "./utilities";
 import { fileURLToPath } from "url";
-import { groupCardHistory } from "../data/repositories/cardsRepository";
-import { discordService, logger } from "@/services";
+import { dataService, discordService, logger } from "@/services";
 import { factions } from "common/models/cards";
+import PlaytestingCard from "@/data/models/cards/playtestingCard";
+import CardCollection from "@/data/models/cards/cardCollection";
 
 export default class CardThreads {
-    public static async sync(guild: Guild, canCreate: boolean, ...cards: Card[]) {
-        const created: Card[] = [];
-        const updated: Card[] = [];
-        const failed: Card[] = [];
+    public static async sync(guild: Guild, canCreate: boolean, cards: CardCollection) {
+        const created: PlaytestingCard[] = [];
+        const updated: PlaytestingCard[] = [];
+        const failed: PlaytestingCard[] = [];
 
-        const titleFunc = (card: Card) => `${card.number}. ${card.toString()}`;
+        const titleFunc = (card: PlaytestingCard) => `${card.number}. ${card.toString()}`;
         try {
-            const { channel, taggedRole, projectTags, factionTags, latestTag } = await CardThreads.validateGuild(guild, ...cards.map((card) => card.project));
+            const projects = await dataService.projects.read(cards.latest.map((card) => ({ number: card.project })));
+            const { channel, taggedRole, projectTags, factionTags, latestTag } = await CardThreads.validateGuild(guild, ...projects);
 
-            const findCardThreadFor = async (card: Card) => await discordService.findForumThread(channel, (thread) => thread.appliedTags.some((tag) => projectTags[card.project._id].id === tag) && thread.name === titleFunc(card));
+            const findCardThreadFor = async (card: PlaytestingCard) => await discordService.findForumThread(channel, (thread) => thread.appliedTags.some((tag) => projectTags[card.project].id === tag) && thread.name === titleFunc(card));
             const autoArchiveDuration = channel.defaultAutoArchiveDuration;
-            const groups = groupCardHistory(cards);
 
             // Looping through each card group, we only want to create/update threads for the "latest" version
-            for (const group of groups) {
-                const card = group.latest;
+            for (const card of cards) {
                 try {
+                    const project = projects.find((p) => p.number === card.project);
                     // Collect card data
                     let thread = await findCardThreadFor(card);
                     const threadTitle = titleFunc(card);
-                    const latestTags = [projectTags[card.project._id].id, factionTags[card.faction].id, latestTag.id];
+                    const latestTags = [projectTags[card.project].id, factionTags[card.faction].id, latestTag.id];
                     // Collect previous data (if applicable)
-                    const previous = group.previous.length > 0 ? group.previous[0] : null;
+                    const previous = cards[card.number][card.playtesting];
                     const previousThread = previous ? await findCardThreadFor(previous) : null;
-                    const previousTags = previous ? [projectTags[previous.project._id].id, factionTags[previous.faction].id] : null;
+                    const previousTags = previous ? [projectTags[previous.project].id, factionTags[previous.faction].id] : null;
 
                     if (!thread) {
                         // Prevent card thread from being created, but warn it was attempted
                         if (!canCreate) {
-                            logger.warn(`Card thread missing for ${card._id}, but thread creation not allowed`);
+                            logger.warn(`Card thread missing for ${card.code}, but thread creation not allowed`);
                             continue;
                         }
 
-                        const reason = `Design Team discussion for ${card.project.short} #${card.number}, ${card.toString()}`;
+                        const reason = `Design Team discussion for ${project.code} #${card.number}, ${card.toString()}`;
                         const message = CardThreads.generate(taggedRole, card, previousThread);
                         thread = await channel.threads.create({
                             name: threadTitle,
@@ -114,7 +114,7 @@ export default class CardThreads {
                             }
 
                             updated.push(card);
-                            logger.verbose(`Updated the following for ${card._id} card thread: ${Array.from(promises.keys()).join(", ")}`);
+                            logger.verbose(`Updated the following for ${card.code} card thread: ${Array.from(promises.keys()).join(", ")}`);
                         }
 
                     }
@@ -184,11 +184,11 @@ export default class CardThreads {
         const projectTags = {} as { [projectId: string]: GuildForumTag };
         for (const project of projects) {
             // Check project tag exists
-            const projectTag = channel?.availableTags.find((t) => t.name === project.short);
+            const projectTag = channel?.availableTags.find((t) => t.name === project.code);
             if (!projectTag) {
-                errors.push(`"${project.short}" tag is missing on forum "${channel?.name}"`);
+                errors.push(`"${project.code}" tag is missing on forum "${channel?.name}"`);
             } else {
-                projectTags[project._id] = projectTag;
+                projectTags[project.code] = projectTag;
             }
         }
 
@@ -215,17 +215,17 @@ export default class CardThreads {
         return { channel, taggedRole, projectTags, factionTags, latestTag };
     }
 
-    private static generate(taggedRole: Role, card: Card, previousThread?: ThreadChannel<true>) {
+    private static generate(taggedRole: Role, card: PlaytestingCard, previousThread?: ThreadChannel<true>) {
         // If it's a preview, type as "Preview"
         // If it's either initial or there is no previous thread (meaning it's the 1.0.0 version), then "Initial"
         // Otherwise, note type
-        const type = card.isPreview ? "Preview" : (card.isInitial ? "Initial" : card.note.type);
+        const type = card.isPreview ? "preview" : (card.isInitial ? "initial" : card.note.type);
         const content = CardThreads.renderTemplate({ type, card, project: card.project, previousUrl: previousThread?.url || card.code, role: taggedRole });
         const image = cardAsAttachment(card);
         const allowedMentions = { parse: ["roles"] };
-        const changeNote = card.note && card.note.type !== "Implemented" ? new EmbedBuilder()
+        const changeNote = card.note && card.note.type !== "implemented" ? new EmbedBuilder()
             .setColor(colors[card.faction as string])
-            .setTitle(`${emojis["ChangeNotes"]} Change Notes`)
+            .setTitle(`${emojis["changeNotes"]} Change Notes`)
             .addFields(
                 { name: `${emojis[card.note.type]} ${card.note.type}`, value: discordify(card.note.text) }
             ) : undefined;
@@ -241,7 +241,7 @@ export default class CardThreads {
     private static renderTemplate(data: ejs.Data) {
         const { type, ...restData } = data;
         const __dirname = path.dirname(fileURLToPath(import.meta.url));
-        const filePath = `${__dirname}/Templates/CardThreads/${type}.ejs`;
+        const filePath = `${__dirname}/templates/cardThreads/${type}.ejs`;
         const file = fs.readFileSync(filePath).toString();
 
         const render = ejs.render(file, { filename: filePath, emojis, icons, ...restData });

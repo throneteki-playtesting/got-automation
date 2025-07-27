@@ -1,83 +1,94 @@
 import { SemanticVersion } from "../utils";
 import * as Projects from "./projects";
 
-export const factions = ["House Baratheon", "House Greyjoy", "House Lannister", "House Martell", "The Night's Watch", "House Stark", "House Targaryen", "House Tyrell", "Neutral"] as const;
-export const types = ["Character", "Location", "Attachment", "Event", "Plot", "Agenda"] as const;
-export const noteTypes = ["Replaced", "Reworked", "Updated", "Implemented"] as const;
+export const factions = ["baratheon", "greyjoy", "lannister", "martell", "thenightswatch", "stark", "targaryen", "tyrell", "neutral"] as const;
+export const types = ["character", "location", "attachment", "event", "plot", "agenda"] as const;
+export const noteTypes = ["replaced", "reworked", "updated", "implemented"] as const;
 export const githubStatuses = ["open", "closed", "complete"] as const;
 export type Faction = typeof factions[number];
 export type Type = typeof types[number];
 export type NoteType = typeof noteTypes[number];
 export type GithubStatus = typeof githubStatuses[number];
 
-export type Code = `${Projects.Id}${number}`;
-// {code}@{version} (eg. 27501@1.0.0)
-export type Id = `${Code}@${SemanticVersion}`;
-export type Matcher = { projectId: Projects.Id, number?: number, version?: SemanticVersion };
+export type Code = `${Projects.Code}${number}`;
 
-
-export interface Model {
-    _id?: Id,
-    projectId: Projects.Id,
-    number: number,
-    version: SemanticVersion,
+export interface JsonCard {
+    code: Code,
+    cost?: number | "X" | "-",
+    deckLimit: number,
+    designer?: string,
     faction: Faction,
-    name: string,
-    type: Type,
+    flavor?: string,
+    icons?: Icons,
+    illustrator: string,
     loyal?: boolean,
+    name: string,
+    plotStats?: PlotStats,
+    strength?: number | "X",
     traits: string[],
     text: string,
-    illustrator: string,
-    flavor?: string,
-    designer?: string,
-    deckLimit: number,
-    quantity: 1 | 2 | 3,
-    cost?: number | "X" | "-",
+    type: Type,
     unique?: boolean,
-    strength?: number | "X",
-    icons?: {
-        military: boolean,
-        intrigue: boolean,
-        power: boolean
-    },
-    plotStats?: {
-        income: number | "X",
-        initiative: number | "X",
-        claim: number | "X",
-        reserve: number | "X"
-    },
-    note?: {
-        type: NoteType,
-        text: string
-    },
+    // octgnId?: string,
+    quantity: 1 | 2 | 3,
+    // errata: ?, Probably not necessary
+    imageUrl?: string
+}
+
+export interface Icons {
+    military: boolean,
+    intrigue: boolean,
+    power: boolean
+}
+
+export interface PlotStats {
+    income: number | "X",
+    initiative: number | "X",
+    claim: number | "X",
+    reserve: number | "X"
+}
+
+export interface JsonPlaytestingCard extends JsonCard {
+    project: number,
+    number: number,
+    // latest: boolean,
+    version: SemanticVersion,
+    note?: NoteDetails,
     playtesting?: SemanticVersion,
-    github?: {
-        status: GithubStatus,
-        issueUrl: string
-    },
-    release?: {
+    github?: GithubDetails,
+    release?: ReleaseDetails
+}
+
+export interface JsonRenderableCard extends JsonCard {
+    watermark: Watermark
+}
+
+export interface Watermark {
+    top: string,
+    middle: string,
+    bottom: string
+}
+
+export interface NoteDetails {
+    type: NoteType,
+    text: string
+}
+
+export interface GithubDetails {
+    status: GithubStatus,
+    issueUrl: string
+}
+
+export interface ReleaseDetails {
         short: string,
         number: number
     }
-};
 
 export enum DefaultDeckLimit {
-    Character = 3,
-    Attachment = 3,
-    Location = 3,
-    Event = 3,
-    Plot = 2,
-    Agenda = 1
-}
-
-export function expandId(id: Id) {
-    const [code, version] = id.split("@") as [Code, SemanticVersion];
-    const projectId = parseInt(code.substring(0, 2));
-    const number = parseInt(code.substring(2)) - 500;
-    return { projectId, number, version };
-}
-
-export function condenseId({ projectId, number, version }: { projectId: Projects.Id, number: number, version: SemanticVersion }) {
-    const code = projectId.toString() + (number + 500).toString() as Code;
-    return `${code}@${version}` as Id;
+    character = 3,
+    attachment = 3,
+    location = 3,
+    event = 3,
+    plot = 2,
+    agenda = 1
 }

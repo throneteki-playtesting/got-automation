@@ -1,5 +1,5 @@
+import { JsonProject, Type } from "common/models/projects";
 import { openMultiWindow, safelyGetUI } from "./spreadsheets/userInput";
-import * as Projects from "common/models/projects";
 
 export enum GooglePropertiesType {
     Script,
@@ -60,35 +60,35 @@ export function deleteProperty(type: GooglePropertiesType, key: string) {
 
 // Project Settings
 export function getProjectDetails() {
-    const releases = getProperty(GooglePropertiesType.Script, "releases");
+    const version = getProperty(GooglePropertiesType.Script, "version");
     const emoji = getProperty(GooglePropertiesType.Script, "emoji");
     const project = {
-        active: getProperty(GooglePropertiesType.Script, "active") === "true",
-        script: getProperty(GooglePropertiesType.Script, "script"),
+        number: parseInt(getProperty(GooglePropertiesType.Script, "number")),
         name: getProperty(GooglePropertiesType.Script, "name"),
-        short: getProperty(GooglePropertiesType.Script, "short"),
-        code: parseInt(getProperty(GooglePropertiesType.Script, "code")),
-        type: getProperty(GooglePropertiesType.Script, "type"),
+        code: getProperty(GooglePropertiesType.Script, "code"),
+        active: getProperty(GooglePropertiesType.Script, "active") === "true",
+        type: getProperty(GooglePropertiesType.Script, "type") as Type,
+        script: getProperty(GooglePropertiesType.Script, "script"),
         perFaction: parseInt(getProperty(GooglePropertiesType.Script, "perFaction")),
         neutral: parseInt(getProperty(GooglePropertiesType.Script, "neutral")),
-        releases: releases ? parseInt(releases) : 0,
+        version: version ? parseInt(version) : 0,
         milestone: parseInt(getProperty(GooglePropertiesType.Script, "milestone")),
         formUrl: getProperty(GooglePropertiesType.Script, "formUrl"),
         emoji: emoji || undefined
-    } as Projects.Model;
+    } as JsonProject;
     return project;
 }
 
-export function setProjectDetails(project: Projects.Model) {
-    setProperty(GooglePropertiesType.Script, "active", `${project.active}`);
-    setProperty(GooglePropertiesType.Script, "script", project.script);
+export function setProjectDetails(project: JsonProject) {
+    setProperty(GooglePropertiesType.Script, "number", `${project.number}`);
     setProperty(GooglePropertiesType.Script, "name", project.name);
-    setProperty(GooglePropertiesType.Script, "short", project.short);
     setProperty(GooglePropertiesType.Script, "code", `${project.code}`);
+    setProperty(GooglePropertiesType.Script, "active", `${project.active}`);
     setProperty(GooglePropertiesType.Script, "type", project.type);
+    setProperty(GooglePropertiesType.Script, "script", project.script);
     setProperty(GooglePropertiesType.Script, "perFaction", `${project.perFaction}`);
     setProperty(GooglePropertiesType.Script, "neutral", `${project.neutral}`);
-    setProperty(GooglePropertiesType.Script, "releases", `${project.releases}`);
+    setProperty(GooglePropertiesType.Script, "version", `${project.version}`);
     setProperty(GooglePropertiesType.Script, "milestone", `${project.milestone}`);
     setProperty(GooglePropertiesType.Script, "formUrl", `${project.formUrl}`);
     if (project.emoji) {

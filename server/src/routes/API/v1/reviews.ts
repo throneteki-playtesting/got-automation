@@ -2,23 +2,27 @@ import express from "express";
 import { celebrate, Joi, Segments } from "celebrate";
 import asyncHandler from "express-async-handler";
 import { dataService, discordService } from "@/services";
-import * as Reviews from "common/models/reviews";
-import Review from "@/data/models/review";
 import ReviewThreads from "@/discord/reviewThreads";
+import * as Schemas from "@/data/schemas";
+import { JsonPlaytestingReview } from "common/models/reviews";
 
 const router = express.Router();
 
-router.post("/", celebrate({
-    [Segments.BODY]: Joi.array().items(Review.schema)
-}), asyncHandler(async (req, res) => {
-    const reviews = await Review.fromModels(...req.body as Reviews.Model[]);
+type ReviewBody = JsonPlaytestingReview | JsonPlaytestingReview[];
 
-    await dataService.reviews.update({ reviews, upsert: true });
+// TODO: More endpoint options (post = create, put = complete update, patch = partial update)
+router.post("/", celebrate({
+    [Segments.BODY]: Joi.array().items(Schemas.PlaytestingReview)
+}), asyncHandler<unknown, unknown, ReviewBody, unknown>(async (req, res) => {
+    const body = req.body;
+
+    await dataService.reviews.update(body, true);
 
     const allCreated = [];
     const allUpdated = [];
     const allFailed = [];
 
+    const reviews = Array.isArray(body) ? body as [] : [body];
     const guilds = await discordService.getGuilds();
     for (const guild of guilds) {
         const { created, updated, failed } = await ReviewThreads.sync(guild, true, ...reviews);

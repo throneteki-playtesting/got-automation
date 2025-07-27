@@ -1,39 +1,38 @@
 import { getProperty, GooglePropertiesType } from "../settings";
 import { Log } from "../cloudLogger";
 import { SemanticVersion } from "common/utils";
-import * as Reviews from "common/models/reviews";
 import * as Forms from "../forms/form";
 import * as RestClient from "../restClient";
+import { JsonPlaytestingReview, PlayedRange } from "common/models/reviews";
 
 export function get() {
     return FormApp.openById(getProperty(GooglePropertiesType.Script, "formId"));
 }
 
 export function toReviews(...formResponses: GoogleAppsScript.Forms.FormResponse[]) {
-    const projectId = parseInt(getProperty(GooglePropertiesType.Script, "code"));
+    const project = parseInt(getProperty(GooglePropertiesType.Script, "number"));
 
-    const reviews: Reviews.Model[] = [];
-    for (const formResponse of formResponses) {
-        const items = formResponse.getItemResponses();
+    const reviews: JsonPlaytestingReview[] = [];
+    for (const response of formResponses) {
+        const items = response.getItemResponses();
 
         // Collect the number, name & version from ReviewingCard in regex groups
         const cardRegex = /(\d+) - (.+) \((.+)\)/gm;
         const groups = cardRegex.exec(items[Question.ReviewingCard].getResponse() as string);
         const number = parseInt(groups[1].trim());
-        const name = groups[2].trim();
+
         const decks = (items[Question.DeckLinks].getResponse() as string).split("\n").map((deck) => deck.trim()).filter((deck) => deck);
         const version = groups[3].trim() as SemanticVersion;
 
-        const date = new Date(formResponse.getTimestamp().toUTCString());
+        const date = new Date(response.getTimestamp().toUTCString());
         const statements = items[Question.Statements].getResponse() as string[];
         const review = {
             reviewer: items[Question.DiscordName].getResponse() as string,
-            projectId,
+            project,
             number,
             version,
-            name,
             decks,
-            played: parseInt(items[Question.Played].getResponse() as string) as Reviews.PlayedRange,
+            played: parseInt(items[Question.Played].getResponse() as string) as PlayedRange,
             statements: {
                 boring: statements[Statements.Boring],
                 competitive: statements[Statements.Competitive],
@@ -43,7 +42,7 @@ export function toReviews(...formResponses: GoogleAppsScript.Forms.FormResponse[
             },
             additional: items[Question.Additional].getResponse() as string || undefined,
             epoch: date.getTime()
-        } as Reviews.Model;
+        } as JsonPlaytestingReview;
 
         reviews.push(review);
     }

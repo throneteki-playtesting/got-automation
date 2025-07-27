@@ -55,7 +55,7 @@ export class AutoCompleteHelper {
             case "card":
                 if (projectId) {
                     // Choices should be cards
-                    const cards = await dataService.cards.database.read({ matchers: [{ projectId }] });
+                    const cards = await dataService.cards.database.read({ project: projectId });
                     // Reverse to ensure the latest cards are added first
                     choices = cards.reverse().reduce((chs, card) => {
                         const name = `${card.number} - ${card.name}`;
@@ -72,7 +72,7 @@ export class AutoCompleteHelper {
             case "version":
                 if (projectId) {
                     const number = parseInt(interaction.options.getString("card"));
-                    const cards = await dataService.cards.database.read({ matchers: [{ projectId, number }] });
+                    const cards = await dataService.cards.database.read({ project: projectId, number });
                     choices = cards.map((card) => ({ name: card.version, value: card.version }));
                 }
                 break;

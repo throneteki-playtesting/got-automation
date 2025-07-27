@@ -1,9 +1,13 @@
 export function safelyGetUI(): GoogleAppsScript.Base.Ui | null {
-    try {
-        return SpreadsheetApp.getUi();
-    } catch {
-        return null;
+    if (!global.hasUi) {
+        try {
+            global.hasUi = true;
+            return SpreadsheetApp.getUi();
+        } catch {
+            global.hasUi = false;
+        }
     }
+    return null;
 }
 
 interface InputOptions {

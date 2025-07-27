@@ -1,8 +1,6 @@
 import config from "config";
 import { JWT } from "google-auth-library";
-import { dataService } from "@/services";
 import { Response } from "gas/restClient";
-import * as Projects from "common/models/projects";
 
 
 export default class GasClient {
@@ -52,19 +50,28 @@ export default class GasClient {
         return json.data;
     }
 
-    public async get<T>(url: string) {
+    /**
+     * Creates the full url for the specified request, converting query parameters into JSON
+     */
+    private buildUrl(baseUrl: string, queryParameters?: { [key: string]: unknown }) {
+        let url = baseUrl;
+        if (!queryParameters || Object.keys(queryParameters).length > 0) {
+            const queryString = Object.entries(queryParameters)
+                .filter(([, value]) => !!value)
+                .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
+                .join("&");
+            url += "?" + queryString;
+        }
+        return url;
+    }
+
+    public async get<T>(baseUrl: string, queryParameters?: { [key: string]: unknown }) {
+        const url = this.buildUrl(baseUrl, queryParameters);
         return await this.fetch<T>(url, { method: "GET" });
     }
 
-    public async post<T>(url: string, body?: BodyInit) {
+    public async post<T>(baseUrl: string, queryParameters?: { [key: string]: unknown }, body?: BodyInit) {
+        const url = this.buildUrl(baseUrl, queryParameters);
         return await this.fetch<T>(url, { method: "POST", ...(body && { body }) });
-    }
-
-    public async getProject(projectId: Projects.Id) {
-        const [project] = await dataService.projects.read({ codes: [projectId] });
-        if (!project) {
-            throw Error(`Missing project "${project}": Make sure it has been initialised!`);
-        }
-        return project;
     }
 }

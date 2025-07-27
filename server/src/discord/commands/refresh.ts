@@ -34,8 +34,8 @@ const refresh = {
 
             switch (type) {
                 case "card":
-                    await dataService.cards.database.destroy({ matchers: [{ projectId }] });
-                    await dataService.cards.read({ matchers: [{ projectId }], hard: true });
+                    await dataService.cards.database.destroy({ project: projectId });
+                    await dataService.cards.read({ project: projectId }, true);
                     break;
                 case "review":
                     throw Error("Review clear not implemented yet!");

@@ -11,8 +11,5 @@
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.2.0",
     "typescript-eslint": "^8.32.1"
-  },
-  "dependencies": {
-    "joi-to-swagger": "^6.2.0"
   }
 }

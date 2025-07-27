@@ -3,24 +3,27 @@ import { celebrate, Joi, Segments } from "celebrate";
 import asyncHandler from "express-async-handler";
 import { dataService } from "@/services";
 import { Pack } from "@/data/models/pack";
-import { groupCardHistory } from "@/data/repositories/cardsRepository";
 
 const router = express.Router();
 
+type ProjectParam = { project: number };
+type ReleaseQuery = { short: string, name: string, release: Date };
+
+// TODO: Openapi spec
 router.get("/:project/development", celebrate({
     [Segments.PARAMS]: {
         project: Joi.number().required()
     }
-}), asyncHandler(async (req, res) => {
-    const projectId = req.params.project as unknown as number;
+}), asyncHandler<ProjectParam, unknown, unknown, unknown>(async (req, res) => {
+    const { project } = req.params;
 
-    const [project] = await dataService.projects.read({ codes: [projectId] });
-    const cards = await dataService.cards.read({ matchers: [{ projectId }] });
-    let latest = groupCardHistory(cards).map((group) => group.latest);
-    latest = latest.filter((card) => !card.isReleasable);
-    const developmentPack = new Pack(project.short, project.name, latest);
+    // TODO: Error if project does not exist
+    const [pack] = await dataService.projects.read({ number: project });
+    const cards = await dataService.cards.read({ project });
+    const latest = cards.latest.filter((card) => !card.isReleasable);
+    const developmentPack = new Pack(pack.code, pack.name, latest);
 
-    res.json(developmentPack.toJSON());
+    res.json(developmentPack.toPackData());
 }));
 
 router.get("/:project/release", celebrate({
@@ -32,16 +35,17 @@ router.get("/:project/release", celebrate({
         name: Joi.string().required(),
         release: Joi.date().required()
     }
-}), asyncHandler(async (req, res) => {
-    const projectId = req.params.project as unknown as number;
-    const short = req.query.short as unknown as string;
-    const name = req.query.name as unknown as string;
-    const release = req.query.release as unknown as Date;
+}), asyncHandler<ProjectParam, unknown, unknown, ReleaseQuery>(async (req, res) => {
+    const { project } = req.params;
+    const { short, name, release } = req.query;
 
-    const cards = (await dataService.cards.read({ matchers: [{ projectId }] })).filter((card) => card.release?.short === short);
-    const releasePack = new Pack(short, name, cards, release);
+    // TODO: Error if project does not exist
+    const cards = await dataService.cards.read({ project });
+    const releasing = cards.latest.filter((card) => card.release?.short === short);
+    // TODO: Add validation
+    const releasePack = new Pack(short, name, releasing, release);
 
-    res.json(releasePack.toJSON());
+    res.json(releasePack.toPackData());
 }));
 
 export default router;

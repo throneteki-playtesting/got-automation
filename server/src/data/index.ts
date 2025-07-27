@@ -6,9 +6,9 @@ import ReviewsRepository from "./repositories/reviewRepository";
 import MongoDataSource from "./repositories/dataSources/mongoDataSource";
 import GASDataSource from "./repositories/dataSources/GASDataSource";
 
-export interface IRepository<C, R> {
-    database?: MongoDataSource<C, R>
-    spreadsheet?: GASDataSource<R>
+export interface IRepository<T> {
+    database?: MongoDataSource<T>
+    spreadsheet?: GASDataSource<T>
 }
 
 class DataService {

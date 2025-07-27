@@ -1,4 +1,3 @@
-import Card from "../data/models/card";
 import fs from "fs";
 import ejs from "ejs";
 import { emojis, githubify } from "./utils";
@@ -7,6 +6,7 @@ import { fileURLToPath } from "url";
 import Project from "../data/models/project";
 import { apiUrl } from "@/app";
 import { NoteType } from "common/models/cards";
+import PlaytestingCard from "@/data/models/cards/playtestingCard";
 
 export type GeneratedIssue = {
     title: string,
@@ -24,9 +24,9 @@ export type GeneratedPullRequest = {
 type NotePackage = { icons: string, title: string, text: string };
 
 export class Issue {
-    static forCard(project: Project, card: Card) {
+    static forCard(project: Project, card: PlaytestingCard) {
         const milestone = project.milestone;
-        const type = card.note?.type || (card.isPreTesting && card.implementStatus !== "Implemented" ? "Implemented" : null);
+        const type = card.note?.type || (card.isPreTesting && card.implementStatus !== "implemented" ? "implemented" : null);
         if (!type) {
             return null;
         }
@@ -44,10 +44,10 @@ export class Issue {
             const imageUrl = card.previousImageUrl;
             return { version, imageUrl };
         };
-        let title = `${card.code} | ${project.short} - `;
+        let title = `${card.code} | ${project.code} - `;
 
         switch (type) {
-            case "Replaced": {
+            case "replaced": {
                 title += `Replace with ${card.toString()}`;
                 const replaced = slimCard;
                 const previous = previousSlimCard();
@@ -55,7 +55,7 @@ export class Issue {
                 const labels = ["automated", "implement-card", "update-card"];
                 return { title, body, labels, milestone } as GeneratedIssue;
             }
-            case "Reworked": {
+            case "reworked": {
                 title += `Rework as ${card.toString()}`;
                 const reworked = slimCard;
                 const previous = previousSlimCard();
@@ -63,7 +63,7 @@ export class Issue {
                 const labels = ["automated", "update-card"];
                 return { title, body, labels, milestone } as GeneratedIssue;
             }
-            case "Updated": {
+            case "updated": {
                 title += `Update to ${card.toString()}`;
                 const updated = slimCard;
                 const previous = previousSlimCard();
@@ -71,7 +71,7 @@ export class Issue {
                 const labels = ["automated", "update-card"];
                 return { title, body, labels, milestone } as GeneratedIssue;
             }
-            case "Implemented": {
+            case "implemented": {
                 title += `Implement ${card.toString()}`;
                 const implemented = slimCard;
                 const body = Issue.renderTemplate({ type, implemented, project });
@@ -81,12 +81,12 @@ export class Issue {
             default: throw Error(`"${type}" is not a valid note type`);
         }
     }
-    static forUpdate(project: Project, cards: Card[]) {
+    static forUpdate(project: Project, cards: PlaytestingCard[]) {
         if (cards.length === 0) {
             return null;
         }
         const milestone = project.milestone;
-        const noteTypeOrdered = ["Replaced", "Reworked", "Updated", "Implemented"] as NoteType[];
+        const noteTypeOrdered = ["replaced", "reworked", "updated", "implemented"] as NoteType[];
         const notesUsed = new Set<NoteType>();
         const notesMap = cards.reduce((map, card) => {
             const noteType = card.note?.type;
@@ -96,7 +96,7 @@ export class Issue {
                 const icons = new Set<string>();
                 // Some cards can be updated, and can also be implemented in the same update
                 // For these, add "implemented" emoji first
-                if (card.implementStatus === "Recently Implemented") {
+                if (card.implementStatus === "recently implemented") {
                     icons.add(emojis["Implemented"]);
                 }
                 // Add note type emoji
@@ -114,7 +114,7 @@ export class Issue {
 
         const notesLegend = noteTypeOrdered.filter((nt) => notesUsed.has(nt)).map((nt) => `${nt} = ${emojis[nt]}`).join(" | ");
         const notes = noteTypeOrdered.map((nt) => notesMap.get(nt)).flat().filter((n) => n);
-        const number = project.releases + 1;
+        const number = project.version + 1;
         const pdf = {
             all: encodeURI(`${apiUrl}/pdf/${project.code}/${number}_all.pdf`),
             updated: cards.some((card) => card.isChanged) ? encodeURI(`${apiUrl}/pdf/${project.code}/${number}_updated.pdf`) : undefined
@@ -122,7 +122,7 @@ export class Issue {
         const date = new Date().toDateString();
         const body = Issue.renderTemplate({ type: "Playtesting Update", emojis, number, project, pdf, notesLegend, notes, date });
 
-        const title = `${project.short} | Playtesting Update ${number}`;
+        const title = `${project.code} | Playtesting Update ${number}`;
         const labels = ["automated", "playtest-update"];
 
         return { title, body, labels, milestone } as GeneratedPullRequest;

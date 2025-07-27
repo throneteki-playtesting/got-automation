@@ -1,171 +1,192 @@
 import MongoDataSource from "./dataSources/mongoDataSource";
 import { MongoClient } from "mongodb";
 import { IRepository } from "..";
-import { logger } from "@/services";
+import { dataService, logger } from "@/services";
 import Review from "../models/review";
-import { Id, Matcher, Model } from "common/models/reviews";
-import { cleanObject, groupBy } from "common/utils";
+import { JsonPlaytestingReview } from "common/models/reviews";
+import { groupBy } from "common/utils";
 import * as ReviewsController from "gas/controllers/reviewsController";
 import GASDataSource from "./dataSources/GASDataSource";
+import { JsonPlaytestingCard } from "common/models/cards";
+import ReviewCollection from "../models/reviewCollection";
 
-export default class ReviewsRepository implements IRepository<Model, Review> {
+export default class ReviewsRepository implements IRepository<JsonPlaytestingReview> {
     public database: ReviewMongoDataSource;
     public spreadsheet: ReviewDataSource;
     constructor(mongoClient: MongoClient) {
         this.database = new ReviewMongoDataSource(mongoClient);
         this.spreadsheet = new ReviewDataSource();
     }
-    public async create({ reviews }: { reviews: Review[] }) {
-        await this.database.create({ reviews });
-        await this.spreadsheet.create({ reviews });
+    public async create(creating: Review | Review[]) {
+        await this.database.create(creating);
+        await this.spreadsheet.create(creating);
     }
 
-    public async read({ matchers, hard }: { matchers: Matcher[], hard?: boolean }) {
-        let reviews: Review[];
+    public async read(reading?: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[], hard = false) {
+        let reviews: JsonPlaytestingReview[];
         // Force hard refresh from spreadsheet (slow)
         if (hard) {
-            const fetched = await this.spreadsheet.read({ matchers });
-            await this.database.update({ reviews: fetched });
+            const fetched = await this.spreadsheet.read(reading);
+            await this.database.update(fetched);
             reviews = fetched;
         } else {
             // Otherwise, use database (fast)...
-            reviews = await this.database.read({ matchers });
-            const missing = matchers?.filter((matcher) => !reviews.some((review) => {
-                return matcher.projectId === review.card.project._id
-                    && (!matcher.number || matcher.number === review.card.number)
-                    && (!matcher.version || matcher.version === review.card.version);
-            })) || [];
-            // ... but fetch any which are missing (unlikely)
-            if (missing.length > 0) {
-                const fetched = await this.spreadsheet.read({ matchers: missing });
-                await this.database.create({ reviews: fetched });
-                reviews = reviews.concat(fetched);
-            }
+            reviews = await this.database.read(reading);
         }
-        return reviews.sort((a, b) => a.date.getTime() - b.date.getTime());
+        return new ReviewCollection(reviews);
     }
 
-    public async update({ reviews, upsert }: { reviews: Review[], upsert?: boolean }) {
-        await this.database.update({ reviews, upsert });
-        await this.spreadsheet.update({ reviews, upsert });
+    public async update(updating: JsonPlaytestingReview | JsonPlaytestingReview[], upsert = true) {
+        await this.database.update(updating, { upsert });
+        await this.spreadsheet.update(updating, { upsert });
     }
 
-    public async destroy({ matchers }: { matchers: Matcher[] }) {
-        await this.database.destroy({ matchers });
-        await this.spreadsheet.destroy({ matchers });
+    public async destroy(destroying: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[]) {
+        await this.database.destroy(destroying);
+        await this.spreadsheet.destroy(destroying);
     }
 }
 
-class ReviewMongoDataSource extends MongoDataSource<Model, Review> {
+class ReviewMongoDataSource extends MongoDataSource<JsonPlaytestingReview> {
     constructor(client: MongoClient) {
         super(client, "reviews");
     }
-    public async create({ reviews }: { reviews: Review[] }) {
+    public async create(creating: JsonPlaytestingReview | JsonPlaytestingReview[]) {
+        const reviews = Array.isArray(creating) ? creating : [creating];
         if (reviews.length === 0) {
             return [];
         }
-        const models = await Review.toModels(...reviews);
-        const results = await this.collection.insertMany(models);
+        const results = await this.collection.insertMany(reviews, { ordered: false });
 
         logger.verbose(`Inserted ${results.insertedCount} values into ${this.name} collection`);
-        const insertedIds = Object.values(results.insertedIds);
-        return reviews.filter((review) => insertedIds.includes(review._id));
+
+        // Return reviews which were actually inserted (no duplicates)
+        return Object.keys(results.insertedIds).map((index) => reviews[index] as JsonPlaytestingReview);
     }
-    public async read({ matchers }: { matchers: Matcher[] }) {
-        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(cleanObject) }) };
+    public async read(reading?: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[]) {
+        const query = this.buildFilterQuery(reading);
         const result = await this.collection.find(query).toArray();
 
         logger.verbose(`Read ${result.length} values from ${this.name} collection`);
-        return await Review.fromModels(...result);
+        return this.withoutId(result);
     }
 
-    public async update({ reviews, upsert = true }: { reviews: Review[], upsert?: boolean }) {
+    public async update(updating: JsonPlaytestingReview | JsonPlaytestingReview[], { upsert }: { upsert: boolean } = { upsert: true }) {
+        const reviews = Array.isArray(updating) ? updating : [updating];
         if (reviews.length === 0) {
             return [];
         }
-        const models = await Review.toModels(...reviews);
-        const results = await this.collection.bulkWrite(models.map((model) => ({
+        const results = await this.collection.bulkWrite(reviews.map((review) => ({
             replaceOne: {
-                filter: { "_id": model._id },
-                replacement: model,
+                filter: { "number": review.number, "version": review.version, "reviewer": review.reviewer },
+                replacement: review,
                 upsert
             }
-        })));
+        })), { ordered: false });
 
         logger.verbose(`${upsert ? "Upserted" : "Updated"} ${results.modifiedCount + results.upsertedCount} values out of ${results.matchedCount} into ${this.name} collection`);
-        const updatedIds = Object.values(results.insertedIds).concat(Object.values(results.upsertedIds));
-        return reviews.filter((review) => updatedIds.includes(review._id));
+
+        const updatedIds = { ... results.insertedIds, ...results.upsertedIds };
+        // Return reviews which were actually inserted or upserted
+        return Object.keys(updatedIds).map((index) => reviews[index] as JsonPlaytestingReview);
     }
 
-    public async destroy({ matchers }: { matchers: Matcher[] }) {
-        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(cleanObject) }) };
+    public async destroy(deleting: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingCard>[]) {
+        const query = this.buildFilterQuery(deleting);
+        if (Object.keys(query).length === 0) {
+            return 0; // Do not delete anything if there are no query parameters
+        }
         // Collect all which are to be deleted
-        const deleting = await Review.fromModels(...(await this.collection.find(query).toArray()));
         const results = await this.collection.deleteMany(query);
 
         logger.verbose(`Deleted ${results.deletedCount} values from ${this.name} collection`);
-        return deleting;
+        return results.deletedCount;
     }
 }
 
-class ReviewDataSource extends GASDataSource<Review> {
-    public async create({ reviews }: { reviews: Review[] }) {
-        const groups = groupBy(reviews, (review) => review.card.project);
-        const created: Review[] = [];
-        for (const [project, pReviews] of groups.entries()) {
-            const url = `${project.script}/reviews/create`;
-            const models = await Review.toModels(...pReviews);
-            const body = JSON.stringify(models);
+class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
+    public async create(creating: JsonPlaytestingReview | JsonPlaytestingReview[]) {
+        const reviews = Array.isArray(creating) ? creating : [creating];
+        const groups = groupBy(reviews, (review) => review.project);
 
-            const response = await this.client.post<ReviewsController.CreateResponse>(url, body);
-            created.push(...await Review.fromModels(...response.created));
+        const created: JsonPlaytestingReview[] = [];
+        for (const [pNumber, pReviews] of groups.entries()) {
+            const [project] = await dataService.projects.read({ number: pNumber });
+            // TODO: Error if project is missing
+            const url = `${project.script}/reviews/create`;
+            const body = JSON.stringify(pReviews);
+            const response = await this.client.post<ReviewsController.CreateResponse>(url, null, body);
+            created.push(...response.created);
             logger.verbose(`${created.length} review(s) created in Google App Script (${project.name})`);
         }
         return created;
     }
 
-    public async read({ matchers }: { matchers: Matcher[] }) {
-        const groups = groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
-        const read: Review[] = [];
-        for (const [projectId, pModels] of groups.entries()) {
-            const project = await this.client.getProject(projectId);
-            const ids = pModels.filter((has) => has.number).map((pm) => `${pm.reviewer}@${pm.number}@${pm.version}` as Id);
-            const url = `${project.script}/reviews${ids.length > 0 ? `?ids=${ids.join(",")}` : ""}`;
+    public async read(reading?: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[]) {
+        const reviews = Array.isArray(reading) ? reading : [reading];
+        const groups = groupBy(reviews, (review) => review.project);
+        // If no project is specified, read that from all active projects
+        if (groups.has(undefined)) {
+            const noProjectCards = groups.get(undefined);
+            const allActiveProjects = await dataService.projects.read({ active: true });
+            allActiveProjects.forEach((project) => groups.set(project.number, noProjectCards));
+            groups.delete(undefined);
+        }
 
-            const response = await this.client.get<ReviewsController.ReadResponse>(url);
-            read.push(...await Review.fromModels(...response.reviews));
+        const read: JsonPlaytestingReview[] = [];
+        for (const [pNumber, pReviews] of groups.entries()) {
+            const [project] = await dataService.projects.read({ number: pNumber });
+            // TODO: Error if project is missing
+            for (const pReview of pReviews) {
+                const url = `${project.script}/cards`;
+                const query = { filter: pReview };
+                const response = await this.client.get<ReviewsController.ReadResponse>(url, query);
+                read.push(...response.reviews);
+            }
             logger.verbose(`${read.length} review(s) read from Google App Script (${project.name})`);
         }
         return read;
     }
 
-    public async update({ reviews, upsert = true }: { reviews: Review[], upsert?: boolean }) {
-        const groups = groupBy(reviews, (review) => review.card.project);
-        const updated: Review[] = [];
-        for (const [project, pReviews] of groups.entries()) {
-            const url = `${project.script}/reviews/update?upsert=${upsert ? "true" : "false"}`;
-            const models = await Review.toModels(...pReviews);
-            const body = JSON.stringify(models);
-
-            const response = await this.client.post<ReviewsController.UpdateResponse>(url, body);
-            updated.push(...await Review.fromModels(...response.updated));
+    public async update(updating: JsonPlaytestingReview | JsonPlaytestingReview[], { upsert = true }: { upsert?: boolean } = {}) {
+        const reviews = Array.isArray(updating) ? updating : [updating];
+        const groups = groupBy(reviews, (review) => review.project);
+        const updated: JsonPlaytestingReview[] = [];
+        for (const [pNumber, pReviews] of groups.entries()) {
+            const [project] = await dataService.projects.read({ number: pNumber });
+            // TODO: Error if project is missing
+            const url = `${project.script}/cards/update`;
+            const query = { upsert };
+            const body = JSON.stringify(pReviews);
+            const response = await this.client.post<ReviewsController.UpdateResponse>(url, query, body);
+            updated.push(...response.updated);
             logger.verbose(`${updated.length} review(s) updated in Google App Script (${project.name})`);
         }
         return updated;
     }
 
-    public async destroy({ matchers }: { matchers: Matcher[] }) {
-        const groups = groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
-        const destroyed: Review[] = [];
-        for (const [projectId, pModels] of groups.entries()) {
-            const project = await this.client.getProject(projectId);
-            const ids = pModels.filter((has) => has.number).map((pm) => `${pm.reviewer}@${pm.number}@${pm.version}` as Id);
-            const url = `${project.script}/reviews/destroy${ids ? `?ids=${ids.join(",")}` : ""}`;
+    public async destroy(destroying: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[]) {
+        const reviews = Array.isArray(destroying) ? destroying : [destroying];
+        const groups = groupBy(reviews, (review) => review.project);
+        // If no project is specified, read that from all active projects
+        if (groups.has(undefined)) {
+            const noProjectCards = groups.get(undefined);
+            const allActiveProjects = await dataService.projects.read({ active: true });
+            allActiveProjects.forEach((project) => groups.set(project.number, noProjectCards));
+            groups.delete(undefined);
+        }
+        const destroyed: JsonPlaytestingReview[] = [];
+        for (const [pNumber, pReviews] of groups.entries()) {
+            const [project] = await dataService.projects.read({ number: pNumber });
 
-            const response = await this.client.get<ReviewsController.DestroyResponse>(url);
-            destroyed.push(...await Review.fromModels(...response.destroyed));
+            for (const pReview of pReviews) {
+                const url = `${project.script}/reviews/destroy`;
+                const query = { filter: pReview };
+                const response = await this.client.post<ReviewsController.DestroyResponse>(url, query);
+                destroyed.push(...response.destroyed);
+            }
             logger.verbose(`${destroyed.length} review(s) deleted in Google App Script (${project.name})`);
         }
-        return destroyed;
+        return destroyed.length;
     }
 }

@@ -1,246 +1,196 @@
-import { compareBuild } from "semver";
 import { MongoClient } from "mongodb";
-import Card from "../models/card";
 import { IRepository } from "..";
-import { dataService, githubService, logger, renderService } from "@/services";
-import { condenseId, Id, Matcher, Model } from "common/models/cards";
-import { cleanObject, groupBy } from "common/utils";
+import { dataService, logger, renderService } from "@/services";
+import { groupBy } from "common/utils";
 import * as CardsController from "gas/controllers/cardsController";
 import { CardSheet } from "gas/spreadsheets/serializers/cardSerializer";
 import MongoDataSource from "./dataSources/mongoDataSource";
 import GASDataSource from "./dataSources/GASDataSource";
+import { JsonPlaytestingCard } from "common/models/cards";
+import CardCollection from "../models/cards/cardCollection";
+import PlaytestingCard from "../models/cards/playtestingCard";
 
-export default class CardsRepository implements IRepository<Model, Card> {
+export default class CardsRepository implements IRepository<JsonPlaytestingCard> {
     public database: CardMongoDataSource;
     public spreadsheet: CardDataSource;
     constructor(mongoClient: MongoClient) {
         this.database = new CardMongoDataSource(mongoClient);
         this.spreadsheet = new CardDataSource();
     }
-    public async create({ cards }: { cards: Card[] }) {
-        await this.database.create({ cards });
-        await this.spreadsheet.create({ cards });
+    public async create(creating: PlaytestingCard | PlaytestingCard[]) {
+        await this.database.create(creating);
+        await this.spreadsheet.create(creating);
     }
 
-    public async read({ matchers, hard }: { matchers: Matcher[], hard?: boolean }) {
-        let cards: Card[];
+    public async read(reading?: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[], hard = false) {
+        let cards: JsonPlaytestingCard[];
         // Force hard refresh from spreadsheet (slow)
         if (hard) {
-            const fetched = await this.spreadsheet.read({ matchers });
-            await this.database.update({ cards: fetched });
+            const fetched = await this.spreadsheet.read(reading);
+            await this.database.update(fetched);
             cards = fetched;
         } else {
             // Otherwise, use database (fast)...
-            cards = await this.database.read({ matchers });
-            const missing = matchers?.filter((matcher) => !cards.some((card) => card.project._id === matcher.projectId && (!matcher.number || card.number === matcher.number) && (!matcher.version || (card.version === matcher.version)))) || [];
-            // ... but fetch any which are missing (unlikely)
-            if (missing.length > 0) {
-                const fetched = await this.spreadsheet.read({ matchers: missing });
-                await this.database.create({ cards: fetched });
-                cards = cards.concat(fetched);
-            }
+            cards = await this.database.read(reading);
         }
-        return cards.sort((a, b) => a.number - b.number || compareBuild(a.version, b.version));
+        return new CardCollection(cards);
     }
-    public async update({ cards, upsert }: { cards: Card[], upsert?: boolean }) {
-        await this.database.update({ cards, upsert });
-        await this.spreadsheet.update({ cards, upsert });
+    public async update(updating: JsonPlaytestingCard | JsonPlaytestingCard[], upsert = true) {
+        await this.database.update(updating, { upsert });
+        await this.spreadsheet.update(updating, { upsert });
     }
 
-    // TODO: Clean up logic here so that "matchers" is ALWAYS required to delete anything (eg. no more "empty matchers = delete all"... thats dangerous!)
-    public async destroy({ matchers }: { matchers: Matcher[] }) {
-        await this.database.destroy({ matchers });
-        await this.spreadsheet.destroy({ matchers });
-    }
-
-    /**
-     * Finalises cards and projects from a recent playtesting release
-     * @param projectId: Id for project which needs it's latest update finalised
-     * @returns An object?
-     */
-    public async finalise(projectId: number) {
-        const toLatest: Card[] = [];
-        const toArchive: Card[] = [];
-
-        const [project] = await dataService.projects.read({ codes: [projectId] });
-        if (!await githubService.isLatestPRMerged(project)) {
-            throw Error(`Playtesting Update ${project.releases + 1} PR either does not exist, or is not merged into playtesting branch`);
-        }
-        const cards = await this.read({ matchers: [{ projectId }] });
-        const latestCards = groupCardHistory(cards).map((group) => group.latest);
-        for (const latest of latestCards) {
-            // If card has any sort of change, it must be marked to update and/or archive
-            if (latest.isChanged || latest.implementStatus === "Recently Implemented") {
-                if (latest.version !== latest.playtesting) {
-                    // Set playtesting to version (for both all copies)
-                    latest.playtesting = latest.version;
-
-                    // Clone for archive
-                    const archive = latest.clone();
-                    // If was recently implemented, mark archived copy as "complete"
-                    if (archive.implementStatus === "Recently Implemented") {
-                        archive.github.status = "complete";
-                    }
-                    toArchive.push(archive);
-                }
-
-                // If card has been implemented, remove the github issue details (for latest only)
-                if (latest.implementStatus === "Recently Implemented") {
-                    delete latest.github;
-                }
-
-                delete latest.note;
-                toLatest.push(latest);
-            }
-        }
-        if (toArchive.length > 0) {
-            // Archive the current version (with notes, issues, etc.)
-            await dataService.cards.database.update({ cards: toArchive });
-            await dataService.cards.spreadsheet.update({ cards: toArchive, sheets: ["archive"] });
-        }
-        if (toLatest.length > 0) {
-            // Update latest with "cleaned" version
-            await dataService.cards.spreadsheet.update({ cards: toLatest, sheets: ["latest"] });
-
-            // Increment project version & update if any were pushed to latest
-            project.releases++;
-            await dataService.projects.update({ projects: [project] });
-        }
-        return {
-            updated: toArchive
-        };
+    public async destroy(destroying: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
+        await this.database.destroy(destroying);
+        await this.spreadsheet.destroy(destroying);
     }
 }
 
-class CardMongoDataSource extends MongoDataSource<Model, Card> {
+class CardMongoDataSource extends MongoDataSource<JsonPlaytestingCard> {
     constructor(client: MongoClient) {
         super(client, "cards");
+        // Index on number & version, and allow _id to be a uuid
+        this.collection.createIndex({ number: 1, version: 1 }, { unique: true });
     }
 
-    public async create({ cards }: { cards: Card[] }) {
+    public async create(creating: JsonPlaytestingCard | JsonPlaytestingCard[]) {
+        const cards = Array.isArray(creating) ? creating : [creating];
         if (cards.length === 0) {
             return [];
         }
-        await renderService.syncImages(cards);
-        const models = await Card.toModels(...cards);
-        const results = await this.collection.insertMany(models);
+        await renderService.syncImages(new CardCollection(cards));
+        const results = await this.collection.insertMany(cards, { ordered: false });
 
         logger.verbose(`Inserted ${results.insertedCount} values into ${this.name} collection`);
-        const insertedIds = Object.values(results.insertedIds);
-        return cards.filter((card) => insertedIds.includes(card._id));
+
+        // Return cards which were actually inserted (no duplicates)
+        return Object.keys(results.insertedIds).map((index) => cards[index] as JsonPlaytestingCard);
     }
 
-    public async read({ matchers }: { matchers: Matcher[] }) {
-        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(cleanObject) }) };
+    public async read(reading?: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
+        const query = this.buildFilterQuery(reading);
         const result = await this.collection.find(query).toArray();
 
         logger.verbose(`Read ${result.length} values from ${this.name} collection`);
-        return await Card.fromModels(...result);
+        return this.withoutId(result);
     }
 
-    public async update({ cards, upsert = true }: { cards: Card[], upsert?: boolean }) {
+    public async update(updating: JsonPlaytestingCard | JsonPlaytestingCard[], { upsert }: { upsert: boolean } = { upsert: true }) {
+        const cards = Array.isArray(updating) ? updating : [updating];
         if (cards.length === 0) {
             return [];
         }
-        await renderService.syncImages(cards, true);
-        const models = await Card.toModels(...cards);
-        const results = await this.collection.bulkWrite(models.map((model) => ({
+        await renderService.syncImages(new CardCollection(cards), true);
+        const results = await this.collection.bulkWrite(cards.map((card) => ({
             replaceOne: {
-                filter: { "_id": model._id },
-                replacement: model,
+                filter: { "number": card.number, "version": card.version },
+                replacement: card,
                 upsert
             }
-        })));
+        })), { ordered: false });
 
         logger.verbose(`${upsert ? "Upserted" : "Updated"} ${results.modifiedCount + results.upsertedCount} values into ${this.name} collection`);
-        const updatedIds = Object.values(results.insertedIds).concat(Object.values(results.upsertedIds));
-        return cards.filter((card) => updatedIds.includes(card._id));
+
+        const updatedIds = { ... results.insertedIds, ...results.upsertedIds };
+        // Return cards which were actually inserted or upserted
+        return Object.keys(updatedIds).map((index) => cards[index] as JsonPlaytestingCard);
     }
 
-    public async destroy({ matchers }: { matchers?: Matcher[] }) {
-        const query = { ...(matchers?.length > 0 && { "$or": matchers.map(cleanObject) }) };
+    public async destroy(deleting: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
+        const query = this.buildFilterQuery(deleting);
+        if (Object.keys(query).length === 0) {
+            return 0; // Do not delete anything if there are no query parameters
+        }
         // Collect all which are to be deleted
-        const deleting = await Card.fromModels(...(await this.collection.find(query).toArray()));
         const results = await this.collection.deleteMany(query);
 
         logger.verbose(`Deleted ${results.deletedCount} values from ${this.name} collection`);
-        return deleting;
+        return results.deletedCount;
     }
 }
 
-class CardDataSource extends GASDataSource<Card> {
-    public async create({ cards }: { cards: Card[] }) {
+class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
+    public async create(creating: JsonPlaytestingCard | JsonPlaytestingCard[]) {
+        const cards = Array.isArray(creating) ? creating : [creating];
         const groups = groupBy(cards, (card) => card.project);
-        const created: Card[] = [];
-        for (const [project, pCards] of groups.entries()) {
-            const url = `${project.script}/cards/create`;
-            const models = await Card.toModels(...pCards);
-            const body = JSON.stringify(models);
 
-            const response = await this.client.post<CardsController.CreateResponse>(url, body);
-            created.push(...await Card.fromModels(...response.created));
+        const created: JsonPlaytestingCard[] = [];
+        for (const [pNumber, pCards] of groups.entries()) {
+            const [project] = await dataService.projects.read({ number: pNumber });
+
+            const url = `${project.script}/cards/create`;
+            const body = JSON.stringify(pCards);
+            const response = await this.client.post<CardsController.CreateResponse>(url, null, body);
+            created.push(...response.created);
             logger.verbose(`${created.length} card(s) created in Google App Script (${project.name})`);
         }
         return created;
     }
 
-    public async read({ matchers }: { matchers: Matcher[] }) {
-        const groups = groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
-        const read: Card[] = [];
-        for (const [projectId, pModels] of groups.entries()) {
-            const project = await this.client.getProject(projectId);
-            const ids = pModels.filter((has) => has.number).map((pm) => !pm.version ? `${pm.number}` : `${pm.number}@${pm.version}` as Id);
-            const url = `${project.script}/cards${ids.length > 0 ? `?ids=${ids.join(",")}` : ""}`;
-
-            const response = await this.client.get<CardsController.ReadResponse>(url);
-            read.push(...await Card.fromModels(...response.cards));
+    public async read(reading?: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
+        const cards = Array.isArray(reading) ? reading : [reading];
+        const groups = groupBy(cards, (card) => card.project);
+        // If no project is specified, read that from all active projects
+        if (groups.has(undefined)) {
+            const noProjectCards = groups.get(undefined);
+            const allActiveProjects = await dataService.projects.read({ active: true });
+            allActiveProjects.forEach((project) => groups.set(project.number, noProjectCards));
+            groups.delete(undefined);
+        }
+        const read: JsonPlaytestingCard[] = [];
+        for (const [pNumber, pCards] of groups.entries()) {
+            const [project] = await dataService.projects.read({ number: pNumber });
+            // TODO: Error if project is missing
+            for (const pCard of pCards) {
+                const url = `${project.script}/cards`;
+                const query = { filter: pCard };
+                const response = await this.client.get<CardsController.ReadResponse>(url, query);
+                read.push(...response.cards);
+            }
             logger.verbose(`${read.length} card(s) read from Google App Script (${project.name})`);
         }
         return read;
     }
 
-    public async update({ cards, upsert = false, sheets }: { cards: Card[], upsert?: boolean, sheets?: CardSheet[] }) {
+    public async update(updating: JsonPlaytestingCard | JsonPlaytestingCard[], { upsert = true, sheets }: { upsert?: boolean; sheets?: CardSheet[] } = {}) {
+        const cards = Array.isArray(updating) ? updating : [updating];
         const groups = groupBy(cards, (card) => card.project);
-        const updated: Card[] = [];
-        for (const [project, pCards] of groups.entries()) {
-            const url = `${project.script}/cards/update?upsert=${upsert ? "true" : "false"}${sheets ? `&sheets=${sheets.join(",")}` : ""}`;
-            const models = await Card.toModels(...pCards);
-            const body = JSON.stringify(models);
-
-            const response = await this.client.post<CardsController.UpdateResponse>(url, body);
-            updated.push(...await Card.fromModels(...response.updated));
+        const updated: JsonPlaytestingCard[] = [];
+        for (const [pNumber, pCards] of groups.entries()) {
+            const [project] = await dataService.projects.read({ number: pNumber });
+            // TODO: Error if project is missing
+            const url = `${project.script}/cards/update`;
+            const query = { upsert, sheets };
+            const body = JSON.stringify(pCards);
+            const response = await this.client.post<CardsController.UpdateResponse>(url, query, body);
+            updated.push(...response.updated);
             logger.verbose(`${updated.length} card(s) updated in Google App Script (${project.name})`);
         }
         return updated;
     }
 
-    public async destroy({ matchers }: { matchers: Matcher[] }) {
-        const groups = groupBy(matchers.map(cleanObject), (matcher) => matcher.projectId);
-        const destroyed: Card[] = [];
-        for (const [projectId, pModels] of groups.entries()) {
-            const project = await this.client.getProject(projectId);
-            // TODO: Alter parameters to allow for any CardModel values to be provided & filtered
-            const ids = pModels.filter((has) => has.number && has.version).map((pm) => condenseId({ projectId, number: pm.number, version: pm.version }));
-            const url = `${project.script}/cards/destroy${ids ? `?ids=${ids.join(",")}` : ""}`;
+    public async destroy(destroying: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
+        const cards = Array.isArray(destroying) ? destroying : [destroying];
+        const groups = groupBy(cards, (card) => card.project);
+        // If no project is specified, read that from all active projects
+        if (groups.has(undefined)) {
+            const noProjectCards = groups.get(undefined);
+            const allActiveProjects = await dataService.projects.read({ active: true });
+            allActiveProjects.forEach((project) => groups.set(project.number, noProjectCards));
+            groups.delete(undefined);
+        }
+        const destroyed: JsonPlaytestingCard[] = [];
+        for (const [pNumber, pCards] of groups.entries()) {
+            const [project] = await dataService.projects.read({ number: pNumber });
 
-            const response = await this.client.post<CardsController.DestroyResponse>(url);
-            if (response.destroyed.length > 0) {
-                destroyed.push(...await Card.fromModels(...response.destroyed));
+            for (const pCard of pCards) {
+                const url = `${project.script}/cards/destroy`;
+                const query = { filter: pCard };
+                const response = await this.client.post<CardsController.DestroyResponse>(url, query);
+                destroyed.push(...response.destroyed);
             }
             logger.verbose(`${destroyed.length} card(s) deleted in Google App Script (${project.name})`);
         }
-        return destroyed;
+        return destroyed.length;
     }
-}
-
-// TODO: Update everything to return a "CardCollection" to mimic this methods behaviour
-export function groupCardHistory(cards: Card[]) {
-    const groups = groupBy(cards, (card) => card.number);
-
-    return Array.from(groups.entries()).map(([number, c]) => {
-        const previous = c.sort((a, b) => -compareBuild(a.version, b.version));
-        const latest = previous.shift();
-
-        return { number, latest, previous };
-    });
 }

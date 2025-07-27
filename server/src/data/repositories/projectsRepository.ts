@@ -1,87 +1,91 @@
-import Project from "../models/project";
 import { IRepository } from "..";
 import { logger } from "@/services";
-import { Model } from "common/models/projects";
+import { JsonProject } from "common/models/projects";
 import MongoDataSource from "./dataSources/mongoDataSource";
 import { MongoClient } from "mongodb";
+import Project from "../models/project";
 
-export default class ProjectsRepository implements IRepository<Model, Project> {
+export default class ProjectsRepository implements IRepository<JsonProject> {
     public database: ProjectDataSource;
     constructor(mongoClient: MongoClient) {
         this.database = new ProjectDataSource(mongoClient);
     }
 
-    public async create({ projects }: { projects: Project[] }) {
-        return this.database.create({ projects });
+    public async create(creating: JsonProject | JsonProject[]) {
+        const database = await this.database.create(creating);
+        return database.map((json) => new Project(json));
     }
 
-    public async read({ codes }: { codes?: number[] } = {}) {
-        return this.database.read({ codes });
+    public async read(reading?: Partial<JsonProject> | Partial<JsonProject>[]) {
+        const database = await this.database.read(reading);
+        return database.map((json) => new Project(json));
     }
 
-    public async update({ projects }: { projects: Project[] }) {
-        return this.database.update({ projects });
+    public async update(updating: JsonProject | JsonProject[]) {
+        const database = await this.database.update(updating);
+        return database.map((json) => new Project(json));
     }
 
-    public async destroy({ codes }: { codes?: number[] } = {}) {
-        return this.database.destroy({ codes });
+    public async destroy(destroying: Partial<JsonProject> | Partial<JsonProject>[]) {
+        return this.database.destroy(destroying);
     }
 }
 
-class ProjectDataSource extends MongoDataSource<Model, Project> {
+class ProjectDataSource extends MongoDataSource<JsonProject> {
     constructor(client: MongoClient) {
         super(client, "projects");
     }
 
-    public async create({ projects }: { projects: Project[] }) {
+    public async create(creating: JsonProject | JsonProject[]) {
+        const projects = Array.isArray(creating) ? creating : [creating];
         if (projects.length === 0) {
             return [];
         }
 
-        const models = await Project.toModels(...projects);
-        const results = await this.collection.insertMany(models);
+        const results = await this.collection.insertMany(projects, { ordered: false });
 
         logger.verbose(`Inserted ${results.insertedCount} values into ${this.name} collection`);
-        const insertedIds = Object.values(results.insertedIds);
-        return projects.filter((project) => insertedIds.includes(project._id));
+
+        return Object.keys(results.insertedIds).map((index) => projects[index] as JsonProject);
     }
 
-    public async read({ codes }: { codes?: number[] } = {}) {
-        const mappedCodes = codes?.map((code) => ({ "code": code }));
-        const query = { ...(mappedCodes && { "$or": mappedCodes }) };
+    public async read(reading?: Partial<JsonProject> | Partial<JsonProject>[]) {
+        const query = this.buildFilterQuery(reading);
         const result = await this.collection.find(query).toArray();
 
         logger.verbose(`Read ${result.length} values from ${this.name} collection`);
-        return await Project.fromModels(...result);
+        return this.withoutId(result);
     }
 
-    public async update({ projects, upsert = true }: { projects: Project[], upsert?: boolean }) {
+    public async update(updating: JsonProject | JsonProject[], { upsert }: { upsert: boolean } = { upsert: true }) {
+        const projects = Array.isArray(updating) ? updating : [updating];
         if (projects.length === 0) {
             return [];
         }
 
-        const models = await Project.toModels(...projects);
-        const results = await this.collection.bulkWrite(models.map((model) => ({
+        const results = await this.collection.bulkWrite(projects.map((project) => ({
             replaceOne: {
-                filter: { "_id": model._id },
-                replacement: model,
+                filter: { "number": project.number },
+                replacement: project,
                 upsert
             }
-        })));
+        })), { ordered: false });
 
         logger.verbose(`${upsert ? "Upserted" : "Updated"} ${results.modifiedCount + results.upsertedCount} values into ${this.name} collection`);
-        const updatedIds = Object.values(results.insertedIds).concat(Object.values(results.upsertedIds));
-        return projects.filter((project) => updatedIds.includes(project._id));
+        const updatedIds = { ... results.insertedIds, ...results.upsertedIds };
+        // Return projects which were actually inserted or upserted
+        return Object.keys(updatedIds).map((index) => projects[index] as JsonProject);
     }
 
-    public async destroy({ codes }: { codes?: number[] } = {}) {
-        const mappedCodes = codes?.map((code) => ({ "code": code }));
-        const query = { ...(mappedCodes && { "$or": mappedCodes }) };
+    public async destroy(deleting: Partial<JsonProject> | Partial<JsonProject>[]) {
+        const query = this.buildFilterQuery(deleting);
+        if (Object.keys(query).length === 0) {
+            return 0; // Do not delete anything if there are no query parameters
+        }
         // Collect all which are to be deleted
-        const deleting = await Project.fromModels(...(await this.collection.find(query).toArray()));
         const results = await this.collection.deleteMany(query);
 
         logger.verbose(`Deleted ${results.deletedCount} values from ${this.name} collection`);
-        return deleting;
+        return results.deletedCount;
     }
 }

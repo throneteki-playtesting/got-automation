@@ -23,7 +23,7 @@
   "include": [
     "src",
     "../common"
-  ],
+, "../gotTemplating/rendering"  ],
   "exclude": [
     "node_modules",
     "dist"

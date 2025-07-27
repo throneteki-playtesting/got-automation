@@ -23,9 +23,6 @@ function initialise(apiHost: string, serverPort: number, clientPort: number) {
     app.use(express.static("public"));
     app.use(express.json());
 
-    app.use(errors());
-    app.use(errorHandler);
-
     // Register routes
     app.use("/api", basicAuth({
         users: config.get("server.auth"),
@@ -34,6 +31,10 @@ function initialise(apiHost: string, serverPort: number, clientPort: number) {
     }), api);
 
     app.use(swaggerRouter);
+
+    app.use(errors());
+    app.use(errorHandler);
+
     app.use((req, res) => {
         res.status(404).send("Route does not exist");
     });

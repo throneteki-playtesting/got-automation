@@ -1,4 +1,4 @@
-import * as Projects from "common/models/projects";
+import { JsonProject } from "common/models/projects";
 import * as RestClient from "../restClient";
 import { getProjectDetails, setProjectDetails } from "../settings";
 
@@ -9,11 +9,11 @@ export function doGet(path: string[], e: GoogleAppsScript.Events.DoGet) {
 }
 
 export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
-    const project = JSON.parse(e.postData.contents) as Projects.Model;
+    const project = JSON.parse(e.postData.contents) as JsonProject;
     setProjectDetails(project);
     const response = { request: e, data: { project } } as RestClient.Response<SetResponse>;
     return RestClient.generateResponse(response);
 }
 
-export interface GetResponse { project: Projects.Model }
-export interface SetResponse { project: Projects.Model }
+export interface GetResponse { project: JsonProject }
+export interface SetResponse { project: JsonProject }

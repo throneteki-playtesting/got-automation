@@ -1,8 +1,9 @@
 export abstract class DataSerializer<Model> {
     public abstract richTextColumns: number[];
-    public abstract filter(values: string[], index: number, model?: Model) : boolean;
-    public abstract deserialize(values: string[], index: number) : Model;
-    public abstract serialize(model: Model) : string[]
+    public abstract matches(values: string[], index: number, filter: Partial<Model>): boolean
+    public abstract filter(values: string[], index: number, filter?: Partial<Model>): boolean;
+    public abstract deserialize(values: string[], index: number): Model;
+    public abstract serialize(model: Model): string[]
 
     protected extractLinkText<T>(value: string, mappingFunc: (link: string, text: string) => T) {
         if (!value) {
