@@ -35,9 +35,9 @@ const Location = ({ card, scale, orientation }: CardComponentProps) => {
                         <Designer>{card.designer}</Designer>
                     </AutoSize>
                 </TextBox>
-            </div>            
+            </div>
         </Card>
     );
-}
+};
 
 export default Location;

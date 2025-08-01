@@ -6,7 +6,7 @@ import AutoSize from "./autoSize";
 import { em, px } from "../../../utilities";
 
 const defaultOrientation = (card: JsonRenderableCard) => card.type === "plot" ? "horizontal" : "vertical";
-export const Card = ({ children, card, orientation = defaultOrientation(card), scale = 1, className, style }: CardProps) => {
+export const Card = ({ children, card, orientation = defaultOrientation(card), scale = 1, rounded = true, className, style }: CardProps) => {
     const factionBorder = {
         baratheon: "border-baratheon",
         greyjoy: "border-greyjoy",
@@ -16,8 +16,8 @@ export const Card = ({ children, card, orientation = defaultOrientation(card), s
         stark: "border-stark",
         targaryen: "border-targaryen",
         tyrell: "border-tyrell",
-        neutral: "border-neutral",
-    }
+        neutral: "border-neutral"
+    };
     const width = 240;
     const height = 333;
 
@@ -28,12 +28,12 @@ export const Card = ({ children, card, orientation = defaultOrientation(card), s
 
     const rotate = orientation !== defaultOrientation(card);
 
-    const innerClassName = classNames("bg-white text-black font-opensans", factionBorder[card.faction], 
+    const innerClassName = classNames("bg-white text-black font-opensans", factionBorder[card.faction],
         {
             "origin-top-left": scale !== 1 || rotate,
-            "relative rotate-270 top-full": rotate,
+            "relative rotate-270 top-full": rotate
         },
-        className)
+        className);
 
     return (
         <div style={{
@@ -46,7 +46,7 @@ export const Card = ({ children, card, orientation = defaultOrientation(card), s
                     width: px(innerWidth),
                     height: px(innerHeight),
                     borderWidth: px(12),
-                    borderRadius: px(12),
+                    ...(rounded && { borderRadius: px(12) }),
                     ...(scale !== 1 && { scale }),
                     ...style
                 }}
@@ -56,14 +56,14 @@ export const Card = ({ children, card, orientation = defaultOrientation(card), s
         </div>
     );
 };
-type CardProps = BaseElementProps & { card: JsonRenderableCard, orientation?: "vertical" | "horizontal", scale?: number };
+type CardProps = BaseElementProps & { card: JsonRenderableCard, orientation?: "vertical" | "horizontal", scale?: number, rounded?: boolean };
 
 
 export const Type = ({ children: type, className, style }: TypeProps) => {
     return (
-    <div className={classNames("relative", className)} style={{ top: px(-5), left: px(2), fontSize: px(8), ...style }}>
-        {type}
-    </div>
+        <div className={classNames("relative", className)} style={{ top: px(-5), left: px(2), fontSize: px(8), ...style }}>
+            {type}
+        </div>
     );
 };
 type TypeProps = Omit<BaseElementProps, "children"> & { children: string };
@@ -94,17 +94,17 @@ type CostProps = Omit<BaseElementProps, "children"> & { children: number | "X" |
 export const ChallengeIcons = ({ children: icons, className, style }: ChallengeIconsProps) => {
     return (
         <div className={classNames("grow flex flex-col", className)} style={style}>
-        {challengeIcons.map((icon) =>
-            <span key={icon} className="grow flex flex-col justify-center items-center">
-                <ThronesIcon
-                    name={icon as ChallengeIcon}
-                    className="h-1/3"
-                    style={{ fontSize: px(20) }}
-                    visible={icons.includes(icon)}
-                />
-            </span>
-        )}
-    </div>
+            {challengeIcons.map((icon) =>
+                <span key={icon} className="grow flex flex-col justify-center items-center">
+                    <ThronesIcon
+                        name={icon as ChallengeIcon}
+                        className="h-1/3 flex justify-center items-center"
+                        style={{ fontSize: px(20) }}
+                        visible={icons.includes(icon)}
+                    />
+                </span>
+            )}
+        </div>
     );
 };
 type ChallengeIconsProps = Omit<BaseElementProps, "children"> & { children: ChallengeIcon[] };
@@ -139,12 +139,12 @@ type StrengthProps = Omit<BaseElementProps, "children"> & { children: number | "
 export const Name = ({ unique, height, children: name, className, style }: NameProps) => {
     return (
         <AutoSize height={height ?? 35} className={classNames("text-center flex items-center justify-center", className)} style={{
-                fontSize: px(14),
-                paddingLeft: px(2),
-                paddingRight: px(2),
-                gap: px(2),
-                ...style
-            }}
+            fontSize: px(14),
+            paddingLeft: px(2),
+            paddingRight: px(2),
+            gap: px(2),
+            ...style
+        }}
         >
             {unique && <ThronesIcon name="unique"/>}
             <span className="flex items-center justify-center">{name}</span>
@@ -198,12 +198,12 @@ export const Ability = ({ children: text, className, style }: AbilityProps) => {
             // If any plot modifiers are detected, create the plot-modifiers class...
             .replace(/\n*((?:\s*[+-]\d+ (?:Income|Initiative|Claim|Reserve)\.?\s*)+)/gi, "<plotModifiers>$1</plotModifiers>")
             // ...and wrap each plot modifier in a span within that class
-            .replace(/\s*([+-])(\d+) (Income|Initiative|Claim|Reserve)\.?\s*/gi, (_: string, modifier: string, value: string, plotStat: string) => `<plotModifier name=\"${plotStat.toLowerCase()}\" modifier=\"${modifier}\">${value}</plotModifier>`)
+            .replace(/\s*([+-])(\d+) (Income|Initiative|Claim|Reserve)\.?\s*/gi, (_: string, modifier: string, value: string, plotStat: string) => `<plotModifier name="${plotStat.toLowerCase()}" modifier="${modifier}">${value}</plotModifier>`)
             // If any lists are detected, create the ul...
             .replace(/(<br>-\s*.*\.)/g, "<ul>$1</ul>")
             // ... and wrap each line in li
-            .replace(/<br>-\s*(.*?\.)(?=<br>|<\/ul>)/g, "<li>$1</li>")
-        
+            .replace(/<br>-\s*(.*?\.)(?=<br>|<\/ul>)/g, "<li>$1</li>");
+
         const parser = new DOMParser();
         const body = parser.parseFromString(raw, "text/html").body;
 
@@ -217,32 +217,32 @@ export const Ability = ({ children: text, className, style }: AbilityProps) => {
 
                 switch (el.tagName.toLowerCase()) {
                     case "p":
-                        return <span key={key}>{children}</span>
+                        return <span key={key}>{children}</span>;
                     case "b":
-                        return <b key={key} className="font-bold">{children}</b>
+                        return <b key={key} className="font-bold">{children}</b>;
                     case "i":
-                        return <i key={key} className="italic font-bold">{children}</i>
+                        return <i key={key} className="italic font-bold">{children}</i>;
                     case "ul":
-                        return <ul key={key} style={{ marginBlockStart: em(0.25), marginBlockEnd: em(0.25), paddingInlineStart: em(2) }}>{children}</ul>
+                        return <ul key={key} style={{ marginBlockStart: em(0.25), marginBlockEnd: em(0.25), paddingInlineStart: em(2) }}>{children}</ul>;
                     case "li":
-                        return <li key={key} style={{ paddingTop: em(0.1), paddingBottom: em(0.1) }}>{children}</li>
+                        return <li key={key} style={{ paddingTop: em(0.1), paddingBottom: em(0.1) }}>{children}</li>;
                     case "icon":
                         return <ThronesIcon key={key} name={el.getAttribute("name") as Icon} />;
                     case "plotmodifiers":
-                        return <div key={key} className="flex justify-center items-center" style={{ gap: em(0.25) }}>{children}</div>
+                        return <div key={key} className="flex justify-center items-center" style={{ gap: em(0.25) }}>{children}</div>;
                     case "plotmodifier":
-                        return <PlotModifier key={key} type={el.getAttribute("name") as PlotStatType} modifier={el.getAttribute("modifier") as "+" | "-"} inline={true}>{parseInt(children[0] as string) as number}</PlotModifier>
+                        return <PlotModifier key={key} type={el.getAttribute("name") as PlotStatType} modifier={el.getAttribute("modifier") as "+" | "-"} inline={true}>{parseInt(children[0] as string) as number}</PlotModifier>;
                     default:
-                        return <span key={key}>{children}</span>
+                        return <span key={key}>{children}</span>;
                 }
             }
             return null;
-        }
+        };
         return body ? Array.from(body.childNodes).map((node, i) => transformNode(node, i)) : [];
     };
-    return <div className={classNames("flex flex-col", className)} style={{ gap: em(0.25), ...style}}>
+    return <div className={classNames("flex flex-col", className)} style={{ gap: em(0.25), ...style }}>
         {convertToHtml(text)}
-    </div>
+    </div>;
 };
 type AbilityProps = Omit<BaseElementProps, "children"> & { children: string };
 
@@ -266,7 +266,7 @@ type PlotModifierProps = Omit<BaseElementProps, "children"> & { type: PlotStatTy
 
 export const PlotStat = ({ className, style, type, children: value }: PlotStatProps) => {
     const getStatDetails = (): { background: string, clipPath: string } => {
-        switch(type) {
+        switch (type) {
             case "income":
                 return { background: "bg-income", clipPath: "circle(50%)" };
             case "initiative":
@@ -276,25 +276,25 @@ export const PlotStat = ({ className, style, type, children: value }: PlotStatPr
             case "reserve":
                 return { background: "bg-reserve", clipPath: "polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%)" };
         }
-    }
+    };
     const { background, clipPath } = getStatDetails();
 
     return (
-    <AutoSize
-        height={30}
-        className={classNames("relative text-center font-opensans", background, className)}
-        style={{ 
-            width: px(30),
-            lineHeight: 1.35,
-            padding: em(0.2),
-            fontSize: px(18),
-            clipPath, ...style
-        }}
-    >
-        {value}
-    </AutoSize>
+        <AutoSize
+            height={30}
+            className={classNames("relative text-center font-opensans", background, className)}
+            style={{
+                width: px(30),
+                lineHeight: 1.35,
+                padding: em(0.2),
+                fontSize: px(18),
+                clipPath, ...style
+            }}
+        >
+            {value}
+        </AutoSize>
     );
-}
+};
 type PlotStatProps = Omit<BaseElementProps, "children"> & { type: PlotStatType, children: number | "X" | `${"+" | "-"}${number | "X"}` }
 
 export const DeckLimit = ({ type, alignment = "left", children: limit, className, style }: DeckLimitProps) => {
@@ -306,8 +306,8 @@ export const DeckLimit = ({ type, alignment = "left", children: limit, className
         <div className={classNames("text-center", { "rotate-180": alignment === "left" }, className)} style={{ fontSize: px(8), padding: px(5), writingMode: "vertical-rl", ...style }}>
             {`Deck Limit: ${limit}`}
         </div>
-    )
-}
+    );
+};
 type DeckLimitProps = Omit<BaseElementProps, "children"> & { type: TypeType, alignment?: "left" | "right", children: number };
 
 

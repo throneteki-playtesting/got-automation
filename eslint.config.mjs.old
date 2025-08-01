@@ -1,8 +1,8 @@
-import typescriptPlugin from "@typescript-eslint/eslint-plugin";
+import js from "@eslint/js";
+import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,17 +15,19 @@ const compat = new FlatCompat({
 
 export default [
     {
-        ignores: ["**/node_modules", "**/dist", "**/*.js"]
+        ignores: ["**/node_modules", "**/dist"]
     }, ...compat.extends(
         "eslint:recommended",
         "plugin:@typescript-eslint/eslint-recommended",
         "plugin:@typescript-eslint/recommended"
     ), {
-        plugins: {
-            "@typescript-eslint": typescriptPlugin
-        },
+        files: ["**/*.{ts,js}"],
         languageOptions: {
-            parser: tsParser
+            parser: tsParser,
+            parserOptions: { ecmaVersion: 2022, sourceType: "module" }
+        },
+        plugins: {
+            "@typescript-eslint": tsPlugin
         },
         rules: {
             "arrow-spacing": ["warn", {
@@ -77,9 +79,5 @@ export default [
             "space-unary-ops": "error",
             yoda: "error"
         }
-    },
-    {
-        files: ["**/*.js"],
-        rules: js.configs.recommended.rules
     }
 ];

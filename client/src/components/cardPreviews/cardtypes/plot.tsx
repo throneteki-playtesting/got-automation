@@ -37,7 +37,7 @@ const Plot = ({ card, scale, orientation = "horizontal" }: PlotComponentProps) =
             </TextBox>
         </Card>
     );
-}
+};
 type PlotComponentProps = CardComponentProps
 
 export default Plot;

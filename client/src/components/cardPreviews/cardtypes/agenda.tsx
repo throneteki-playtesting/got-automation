@@ -24,6 +24,6 @@ const Agenda = ({ card, scale, orientation }: CardComponentProps) => {
             </TextBox>
         </Card>
     );
-}
+};
 
 export default Agenda;

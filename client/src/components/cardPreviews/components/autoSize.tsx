@@ -3,7 +3,7 @@ import { px } from "../../../utilities";
 
 const AutoSize = ({ children, className, style, height, rate = 0.01, minimum = 0.4 }: AutoSizeProps) => {
     const contentRef = useRef<HTMLDivElement>(null);
-    let dependencies = Array.isArray(children) ? children as [] : [children];
+    const dependencies = Array.isArray(children) ? children as [] : [children];
 
     useEffect(() => {
         const content = contentRef.current;
@@ -37,14 +37,15 @@ const AutoSize = ({ children, className, style, height, rate = 0.01, minimum = 0
             multiplier -= rate;
             shrink(content);
         }
-    }, dependencies);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [...dependencies, minimum, rate]);
 
     return (
         <div ref={contentRef} className={className} style={{ ...style, height: px(height) }}>
             {children}
         </div>
-    )
-}
+    );
+};
 type AutoSizeProps = {
     children?: React.ReactNode | React.ReactNode[],
     className?: string,

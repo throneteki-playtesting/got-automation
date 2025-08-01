@@ -25,14 +25,14 @@ const ThronesIcon = ({ name, className, style, visible = true }: IconProps) => {
         event: "\ue610",
         plot: "\ue60c",
         agenda: "\ue611"
-    }
+    };
 
     return (
-        <span className={classNames("flex justify-center items-center font-thronesdb leading-none", className, { invisible: !visible, "leading-relaxed": name === "unique" })} style={style}>
+        <span className={classNames("font-thronesdb leading-none", className, { invisible: !visible, "leading-relaxed": name === "unique" })} style={style}>
             {icons[name]}
         </span>
-    )
-}
+    );
+};
 
 export type Icon = Faction | ChallengeIcon | "unique" | Type;
 

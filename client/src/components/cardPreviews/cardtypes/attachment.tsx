@@ -36,6 +36,6 @@ const Attachment = ({ card, scale, orientation }: CardComponentProps) => {
             </div>
         </Card>
     );
-}
+};
 
 export default Attachment;

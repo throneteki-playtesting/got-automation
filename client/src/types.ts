@@ -1,5 +1,5 @@
 import { JsonRenderableCard } from "common/models/cards";
-import { CSSProperties } from "react"
+import { CSSProperties } from "react";
 
 export type BaseElementProps = {
     children?: React.ReactNode | React.ReactNode[],

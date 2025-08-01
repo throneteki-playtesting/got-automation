@@ -39,6 +39,6 @@ const Character = ({ card, scale, orientation }: CardComponentProps) => {
             </TextBox>
         </Card>
     );
-}
+};
 
 export default Character;

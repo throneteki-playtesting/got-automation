@@ -36,6 +36,6 @@ const Event = ({ card, scale, orientation }: CardComponentProps) => {
             </TextBox>
         </Card>
     );
-}
+};
 
 export default Event;

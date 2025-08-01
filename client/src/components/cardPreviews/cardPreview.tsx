@@ -8,7 +8,7 @@ import Agenda from "./cardtypes/agenda";
 
 const CardPreview = ({ card, scale, orientation }: CardPreviewProps) => {
     const getComponentFor = (card: JsonRenderableCard) => {
-        switch(card.type) {
+        switch (card.type) {
             case "character":
                 return Character;
             case "location":
@@ -22,11 +22,11 @@ const CardPreview = ({ card, scale, orientation }: CardPreviewProps) => {
             case "agenda":
                 return Agenda;
         }
-    }
-    
+    };
+
     const CardComponent = getComponentFor(card);
-    return <CardComponent card={card} scale={scale} orientation={orientation}/>
-}
+    return <CardComponent card={card} scale={scale} orientation={orientation}/>;
+};
 export type CardPreviewProps = {
     card: JsonRenderableCard,
     scale?: number,
