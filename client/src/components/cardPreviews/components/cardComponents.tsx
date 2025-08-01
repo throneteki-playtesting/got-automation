@@ -249,7 +249,7 @@ type AbilityProps = Omit<BaseElementProps, "children"> & { children: string };
 
 export const Designer = ({ children: designer, className, style }: DesignerProps) => {
     return (
-        (designer && <div className={classNames("font-bold", className)} style={{ fontSize: px(11), paddingTop: em(0.25), ...style }}>
+        (designer && <div className={classNames("font-bold", className)} style={{ fontSize: px(11), paddingTop: em(0.5), ...style }}>
             {designer}
         </div>)
     );
