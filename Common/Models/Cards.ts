@@ -5,10 +5,14 @@ export const factions = ["baratheon", "greyjoy", "lannister", "martell", "thenig
 export const types = ["character", "location", "attachment", "event", "plot", "agenda"] as const;
 export const noteTypes = ["replaced", "reworked", "updated", "implemented"] as const;
 export const githubStatuses = ["open", "closed", "complete"] as const;
+export const challengeIcons = ["military", "intrigue", "power"] as const;
+export const plotStats = ["income", "initiative", "claim", "reserve"] as const;
 export type Faction = typeof factions[number];
 export type Type = typeof types[number];
 export type NoteType = typeof noteTypes[number];
 export type GithubStatus = typeof githubStatuses[number];
+export type ChallengeIcon = typeof challengeIcons[number];
+export type PlotStat = typeof plotStats[number];
 
 export type Code = `${Projects.Code}${number}`;
 
