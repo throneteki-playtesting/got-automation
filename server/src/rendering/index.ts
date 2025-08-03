@@ -10,6 +10,7 @@ import PlaytestingCard from "@/data/models/cards/playtestingCard";
 import RenderedCard from "@/data/models/cards/renderedCard";
 import CardCollection from "@/data/models/cards/cardCollection";
 import { logger } from "@/services";
+import { asArray, asSingle } from "common/utils";
 
 export type RenderType = "single" | "batch";
 type RenderHtmlOptions = { copies?: number, perPage?: number, includeCSS?: boolean, includeJS?: boolean };
@@ -106,7 +107,7 @@ class RenderingService {
     }
 
     public async asPDF(data: RenderedCard | RenderedCard[], options? : { copies: number, perPage: number }) {
-        const cards = Array.isArray(data) ? data as [] : [data];
+        const cards = asArray(data);
         if (cards.length === 0) {
             throw Error("Cannot render PDF with no cards");
         }
@@ -128,11 +129,11 @@ class RenderingService {
     public async asHtml(mode: RenderType, cards: RenderedCard | RenderedCard[], options?: RenderHtmlOptions) {
         switch (mode) {
             case "single":
-                const single = Array.isArray(cards) ? cards[0] : cards as RenderedCard;
+                const single = asSingle(cards);
                 options = { ...{ includeCSS: false, includeJS: false }, ...options };
                 return RenderingService.renderTemplate({ type: mode, card: this.prepareCard(single), ...options });
             case "batch":
-                const batch = Array.isArray(cards) ? cards : [cards];
+                const batch = asArray(cards);
                 options = { ... { includeCSS: false, includeJS: false, copies: 3, perPage: 9 }, ...options };
                 return RenderingService.renderTemplate({ type: mode, cards: batch.map((card) => this.prepareCard(card)), ...options });
         }

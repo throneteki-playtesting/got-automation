@@ -28,7 +28,8 @@ export default tseslint.config(
                 "warn",
                 { allowConstantExport: true }
             ],
-            "no-unused-vars": ["error", { vars: "all", args: "after-used", ignoreRestSiblings: false }],
+            "no-unused-vars": "off",
+            "@typescript-eslint/no-unused-vars": "warn",
             "arrow-spacing": ["warn", {
                 before: true,
                 after: true

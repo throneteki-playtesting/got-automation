@@ -1,7 +1,7 @@
 import { MongoClient } from "mongodb";
 import { IRepository } from "..";
 import { dataService, logger, renderService } from "@/services";
-import { groupBy } from "common/utils";
+import { asArray, groupBy } from "common/utils";
 import * as CardsController from "gas/controllers/cardsController";
 import { CardSheet } from "gas/spreadsheets/serializers/cardSerializer";
 import MongoDataSource from "./dataSources/mongoDataSource";
@@ -54,7 +54,7 @@ class CardMongoDataSource extends MongoDataSource<JsonPlaytestingCard> {
     }
 
     public async create(creating: JsonPlaytestingCard | JsonPlaytestingCard[]) {
-        const cards = Array.isArray(creating) ? creating : [creating];
+        const cards = asArray(creating);
         if (cards.length === 0) {
             return [];
         }
@@ -76,7 +76,7 @@ class CardMongoDataSource extends MongoDataSource<JsonPlaytestingCard> {
     }
 
     public async update(updating: JsonPlaytestingCard | JsonPlaytestingCard[], { upsert }: { upsert: boolean } = { upsert: true }) {
-        const cards = Array.isArray(updating) ? updating : [updating];
+        const cards = asArray(updating);
         if (cards.length === 0) {
             return [];
         }
@@ -111,7 +111,7 @@ class CardMongoDataSource extends MongoDataSource<JsonPlaytestingCard> {
 
 class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
     public async create(creating: JsonPlaytestingCard | JsonPlaytestingCard[]) {
-        const cards = Array.isArray(creating) ? creating : [creating];
+        const cards = asArray(creating);
         const groups = groupBy(cards, (card) => card.project);
 
         const created: JsonPlaytestingCard[] = [];
@@ -128,7 +128,7 @@ class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
     }
 
     public async read(reading?: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
-        const cards = Array.isArray(reading) ? reading : [reading];
+        const cards = asArray(reading);
         const groups = groupBy(cards, (card) => card.project);
         // If no project is specified, read that from all active projects
         if (groups.has(undefined)) {
@@ -153,7 +153,7 @@ class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
     }
 
     public async update(updating: JsonPlaytestingCard | JsonPlaytestingCard[], { upsert = true, sheets }: { upsert?: boolean; sheets?: CardSheet[] } = {}) {
-        const cards = Array.isArray(updating) ? updating : [updating];
+        const cards = asArray(updating);
         const groups = groupBy(cards, (card) => card.project);
         const updated: JsonPlaytestingCard[] = [];
         for (const [pNumber, pCards] of groups.entries()) {
@@ -170,7 +170,7 @@ class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
     }
 
     public async destroy(destroying: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
-        const cards = Array.isArray(destroying) ? destroying : [destroying];
+        const cards = asArray(destroying);
         const groups = groupBy(cards, (card) => card.project);
         // If no project is specified, read that from all active projects
         if (groups.has(undefined)) {

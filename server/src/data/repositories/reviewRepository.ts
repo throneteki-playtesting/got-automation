@@ -4,7 +4,7 @@ import { IRepository } from "..";
 import { dataService, logger } from "@/services";
 import Review from "../models/review";
 import { JsonPlaytestingReview } from "common/models/reviews";
-import { groupBy } from "common/utils";
+import { asArray, groupBy } from "common/utils";
 import * as ReviewsController from "gas/controllers/reviewsController";
 import GASDataSource from "./dataSources/GASDataSource";
 import { JsonPlaytestingCard } from "common/models/cards";
@@ -52,7 +52,7 @@ class ReviewMongoDataSource extends MongoDataSource<JsonPlaytestingReview> {
         super(client, "reviews");
     }
     public async create(creating: JsonPlaytestingReview | JsonPlaytestingReview[]) {
-        const reviews = Array.isArray(creating) ? creating : [creating];
+        const reviews = asArray(creating);
         if (reviews.length === 0) {
             return [];
         }
@@ -72,7 +72,7 @@ class ReviewMongoDataSource extends MongoDataSource<JsonPlaytestingReview> {
     }
 
     public async update(updating: JsonPlaytestingReview | JsonPlaytestingReview[], { upsert }: { upsert: boolean } = { upsert: true }) {
-        const reviews = Array.isArray(updating) ? updating : [updating];
+        const reviews = asArray(updating);
         if (reviews.length === 0) {
             return [];
         }
@@ -106,7 +106,7 @@ class ReviewMongoDataSource extends MongoDataSource<JsonPlaytestingReview> {
 
 class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
     public async create(creating: JsonPlaytestingReview | JsonPlaytestingReview[]) {
-        const reviews = Array.isArray(creating) ? creating : [creating];
+        const reviews = asArray(creating);
         const groups = groupBy(reviews, (review) => review.project);
 
         const created: JsonPlaytestingReview[] = [];
@@ -123,7 +123,7 @@ class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
     }
 
     public async read(reading?: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[]) {
-        const reviews = Array.isArray(reading) ? reading : [reading];
+        const reviews = asArray(reading);
         const groups = groupBy(reviews, (review) => review.project);
         // If no project is specified, read that from all active projects
         if (groups.has(undefined)) {
@@ -149,7 +149,7 @@ class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
     }
 
     public async update(updating: JsonPlaytestingReview | JsonPlaytestingReview[], { upsert = true }: { upsert?: boolean } = {}) {
-        const reviews = Array.isArray(updating) ? updating : [updating];
+        const reviews = asArray(updating);
         const groups = groupBy(reviews, (review) => review.project);
         const updated: JsonPlaytestingReview[] = [];
         for (const [pNumber, pReviews] of groups.entries()) {
@@ -166,7 +166,7 @@ class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
     }
 
     public async destroy(destroying: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[]) {
-        const reviews = Array.isArray(destroying) ? destroying : [destroying];
+        const reviews = asArray(destroying);
         const groups = groupBy(reviews, (review) => review.project);
         // If no project is specified, read that from all active projects
         if (groups.has(undefined)) {

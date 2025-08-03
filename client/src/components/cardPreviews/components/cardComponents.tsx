@@ -196,13 +196,14 @@ export const Ability = ({ children: text, className, style }: AbilityProps) => {
             .replace(/(?<=\n?)([^\n]+)(?=\n?)/g, "<p>$1</p>")
             .replace(/\[([^\]]+)\]/g, "<icon name=\"$1\"></icon>")
             // If any plot modifiers are detected, create the plot-modifiers class...
-            .replace(/\n*((?:\s*[+-]\d+ (?:Income|Initiative|Claim|Reserve)\.?\s*)+)/gi, "<plotModifiers>$1</plotModifiers>")
+            .replace(/<p>((?:\s*[+-]\d+ (?:Income|Initiative|Claim|Reserve)\.?\s*)+)<\/p>/gi, "<plotModifiers>$1</plotModifiers>")
             // ...and wrap each plot modifier in a span within that class
             .replace(/\s*([+-])(\d+) (Income|Initiative|Claim|Reserve)\.?\s*/gi, (_: string, modifier: string, value: string, plotStat: string) => `<plotModifier name="${plotStat.toLowerCase()}" modifier="${modifier}">${value}</plotModifier>`)
             // If any lists are detected, create the ul...
-            .replace(/(<br>-\s*.*\.)/g, "<ul>$1</ul>")
+            .replace(/<p>(-\s*.*\.)<\/p>/g, "<ul>$1</ul>")
             // ... and wrap each line in li
-            .replace(/<br>-\s*(.*?\.)(?=<br>|<\/ul>)/g, "<li>$1</li>");
+            .replace(/<p>-\s*(.*?\.)(?=<br>|<\/ul><\/p>)/g, "<li>$1</li>")
+            .replace(/\n/g, "");
 
         const parser = new DOMParser();
         const body = parser.parseFromString(raw, "text/html").body;
@@ -229,7 +230,7 @@ export const Ability = ({ children: text, className, style }: AbilityProps) => {
                     case "icon":
                         return <ThronesIcon key={key} name={el.getAttribute("name") as Icon} />;
                     case "plotmodifiers":
-                        return <div key={key} className="flex justify-center items-center" style={{ gap: em(0.25) }}>{children}</div>;
+                        return <div key={key} className="grow flex justify-center items-center" style={{ gap: em(0.25) }}>{children}</div>;
                     case "plotmodifier":
                         return <PlotModifier key={key} type={el.getAttribute("name") as PlotStatType} modifier={el.getAttribute("modifier") as "+" | "-"} inline={true}>{parseInt(children[0] as string) as number}</PlotModifier>;
                     default:
@@ -240,7 +241,7 @@ export const Ability = ({ children: text, className, style }: AbilityProps) => {
         };
         return body ? Array.from(body.childNodes).map((node, i) => transformNode(node, i)) : [];
     };
-    return <div className={classNames("flex flex-col", className)} style={{ gap: em(0.25), ...style }}>
+    return <div className={classNames("grow flex flex-col", className)} style={{ gap: em(0.25), ...style }}>
         {convertToHtml(text)}
     </div>;
 };
@@ -249,7 +250,7 @@ type AbilityProps = Omit<BaseElementProps, "children"> & { children: string };
 
 export const Designer = ({ children: designer, className, style }: DesignerProps) => {
     return (
-        (designer && <div className={classNames("font-bold", className)} style={{ fontSize: px(11), paddingTop: em(0.5), ...style }}>
+        (designer && <div className={classNames("grow font-bold", className)} style={{ fontSize: px(11), paddingTop: em(0.5), ...style }}>
             {designer}
         </div>)
     );
@@ -286,7 +287,7 @@ export const PlotStat = ({ className, style, type, children: value }: PlotStatPr
             style={{
                 width: px(30),
                 lineHeight: 1.35,
-                padding: em(0.2),
+                padding: em(0.15),
                 fontSize: px(18),
                 clipPath, ...style
             }}

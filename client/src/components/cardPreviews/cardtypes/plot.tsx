@@ -3,9 +3,9 @@ import AutoSize from "../components/autoSize";
 import { px } from "../../../utilities";
 import { CardComponentProps } from "../../../types";
 
-const Plot = ({ card, scale, orientation = "horizontal" }: PlotComponentProps) => {
+const Plot = ({ card, scale, orientation, rounded, className, style }: PlotComponentProps) => {
     return (
-        <Card scale={scale} card={card} orientation={orientation}>
+        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} style={style}>
             <div className="flex flex-row items-center" style={{ height: px(40) }}>
                 <div className="flex items-center justify-center gap-1" style={{ width: px(110) }}>
                     <PlotStat type="income">{card.plotStats!.income}</PlotStat>
@@ -30,7 +30,7 @@ const Plot = ({ card, scale, orientation = "horizontal" }: PlotComponentProps) =
             </div>
             <TextBox style={{ paddingBottom: px(0) }}>
                 <Traits>{card.traits}</Traits>
-                <AutoSize height={60}>
+                <AutoSize height={60} className="flex flex-col">
                     <Ability>{card.text}</Ability>
                     <Designer>{card.designer}</Designer>
                 </AutoSize>

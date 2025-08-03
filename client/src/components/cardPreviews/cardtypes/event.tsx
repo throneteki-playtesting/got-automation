@@ -2,10 +2,11 @@ import { Ability, Card, Cost, DeckLimit, Designer, Faction, Loyalty, Name, TextB
 import AutoSize from "../components/autoSize";
 import { px } from "../../../utilities";
 import { CardComponentProps } from "../../../types";
+import classNames from "classnames";
 
-const Event = ({ card, scale, orientation }: CardComponentProps) => {
+const Event = ({ card, scale, orientation, rounded, className, style }: CardComponentProps) => {
     return (
-        <Card scale={scale} card={card} orientation={orientation} className="flex flex-col">
+        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={classNames("flex flex-col", className)} style={style}>
             <div className="grow flex">
                 <div className="flex flex-col" style={{ width: px(35) }}>
                     <Cost>{card.cost!}</Cost>
@@ -29,7 +30,7 @@ const Event = ({ card, scale, orientation }: CardComponentProps) => {
             </div>
             <TextBox>
                 <Traits>{card.traits}</Traits>
-                <AutoSize height={130}>
+                <AutoSize height={130} className="flex flex-col">
                     <Ability>{card.text}</Ability>
                     <Designer>{card.designer}</Designer>
                 </AutoSize>

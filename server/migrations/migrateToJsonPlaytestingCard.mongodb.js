@@ -40,10 +40,15 @@ cards.find({}).forEach(card => {
         delete card.projectId;
     }
 
-    // 5. Replace _id with new ObjectId
+    // 5. Clean \r from card text
+    if (card.text) {
+        card.text = card.text.replace("\r", "");
+    }
+
+    // 6. Replace _id with new ObjectId
     const newId = new ObjectId();
 
-    // 6. Apply update
+    // 7. Apply update
     cards.deleteOne({ _id: card._id });
     const { project, ...other } = card;
     cards.insertOne({

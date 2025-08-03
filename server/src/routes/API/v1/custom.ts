@@ -5,6 +5,7 @@ import { renderService } from "@/services";
 import * as Schemas from "@/data/schemas";
 import { JsonRenderableCard } from "common/models/cards";
 import RenderedCard from "@/data/models/cards/renderedCard";
+import { asArray } from "common/utils";
 
 export type ResourceFormat = "JSON" | "HTML" | "TXT" | "PNG" | "PDF";
 
@@ -21,7 +22,7 @@ router.post("/", celebrate({
     const { format } = req.query;
     const body = req.body;
 
-    const cards = Array.isArray(body) ? body.map((b) => new RenderedCard(b)) as [] : [new RenderedCard(body)];
+    const cards = asArray(body).map((card) => new RenderedCard(card));
 
     switch (format) {
         case "JSON": {

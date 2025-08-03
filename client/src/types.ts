@@ -7,8 +7,9 @@ export type BaseElementProps = {
     style?: CSSProperties
 }
 
-export type CardComponentProps = {
+export type CardComponentProps = Omit<BaseElementProps, "children"> & {
     card: JsonRenderableCard,
     scale?: number,
-    orientation?: "horizontal" | "vertical"
+    orientation?: "horizontal" | "vertical",
+    rounded?: boolean
 };

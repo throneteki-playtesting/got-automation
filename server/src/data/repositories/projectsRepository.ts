@@ -4,6 +4,7 @@ import { JsonProject } from "common/models/projects";
 import MongoDataSource from "./dataSources/mongoDataSource";
 import { MongoClient } from "mongodb";
 import Project from "../models/project";
+import { asArray } from "common/utils";
 
 export default class ProjectsRepository implements IRepository<JsonProject> {
     public database: ProjectDataSource;
@@ -37,7 +38,7 @@ class ProjectDataSource extends MongoDataSource<JsonProject> {
     }
 
     public async create(creating: JsonProject | JsonProject[]) {
-        const projects = Array.isArray(creating) ? creating : [creating];
+        const projects = asArray(creating);
         if (projects.length === 0) {
             return [];
         }
@@ -58,7 +59,7 @@ class ProjectDataSource extends MongoDataSource<JsonProject> {
     }
 
     public async update(updating: JsonProject | JsonProject[], { upsert }: { upsert: boolean } = { upsert: true }) {
-        const projects = Array.isArray(updating) ? updating : [updating];
+        const projects = asArray(updating);
         if (projects.length === 0) {
             return [];
         }

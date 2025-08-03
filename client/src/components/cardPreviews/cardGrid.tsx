@@ -7,7 +7,7 @@ const CardGrid = ({ children: cards, className, style, scale }: CardPreviewProps
     return (
         <div className={classNames("flex flex-wrap", className)} style={style}>
             {cards.map((card, index) => {
-                return <CardPreview key={index} card={card} scale={scale} orientation="vertical" />;
+                return <CardPreview key={index} card={card} scale={scale} orientation="vertical" rounded={false} />;
             })}
         </div>
     );

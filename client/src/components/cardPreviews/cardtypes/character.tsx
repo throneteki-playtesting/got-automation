@@ -3,10 +3,11 @@ import { Ability, Card, ChallengeIcons, Cost, DeckLimit, Designer, Faction, Loya
 import AutoSize from "../components/autoSize";
 import { px } from "../../../utilities";
 import { CardComponentProps } from "../../../types";
+import classNames from "classnames";
 
-const Character = ({ card, scale, orientation }: CardComponentProps) => {
+const Character = ({ card, scale, orientation, rounded, className, style }: CardComponentProps) => {
     return (
-        <Card scale={scale} card={card} orientation={orientation} className="flex flex-col">
+        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={classNames("flex flex-col", className)} style={style}>
             <div className="flex grow">
                 <div className="flex relative flex-col" style={{ width: px(35) }}>
                     <Cost>{card.cost!}</Cost>
@@ -32,7 +33,7 @@ const Character = ({ card, scale, orientation }: CardComponentProps) => {
             </div>
             <TextBox>
                 <Traits>{card.traits}</Traits>
-                <AutoSize height={95}>
+                <AutoSize height={95} className="flex flex-col">
                     <Ability>{card.text}</Ability>
                     <Designer>{card.designer}</Designer>
                 </AutoSize>

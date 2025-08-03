@@ -5,6 +5,7 @@ import { dataService, discordService } from "@/services";
 import ReviewThreads from "@/discord/reviewThreads";
 import * as Schemas from "@/data/schemas";
 import { JsonPlaytestingReview } from "common/models/reviews";
+import { asArray } from "common/utils";
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ router.post("/", celebrate({
     const allUpdated = [];
     const allFailed = [];
 
-    const reviews = Array.isArray(body) ? body as [] : [body];
+    const reviews = asArray(body);
     const guilds = await discordService.getGuilds();
     for (const guild of guilds) {
         const { created, updated, failed } = await ReviewThreads.sync(guild, true, ...reviews);

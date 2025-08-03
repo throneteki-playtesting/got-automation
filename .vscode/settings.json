@@ -8,6 +8,11 @@
     "html.validate.scripts": false,
     "html.validate.styles": false,
     "typescript.tsserver.experimental.enableProjectDiagnostics": true,
-    "eslint.validate": ["javascript", "typescript"],
-    "eslint.useFlatConfig": true
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+    "eslint.useFlatConfig": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
 }

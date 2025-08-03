@@ -2,10 +2,11 @@ import { Ability, Card, Cost, DeckLimit, Designer, Faction, Loyalty, Name, TextB
 import AutoSize from "../components/autoSize";
 import { px } from "../../../utilities";
 import { CardComponentProps } from "../../../types";
+import classNames from "classnames";
 
-const Attachment = ({ card, scale, orientation }: CardComponentProps) => {
+const Attachment = ({ card, scale, orientation, rounded, className, style }: CardComponentProps) => {
     return (
-        <Card scale={scale} card={card} orientation={orientation} className="flex flex-col">
+        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={classNames("flex flex-col", className)} style={style}>
             <div className="flex grow">
                 <div className="flex flex-col" style={{ width: px(35) }}>
                     <Cost>{card.cost!}</Cost>
@@ -17,7 +18,7 @@ const Attachment = ({ card, scale, orientation }: CardComponentProps) => {
             <div className="flex flex-col items-end">
                 <TextBox>
                     <Traits>{card.traits}</Traits>
-                    <AutoSize height={90}>
+                    <AutoSize height={90} className="flex flex-col">
                         <Ability>{card.text}</Ability>
                         <Designer>{card.designer}</Designer>
                     </AutoSize>

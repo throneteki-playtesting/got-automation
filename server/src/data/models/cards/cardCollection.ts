@@ -1,6 +1,6 @@
 import * as Ver from "semver";
 import PlaytestingCard from "./playtestingCard";
-import { SemanticVersion } from "common/utils";
+import { pushSorted, SemanticVersion } from "common/utils";
 import { JsonPlaytestingCard } from "common/models/cards";
 
 /**
@@ -17,9 +17,10 @@ class CardCollection implements CardNumberCollection {
 
     constructor(jsonCards: JsonPlaytestingCard[]) {
         const nMap = new Map<number, CardVersionCollection>();
+        const compareFn = (a: PlaytestingCard, b: PlaytestingCard) => a.project - b.project || a.number - b.number || Ver.compare(a.version, b.version);
         for (const jsonCard of jsonCards) {
             const card = new PlaytestingCard(jsonCard);
-            this.all.push(card);
+            pushSorted(this.all, card, compareFn);
 
             const { number, version } = card;
             let vCollection = nMap.get(number);
@@ -31,7 +32,7 @@ class CardCollection implements CardNumberCollection {
                 nMap.set(number, vCollection);
             }
 
-            vCollection.all.push(card);
+            pushSorted(vCollection.all, card, compareFn);
             vCollection[version] = card;
 
             if (Ver.gt(card.version, vCollection.latest.version)) {
@@ -50,16 +51,16 @@ class CardCollection implements CardNumberCollection {
             this[number] = vCollection;
             const { latest, draft } = vCollection;
 
-            this.latest.push(latest);
+            pushSorted(this.latest, latest, compareFn);
 
             if (draft) {
-                this.draft.push(draft);
+                pushSorted(this.draft, draft, compareFn);
             }
 
             // Set playtesting on both number & version collections as we now know the actual latests
             if (latest.playtesting && vCollection[latest.playtesting]) {
                 vCollection.playtesting = vCollection[latest.playtesting];
-                this.playtesting.push(vCollection[latest.playtesting]);
+                pushSorted(this.playtesting, vCollection[latest.playtesting], compareFn);
             }
         }
     }

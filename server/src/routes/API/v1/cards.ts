@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request } from "express";
 import { celebrate, Joi, Segments } from "celebrate";
 import asyncHandler from "express-async-handler";
 import PlaytestingCard from "@/data/models/cards/playtestingCard";
@@ -7,7 +7,6 @@ import { dataService, logger, renderService } from "@/services";
 import { SemanticVersion } from "common/utils";
 import { JsonPlaytestingCard, NoteType } from "common/models/cards";
 import * as Schemas from "@/data/schemas";
-import { parseCardFilter } from "./middleware";
 
 export type ResourceFormat = "JSON" | "HTML" | "TXT" | "PNG" | "PDF";
 
@@ -19,6 +18,54 @@ type FilterQuery = { filter?: Partial<JsonPlaytestingCard> | Partial<JsonPlaytes
 type RenderQuery = { copies?: number, perPage?: number };
 type FormatQuery = { format?: ResourceFormat }
 type CardBody = JsonPlaytestingCard | JsonPlaytestingCard[];
+
+const handleGetCards = [
+    celebrate({
+        [Segments.QUERY]: {
+            filter: Joi.alternatives().try(Schemas.PlaytestingCard.Query, Joi.array().items(Schemas.PlaytestingCard.Query)),
+            hard: Joi.boolean().default(false),
+            latest: Joi.boolean().default(true),
+            format: Joi.string().insensitive().valid("JSON", "HTML", "PNG", "PDF").default("JSON"),
+            copies: Joi.number().default(3),
+            perPage: Joi.number().default(9)
+        }
+    }),
+    asyncHandler<unknown, unknown, unknown, RenderQuery & FilterQuery & FormatQuery>(async (req, res) => {
+        const { format, hard, filter, latest, copies, perPage } = req.query;
+        const result = await dataService.cards.read(filter, hard);
+        const cards = latest ? result.latest : result.all;
+
+        switch (format) {
+            case "JSON":
+                const json = cards.map((card) => card.toJSON());
+                res.json(json);
+                break;
+            case "HTML":
+                const html = await renderService.asHtml("batch", cards.map((card) => card.toRenderedCard()), { copies, perPage });
+                res.send(html);
+                break;
+            case "PNG":
+                // TODO: Make this handling more generic
+                if (cards.length > 1) {
+                    res.status(400).json({ message: `Cannot render PNG for multiple cards: found ${cards.length} cards. Refine filter, use PDF, or set latest=true` });
+                    break;
+                }
+                const png = await renderService.asPNG(cards[0].toRenderedCard());
+                res.type("png");
+                res.send(png);
+                break;
+            case "PDF":
+                const pdf = await renderService.asPDF(cards.map((card) => card.toRenderedCard()), { copies, perPage });
+                res.contentType("application/pdf");
+                res.send(pdf);
+                break;
+            default:
+                throw Error(`"${req.query.format as string}" not implemented yet`);
+        }
+    })
+];
+
+router.get("/", ...handleGetCards);
 
 /**
  * @openapi
@@ -92,42 +139,26 @@ type CardBody = JsonPlaytestingCard | JsonPlaytestingCard[];
  *         description: Invalid parameters provided
  *
  */
-router.get("/:project", parseCardFilter, celebrate({
+router.get("/:project", celebrate({
     [Segments.PARAMS]: {
         project: Joi.number().required()
-    },
-    [Segments.QUERY]: {
-        filter: Joi.alternatives().try(Schemas.PlaytestingCard.Query, Joi.array().items(Schemas.PlaytestingCard.Query)),
-        format: Joi.string().insensitive().valid("JSON", "HTML", "PDF").default("JSON"),
-        hard: Joi.boolean().default(false),
-        latest: Joi.boolean().default(true),
-        copies: Joi.number().default(3),
-        perPage: Joi.number().default(9)
     }
-}), asyncHandler<ProjectParam, unknown, unknown, RenderQuery & FilterQuery & FormatQuery>(async (req, res) => {
+}), (req: Request<ProjectParam, unknown, unknown, FilterQuery>, res: unknown, next: (arg?: unknown) => void) => {
     const { project } = req.params;
-    const { format, hard, filter, copies, perPage } = req.query;
-    const reading = !filter || Array.isArray(filter) ? filter as [] : [filter];
-    const cards = await dataService.cards.read(reading?.map((r) => ({ ...r, project })) ?? { project }, hard);
-
-    switch (format) {
-        case "JSON":
-            const json = cards.all.map((card) => card.toJSON());
-            res.json(json);
-            break;
-        case "HTML":
-            const html = await renderService.asHtml("batch", cards.all.map((card) => card.toRenderedCard()), { copies, perPage });
-            res.send(html);
-            break;
-        case "PDF":
-            const pdf = await renderService.asPDF(cards.all.map((card) => card.toRenderedCard()), { copies, perPage });
-            res.contentType("application/pdf");
-            res.send(pdf);
-            break;
-        default:
-            throw Error(`"${req.query.format as string}" not implemented yet`);
+    let { filter } = req.query;
+    try {
+        filter = filter || {};
+        if (Array.isArray(filter)) {
+            filter.forEach((f) => f.project = project);
+        } else {
+            filter.project = project;
+        }
+        req.query.filter = filter;
+    } catch (err) {
+        next(err);
     }
-}));
+    next();
+}, ...handleGetCards);
 
 /**
  * @openapi
@@ -213,58 +244,32 @@ router.get("/:project", parseCardFilter, celebrate({
  *       400:
  *         description: Invalid parameters provided
  */
-router.get("/:project/:number", parseCardFilter, celebrate({
+router.get("/:project/:number", celebrate({
     [Segments.PARAMS]: {
         project: Joi.number().required(),
         number: Joi.number().required()
-    },
-    [Segments.QUERY]: {
-        filter: Joi.alternatives().try(Schemas.PlaytestingCard.Query, Joi.array().items(Schemas.PlaytestingCard.Query)),
-        hard: Joi.boolean().default(false),
-        latest: Joi.boolean().default(true),
-        format: Joi.string().insensitive().valid("JSON", "HTML", "PNG", "PDF").default("JSON")
     }
-}), asyncHandler<ProjectParam & CardParam, unknown, unknown, FormatQuery & FilterQuery>(async (req, res) => {
+}), (req: Request<ProjectParam & CardParam, unknown, unknown, FilterQuery>, res: unknown, next: (arg?: unknown) => void) => {
     const { project, number } = req.params;
-    const { format, filter, hard, latest } = req.query;
-
-    const reading = !filter || Array.isArray(filter) ? filter as [] : [filter];
-    const read = await dataService.cards.read(reading?.map((r) => ({ ...r, project, number })) ?? { project, number }, hard);
-
-    const cards = latest && read.latest.length > 0 ? [read.latest[0]] : read.all;
-    // TODO: Make this handling more generic
-    if (cards.length === 0) {
-        res.status(404).json({ message: "No cards found for that project with provided values" });
-        return;
+    let { filter } = req.query;
+    try {
+        filter = filter || {};
+        if (Array.isArray(filter)) {
+            filter.forEach((f) => {
+                f.project = project;
+                f.number = number;
+            });
+        } else {
+            filter.project = project;
+            filter.number = number;
+        }
+        req.query.filter = filter;
+    } catch (err) {
+        next(err);
     }
-    switch (format) {
-        case "JSON":
-            const json = latest ? cards[0].toJSON() : cards.map((c) => c.toJSON());
-            res.json(json);
-            break;
-        case "HTML":
-            const html = latest ? await renderService.asHtml("single", cards[0].toRenderedCard()) : await renderService.asHtml("batch", cards.map((card) => card.toRenderedCard()));
-            res.send(html);
-            break;
-        case "PNG":
-            // TODO: Make this handling more generic
-            if (cards.length > 1) {
-                res.status(400).json({ message: `Cannot render PNG for multiple cards: found ${cards.length} cards. Refine filter, use PDF, or set latest=true` });
-                break;
-            }
-            const png = await renderService.asPNG(cards[0].toRenderedCard());
-            res.type("png");
-            res.send(png);
-            break;
-        case "PDF":
-            const pdf = latest ? await renderService.asPDF(cards[0].toRenderedCard()) : await renderService.asPDF(cards.map((card) => card.toRenderedCard()));
-            res.contentType("application/pdf");
-            res.send(pdf);
-            break;
-        default:
-            throw Error(`"${req.query.format as string}" not implemented yet`);
-    }
-}));
+    next();
+}, ...handleGetCards);
+
 
 /**
  * @openapi

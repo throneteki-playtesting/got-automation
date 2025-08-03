@@ -5,8 +5,9 @@ import Attachment from "./cardtypes/attachment";
 import Event from "./cardtypes/event";
 import Plot from "./cardtypes/plot";
 import Agenda from "./cardtypes/agenda";
+import { CardComponentProps } from "../../types";
 
-const CardPreview = ({ card, scale, orientation }: CardPreviewProps) => {
+const CardPreview = ({ card, scale, orientation, rounded, className, style }: CardPreviewProps) => {
     const getComponentFor = (card: JsonRenderableCard) => {
         switch (card.type) {
             case "character":
@@ -25,12 +26,8 @@ const CardPreview = ({ card, scale, orientation }: CardPreviewProps) => {
     };
 
     const CardComponent = getComponentFor(card);
-    return <CardComponent card={card} scale={scale} orientation={orientation}/>;
+    return <CardComponent card={card} scale={scale} orientation={orientation} rounded={rounded} className={className} style={style}/>;
 };
-export type CardPreviewProps = {
-    card: JsonRenderableCard,
-    scale?: number,
-    orientation?: "horizontal" | "vertical"
-};
+export type CardPreviewProps = CardComponentProps;
 
 export default CardPreview;

@@ -1,6 +1,7 @@
 import config from "config";
 import { JWT } from "google-auth-library";
 import { Response } from "gas/restClient";
+import { buildUrl } from "common/utils";
 
 
 export default class GasClient {
@@ -50,28 +51,13 @@ export default class GasClient {
         return json.data;
     }
 
-    /**
-     * Creates the full url for the specified request, converting query parameters into JSON
-     */
-    private buildUrl(baseUrl: string, queryParameters?: { [key: string]: unknown }) {
-        let url = baseUrl;
-        if (!queryParameters || Object.keys(queryParameters).length > 0) {
-            const queryString = Object.entries(queryParameters)
-                .filter(([, value]) => !!value)
-                .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
-                .join("&");
-            url += "?" + queryString;
-        }
-        return url;
-    }
-
     public async get<T>(baseUrl: string, queryParameters?: { [key: string]: unknown }) {
-        const url = this.buildUrl(baseUrl, queryParameters);
+        const url = buildUrl(baseUrl, queryParameters);
         return await this.fetch<T>(url, { method: "GET" });
     }
 
     public async post<T>(baseUrl: string, queryParameters?: { [key: string]: unknown }, body?: BodyInit) {
-        const url = this.buildUrl(baseUrl, queryParameters);
+        const url = buildUrl(baseUrl, queryParameters);
         return await this.fetch<T>(url, { method: "POST", ...(body && { body }) });
     }
 }
