@@ -7,7 +7,7 @@ export const cardsApi = createApi({
     reducerPath: "cardsApi",
     baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
     endpoints: (builder) => ({
-        getCards: builder.query<JsonPlaytestingCard[], { filter: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[], latest: boolean } | void>({
+        getCards: builder.query<JsonPlaytestingCard[], { filter?: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[], latest?: boolean } | void>({
             query: (options) => {
                 const url = buildUrl("cards", { filter: options?.filter, latest: options?.latest });
                 return { url, method: "GET" };

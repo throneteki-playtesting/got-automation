@@ -1,20 +1,25 @@
-import { Link, Navbar, NavbarContent, NavbarMenu, NavbarMenuItem, NavbarMenuToggle } from "@heroui/react";
+import { Navbar, NavbarContent, NavbarItem, NavbarMenu, NavbarMenuItem, NavbarMenuToggle } from "@heroui/react";
 import { useState } from "react";
+import pages from "../pages";
+import { Link } from "react-router-dom";
 
 const NavigationBar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const menuItems = ["Test1", "Test2"];
     return (
         <Navbar onMenuOpenChange={setIsMenuOpen}>
-            <NavbarContent>
+            <NavbarContent className="sm:hidden">
                 <NavbarMenuToggle
                     aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-                    className="sm:hidden"
                 />
-                {"Website!"}
             </NavbarContent>
+            <NavbarContent className="hidden sm:flex">
+                {pages.map((page) => <NavbarItem key={page.path}>
+                    <Link to={page.path} className="text-large">{page.label}</Link>
+                </NavbarItem>)}
+            </NavbarContent>
+            {"GOT Automation (WIP)"}
             <NavbarMenu>
-                {menuItems.map((item, index) => <NavbarMenuItem key={index}><Link href={item}>{item}</Link></NavbarMenuItem>)}
+                {pages.map((page) => <NavbarMenuItem key={page.path}><Link to={page.path}>{page.label}</Link></NavbarMenuItem>)}
             </NavbarMenu>
         </Navbar>);
 };

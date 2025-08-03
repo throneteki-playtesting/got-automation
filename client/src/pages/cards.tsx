@@ -2,7 +2,7 @@ import { useGetCardsQuery } from "../api/cardsApi";
 import { JsonRenderableCard } from "common/models/cards";
 import CardGrid from "../components/cardPreviews/cardGrid";
 
-const CardList = ({ scale }: CardListProps) => {
+const Cards = () => {
     const { data: cards, isLoading, error } = useGetCardsQuery();
 
     if (!cards || isLoading || error) {
@@ -21,14 +21,10 @@ const CardList = ({ scale }: CardListProps) => {
     });
 
     return (
-        <CardGrid scale={scale}>
+        <CardGrid className="justify-center">
             {rendering}
         </CardGrid>
     );
 };
 
-type CardListProps = {
-    scale: number
-}
-
-export default CardList;
+export default Cards;
