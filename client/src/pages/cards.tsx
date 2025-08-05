@@ -1,6 +1,6 @@
 import { useGetCardsQuery } from "../api/cardsApi";
 import { JsonRenderableCard } from "common/models/cards";
-import CardGrid from "../components/cardPreviews/cardGrid";
+import CardGrid from "../components/cardPreview/cardGrid";
 
 const Cards = () => {
     const { data: cards, isLoading, error } = useGetCardsQuery();

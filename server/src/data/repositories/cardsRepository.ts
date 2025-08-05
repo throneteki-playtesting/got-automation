@@ -9,6 +9,7 @@ import GASDataSource from "./dataSources/GASDataSource";
 import { JsonPlaytestingCard } from "common/models/cards";
 import CardCollection from "../models/cards/cardCollection";
 import PlaytestingCard from "../models/cards/playtestingCard";
+import { DeepPartial, SingleOrArray } from "common/types";
 
 export default class CardsRepository implements IRepository<JsonPlaytestingCard> {
     public database: CardMongoDataSource;
@@ -17,12 +18,12 @@ export default class CardsRepository implements IRepository<JsonPlaytestingCard>
         this.database = new CardMongoDataSource(mongoClient);
         this.spreadsheet = new CardDataSource();
     }
-    public async create(creating: PlaytestingCard | PlaytestingCard[]) {
+    public async create(creating: SingleOrArray<PlaytestingCard>) {
         await this.database.create(creating);
         await this.spreadsheet.create(creating);
     }
 
-    public async read(reading?: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[], hard = false) {
+    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingCard>>, hard = false) {
         let cards: JsonPlaytestingCard[];
         // Force hard refresh from spreadsheet (slow)
         if (hard) {
@@ -35,12 +36,12 @@ export default class CardsRepository implements IRepository<JsonPlaytestingCard>
         }
         return new CardCollection(cards);
     }
-    public async update(updating: JsonPlaytestingCard | JsonPlaytestingCard[], upsert = true) {
+    public async update(updating: SingleOrArray<JsonPlaytestingCard>, upsert = true) {
         await this.database.update(updating, { upsert });
         await this.spreadsheet.update(updating, { upsert });
     }
 
-    public async destroy(destroying: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
+    public async destroy(destroying: SingleOrArray<DeepPartial<JsonPlaytestingCard>>) {
         await this.database.destroy(destroying);
         await this.spreadsheet.destroy(destroying);
     }
@@ -53,7 +54,7 @@ class CardMongoDataSource extends MongoDataSource<JsonPlaytestingCard> {
         this.collection.createIndex({ number: 1, version: 1 }, { unique: true });
     }
 
-    public async create(creating: JsonPlaytestingCard | JsonPlaytestingCard[]) {
+    public async create(creating: SingleOrArray<JsonPlaytestingCard>) {
         const cards = asArray(creating);
         if (cards.length === 0) {
             return [];
@@ -67,7 +68,7 @@ class CardMongoDataSource extends MongoDataSource<JsonPlaytestingCard> {
         return Object.keys(results.insertedIds).map((index) => cards[index] as JsonPlaytestingCard);
     }
 
-    public async read(reading?: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
+    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingCard>>) {
         const query = this.buildFilterQuery(reading);
         const result = await this.collection.find(query).toArray();
 
@@ -75,7 +76,7 @@ class CardMongoDataSource extends MongoDataSource<JsonPlaytestingCard> {
         return this.withoutId(result);
     }
 
-    public async update(updating: JsonPlaytestingCard | JsonPlaytestingCard[], { upsert }: { upsert: boolean } = { upsert: true }) {
+    public async update(updating: SingleOrArray<JsonPlaytestingCard>, { upsert }: { upsert: boolean } = { upsert: true }) {
         const cards = asArray(updating);
         if (cards.length === 0) {
             return [];
@@ -96,7 +97,7 @@ class CardMongoDataSource extends MongoDataSource<JsonPlaytestingCard> {
         return Object.keys(updatedIds).map((index) => cards[index] as JsonPlaytestingCard);
     }
 
-    public async destroy(deleting: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
+    public async destroy(deleting: SingleOrArray<DeepPartial<JsonPlaytestingCard>>) {
         const query = this.buildFilterQuery(deleting);
         if (Object.keys(query).length === 0) {
             return 0; // Do not delete anything if there are no query parameters
@@ -110,7 +111,7 @@ class CardMongoDataSource extends MongoDataSource<JsonPlaytestingCard> {
 }
 
 class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
-    public async create(creating: JsonPlaytestingCard | JsonPlaytestingCard[]) {
+    public async create(creating: SingleOrArray<JsonPlaytestingCard>) {
         const cards = asArray(creating);
         const groups = groupBy(cards, (card) => card.project);
 
@@ -127,7 +128,7 @@ class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
         return created;
     }
 
-    public async read(reading?: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
+    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingCard>>) {
         const cards = asArray(reading);
         const groups = groupBy(cards, (card) => card.project);
         // If no project is specified, read that from all active projects
@@ -152,7 +153,7 @@ class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
         return read;
     }
 
-    public async update(updating: JsonPlaytestingCard | JsonPlaytestingCard[], { upsert = true, sheets }: { upsert?: boolean; sheets?: CardSheet[] } = {}) {
+    public async update(updating: SingleOrArray<JsonPlaytestingCard>, { upsert = true, sheets }: { upsert?: boolean; sheets?: CardSheet[] } = {}) {
         const cards = asArray(updating);
         const groups = groupBy(cards, (card) => card.project);
         const updated: JsonPlaytestingCard[] = [];
@@ -169,7 +170,7 @@ class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
         return updated;
     }
 
-    public async destroy(destroying: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[]) {
+    public async destroy(destroying: SingleOrArray<DeepPartial<JsonPlaytestingCard>>) {
         const cards = asArray(destroying);
         const groups = groupBy(cards, (card) => card.project);
         // If no project is specified, read that from all active projects

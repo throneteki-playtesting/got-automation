@@ -1,8 +1,8 @@
-import { Code, Faction, Icons, JsonCard, PlotStats, Type } from "common/models/cards";
+import { Code, Cost, Faction, Icons, JsonCard, PlotStats, Strength, Type } from "common/models/cards";
 
 class BaseCard implements JsonCard {
     public code: Code;
-    public cost?: number | "X" | "-";
+    public cost?: Cost;
     public deckLimit: number;
     public designer?: string;
     public faction: Faction;
@@ -12,7 +12,7 @@ class BaseCard implements JsonCard {
     public loyal?: boolean;
     public name: string;
     public plotStats?: PlotStats;
-    public strength?: number | "X";
+    public strength?: Strength;
     public traits: string[];
     public text: string;
     public type: Type;

@@ -2,11 +2,12 @@ import { DataSheet } from "../spreadsheets/spreadsheet";
 import { ReviewSerializer } from "../spreadsheets/serializers/reviewSerializer";
 import * as RestClient from "../restClient";
 import { JsonPlaytestingReview } from "common/models/reviews";
+import { DeepPartial } from "common/types";
 
 export function doGet(path: string[], e: GoogleAppsScript.Events.DoGet) {
     const { filter } = e.parameter;
     // Assume filter is in a valid partial format (eg. no error checking here!!!)
-    const partial = JSON.parse(filter) as Partial<JsonPlaytestingReview>;
+    const partial = JSON.parse(filter) as DeepPartial<JsonPlaytestingReview>;
     const readFunc = (values: string[], index: number) => ReviewSerializer.instance.filter(values, index, partial);
 
     const reviews = DataSheet.sheets.review.read(readFunc);
@@ -32,7 +33,7 @@ export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
         }
         case "destroy": {
             // Assume filter is in a valid partial format (eg. no error checking here!!!)
-            const partial = JSON.parse(filter) as Partial<JsonPlaytestingReview>;
+            const partial = JSON.parse(filter) as DeepPartial<JsonPlaytestingReview>;
             const deleteFunc = (values: string[], index: number) => ReviewSerializer.instance.filter(values, index, partial);
 
             const destroyed = DataSheet.sheets.review.delete(deleteFunc);

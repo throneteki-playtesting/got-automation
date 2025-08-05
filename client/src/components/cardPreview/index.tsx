@@ -6,9 +6,11 @@ import Event from "./cardtypes/event";
 import Plot from "./cardtypes/plot";
 import Agenda from "./cardtypes/agenda";
 import { CardComponentProps } from "../../types";
+import { Card } from "./components/cardComponents";
+import { DeepPartial } from "common/types";
 
 const CardPreview = ({ card, scale, orientation, rounded, className, style }: CardPreviewProps) => {
-    const getComponentFor = (card: JsonRenderableCard) => {
+    const getComponentFor = (card: DeepPartial<JsonRenderableCard>) => {
         switch (card.type) {
             case "character":
                 return Character;
@@ -22,6 +24,8 @@ const CardPreview = ({ card, scale, orientation, rounded, className, style }: Ca
                 return Plot;
             case "agenda":
                 return Agenda;
+            default:
+                return Card;
         }
     };
 

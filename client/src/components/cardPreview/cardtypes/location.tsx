@@ -8,7 +8,7 @@ const Location = ({ card, scale, orientation, rounded, className, style }: CardC
     return (
         <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={classNames("flex flex-row", className)} style={style}>
             <div className="relative flex flex-col" style={{ width: px(35) }}>
-                <Cost>{card.cost!}</Cost>
+                <Cost>{card.cost}</Cost>
                 <Type>Location</Type>
                 <Name unique={card.unique} height={150} className="border-solid border-black rotate-180" style={{
                     width: px(35),
@@ -22,7 +22,7 @@ const Location = ({ card, scale, orientation, rounded, className, style }: CardC
                     {card.name}
                 </Name>
                 <Faction>{card.faction}</Faction>
-                <Loyalty>{card.loyal!}</Loyalty>
+                <Loyalty>{card.loyal}</Loyalty>
             </div>
             <div className="flex flex-col justify-between">
                 <div className="grow relative flex flex-col">

@@ -2,13 +2,12 @@ import MongoDataSource from "./dataSources/mongoDataSource";
 import { MongoClient } from "mongodb";
 import { IRepository } from "..";
 import { dataService, logger } from "@/services";
-import Review from "../models/review";
 import { JsonPlaytestingReview } from "common/models/reviews";
 import { asArray, groupBy } from "common/utils";
 import * as ReviewsController from "gas/controllers/reviewsController";
 import GASDataSource from "./dataSources/GASDataSource";
-import { JsonPlaytestingCard } from "common/models/cards";
 import ReviewCollection from "../models/reviewCollection";
+import { DeepPartial, SingleOrArray } from "common/types";
 
 export default class ReviewsRepository implements IRepository<JsonPlaytestingReview> {
     public database: ReviewMongoDataSource;
@@ -17,12 +16,12 @@ export default class ReviewsRepository implements IRepository<JsonPlaytestingRev
         this.database = new ReviewMongoDataSource(mongoClient);
         this.spreadsheet = new ReviewDataSource();
     }
-    public async create(creating: Review | Review[]) {
+    public async create(creating: SingleOrArray<JsonPlaytestingReview>) {
         await this.database.create(creating);
         await this.spreadsheet.create(creating);
     }
 
-    public async read(reading?: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[], hard = false) {
+    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingReview>>, hard = false) {
         let reviews: JsonPlaytestingReview[];
         // Force hard refresh from spreadsheet (slow)
         if (hard) {
@@ -36,12 +35,12 @@ export default class ReviewsRepository implements IRepository<JsonPlaytestingRev
         return new ReviewCollection(reviews);
     }
 
-    public async update(updating: JsonPlaytestingReview | JsonPlaytestingReview[], upsert = true) {
+    public async update(updating: SingleOrArray<JsonPlaytestingReview>, upsert = true) {
         await this.database.update(updating, { upsert });
         await this.spreadsheet.update(updating, { upsert });
     }
 
-    public async destroy(destroying: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[]) {
+    public async destroy(destroying: SingleOrArray<DeepPartial<JsonPlaytestingReview>>) {
         await this.database.destroy(destroying);
         await this.spreadsheet.destroy(destroying);
     }
@@ -51,7 +50,7 @@ class ReviewMongoDataSource extends MongoDataSource<JsonPlaytestingReview> {
     constructor(client: MongoClient) {
         super(client, "reviews");
     }
-    public async create(creating: JsonPlaytestingReview | JsonPlaytestingReview[]) {
+    public async create(creating: SingleOrArray<JsonPlaytestingReview>) {
         const reviews = asArray(creating);
         if (reviews.length === 0) {
             return [];
@@ -63,7 +62,7 @@ class ReviewMongoDataSource extends MongoDataSource<JsonPlaytestingReview> {
         // Return reviews which were actually inserted (no duplicates)
         return Object.keys(results.insertedIds).map((index) => reviews[index] as JsonPlaytestingReview);
     }
-    public async read(reading?: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[]) {
+    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingReview>>) {
         const query = this.buildFilterQuery(reading);
         const result = await this.collection.find(query).toArray();
 
@@ -71,7 +70,7 @@ class ReviewMongoDataSource extends MongoDataSource<JsonPlaytestingReview> {
         return this.withoutId(result);
     }
 
-    public async update(updating: JsonPlaytestingReview | JsonPlaytestingReview[], { upsert }: { upsert: boolean } = { upsert: true }) {
+    public async update(updating: SingleOrArray<JsonPlaytestingReview>, { upsert }: { upsert: boolean } = { upsert: true }) {
         const reviews = asArray(updating);
         if (reviews.length === 0) {
             return [];
@@ -91,7 +90,7 @@ class ReviewMongoDataSource extends MongoDataSource<JsonPlaytestingReview> {
         return Object.keys(updatedIds).map((index) => reviews[index] as JsonPlaytestingReview);
     }
 
-    public async destroy(deleting: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingCard>[]) {
+    public async destroy(deleting: SingleOrArray<DeepPartial<JsonPlaytestingReview>>) {
         const query = this.buildFilterQuery(deleting);
         if (Object.keys(query).length === 0) {
             return 0; // Do not delete anything if there are no query parameters
@@ -105,7 +104,7 @@ class ReviewMongoDataSource extends MongoDataSource<JsonPlaytestingReview> {
 }
 
 class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
-    public async create(creating: JsonPlaytestingReview | JsonPlaytestingReview[]) {
+    public async create(creating: SingleOrArray<JsonPlaytestingReview>) {
         const reviews = asArray(creating);
         const groups = groupBy(reviews, (review) => review.project);
 
@@ -122,7 +121,7 @@ class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
         return created;
     }
 
-    public async read(reading?: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[]) {
+    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingReview>>) {
         const reviews = asArray(reading);
         const groups = groupBy(reviews, (review) => review.project);
         // If no project is specified, read that from all active projects
@@ -148,7 +147,7 @@ class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
         return read;
     }
 
-    public async update(updating: JsonPlaytestingReview | JsonPlaytestingReview[], { upsert = true }: { upsert?: boolean } = {}) {
+    public async update(updating: SingleOrArray<JsonPlaytestingReview>, { upsert = true }: { upsert?: boolean } = {}) {
         const reviews = asArray(updating);
         const groups = groupBy(reviews, (review) => review.project);
         const updated: JsonPlaytestingReview[] = [];
@@ -165,7 +164,7 @@ class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
         return updated;
     }
 
-    public async destroy(destroying: Partial<JsonPlaytestingReview> | Partial<JsonPlaytestingReview>[]) {
+    public async destroy(destroying: SingleOrArray<DeepPartial<JsonPlaytestingReview>>) {
         const reviews = asArray(destroying);
         const groups = groupBy(reviews, (review) => review.project);
         // If no project is specified, read that from all active projects

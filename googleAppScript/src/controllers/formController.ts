@@ -1,18 +1,19 @@
 import * as RestClient from "../restClient";
 import * as Forms from "../forms/form";
 import { JsonPlaytestingReview } from "common/models/reviews";
+import { DeepPartial } from "common/types";
 
 export function doGet(path: string[], e: GoogleAppsScript.Events.DoGet) {
     const { filter } = e.parameter;
     // Assume filter is in a valid partial format (eg. no error checking here!!!)
-    const partial = JSON.parse(filter || "{}") as Partial<JsonPlaytestingReview>;
+    const partial = JSON.parse(filter || "{}") as DeepPartial<JsonPlaytestingReview>;
     const responses = Forms.get().getResponses();
     const reviews = Forms.toReviews(...responses).filter((review) => matches(review, partial));
     const response = { request: e, data: { reviews } } as RestClient.Response<ReadReviewsResponse>;
     return RestClient.generateResponse(response);
 }
 
-function matches(review: JsonPlaytestingReview, partial: Partial<JsonPlaytestingReview>) {
+function matches(review: JsonPlaytestingReview, partial: DeepPartial<JsonPlaytestingReview>) {
     return (
         (!partial.number || partial.number === review.number)
             && (!partial.version || partial.version === review.version)

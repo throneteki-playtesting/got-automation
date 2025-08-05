@@ -1,12 +1,13 @@
 import { Collection, Filter, MongoClient, WithId } from "mongodb";
 import { flatten } from "flat";
+import { DeepPartial, SingleOrArray } from "common/types";
 
 abstract class MongoDataSource<T> {
     protected collection: Collection<T>;
     constructor(client: MongoClient, protected name: string) {
         this.collection = client.db().collection<T>(name);
     }
-    protected buildFilterQuery(values?: Partial<T> | Partial<T>[]): Filter<T> {
+    protected buildFilterQuery(values?: SingleOrArray<DeepPartial<T>>): Filter<T> {
         let query = {};
 
         if (values) {
@@ -35,10 +36,10 @@ abstract class MongoDataSource<T> {
             return rest as T;
         });
     }
-    abstract create(creating: T | T[], options?: object): Promise<T[]>
-    abstract read(reading?: Partial<T> | Partial<T>[], options?: object): Promise<T[]>
-    abstract update(updating: T | T[], options?: object): Promise<T[]>
-    abstract destroy(deleting: Partial<T> | Partial<T>[], options?: object): Promise<number>
+    abstract create(creating: SingleOrArray<T>, options?: object): Promise<T[]>
+    abstract read(reading?: SingleOrArray<DeepPartial<T>>, options?: object): Promise<T[]>
+    abstract update(updating: SingleOrArray<T>, options?: object): Promise<T[]>
+    abstract destroy(deleting: SingleOrArray<DeepPartial<T>>, options?: object): Promise<number>
 };
 
 export default MongoDataSource;

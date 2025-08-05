@@ -1,7 +1,7 @@
 import { JsonRenderableCard } from "common/models/cards";
 import { BaseElementProps } from "../../types";
 import classNames from "classnames";
-import CardPreview from "./cardPreview";
+import CardPreview from ".";
 
 const CardGrid = ({ children: cards, className, style, scale }: CardPreviewProps) => {
     return (

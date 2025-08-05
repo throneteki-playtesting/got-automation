@@ -1,8 +1,9 @@
+import { DeepPartial } from "common/types";
 import * as CardsController from "../controllers/cardsController";
 import * as RestClient from "../restClient";
 import { run, test, testGroup } from "./runner";
 
-function createFakeGoRequest(options?: Partial<GoogleAppsScript.Events.DoGet>) {
+function createFakeGoRequest(options?: DeepPartial<GoogleAppsScript.Events.DoGet>) {
     const defaults = {
         parameter: {},
         parameters: {},

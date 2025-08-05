@@ -6,10 +6,11 @@ import ReviewThreads from "@/discord/reviewThreads";
 import * as Schemas from "@/data/schemas";
 import { JsonPlaytestingReview } from "common/models/reviews";
 import { asArray } from "common/utils";
+import { SingleOrArray } from "common/types";
 
 const router = express.Router();
 
-type ReviewBody = JsonPlaytestingReview | JsonPlaytestingReview[];
+type ReviewBody = SingleOrArray<JsonPlaytestingReview>;
 
 // TODO: More endpoint options (post = create, put = complete update, patch = partial update)
 router.post("/", celebrate({

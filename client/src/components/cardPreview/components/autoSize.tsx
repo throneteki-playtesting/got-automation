@@ -4,6 +4,7 @@ import { px } from "../../../utilities";
 const AutoSize = ({ children, className, style, height, rate = 0.01, minimum = 0.4 }: AutoSizeProps) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const dependencies = Array.isArray(children) ? children as [] : [children];
+    const elements = useRef(new Map<HTMLElement, number>());
 
     useEffect(() => {
         const content = contentRef.current;
@@ -12,12 +13,18 @@ const AutoSize = ({ children, className, style, height, rate = 0.01, minimum = 0
         }
 
         let multiplier = 1;
-        const baseSizes = new Map<HTMLElement, number>();
+        const baseSizes = elements.current;
+        // Reset sizes if they were changed
+        for (const [element, baseSize] of [...baseSizes.entries()]) {
+            element.style.fontSize = px(baseSize);
+            baseSizes.delete(element);
+        }
 
         const shrink = (el: HTMLElement) => {
             if (el.style.fontSize) {
                 if (!baseSizes.has(el)) {
-                    baseSizes.set(el, parseFloat(el.style.fontSize));
+                    const currentSize = parseFloat(el.style.fontSize);
+                    baseSizes.set(el, currentSize);
                 }
                 const baseSize = baseSizes.get(el) as number;
                 el.style.fontSize = px(baseSize * multiplier);

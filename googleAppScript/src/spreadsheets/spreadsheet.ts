@@ -6,6 +6,7 @@ import { DataSerializer } from "./serializers/dataSerializer";
 import { titleCase } from "common/utils";
 import { post } from "../restClient";
 import { safelyGetUI } from "./userInput";
+import { DeepPartial } from "common/types";
 
 export class DataSheet<Model> {
     public static sheets = {
@@ -71,7 +72,7 @@ export class DataSheet<Model> {
         return models;
     }
 
-    public read(filter: (values: string[], index: number, model?: Model) => boolean = this.serializer.filter) {
+    public read(filter: (values: string[], index: number, model?: Model | DeepPartial<Model>) => boolean = this.serializer.filter) {
         const start = new Date();
         // TODO: Save current filter, unapply, then reapply when finished reading
         if (this.maxRows <= 0) {
@@ -127,7 +128,7 @@ export class DataSheet<Model> {
                 const values = valueMatrix[i];
 
                 let startRow: number;
-                const matched = models.find((model) => this.serializer.matches(values, i, model));
+                const matched = models.find((model) => this.serializer.matches(values, i, model as DeepPartial<Model>));
                 if (matched && (!firstOnly || !updated.includes(matched))) {
                     startRow = startRow || (this.firstRow + i);
                     const group: string[][] = setMap[startRow] || [];
@@ -169,7 +170,7 @@ export class DataSheet<Model> {
         return updated;
     }
 
-    public delete(filter: (values: string[], index: number, model?: Model) => boolean = this.serializer.filter) {
+    public delete(filter: (values: string[], index: number, model?: DeepPartial<Model>) => boolean = this.serializer.filter) {
         if (this.maxRows <= 0) {
             return [];
         }

@@ -8,9 +8,9 @@ const Plot = ({ card, scale, orientation, rounded, className, style }: PlotCompo
         <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} style={style}>
             <div className="flex flex-row items-center" style={{ height: px(40) }}>
                 <div className="flex items-center justify-center gap-1" style={{ width: px(110) }}>
-                    <PlotStat type="income">{card.plotStats!.income}</PlotStat>
-                    <PlotStat type="initiative">{card.plotStats!.initiative}</PlotStat>
-                    <PlotStat type="claim">{card.plotStats!.claim}</PlotStat>
+                    <PlotStat type="income">{card.plotStats?.income}</PlotStat>
+                    <PlotStat type="initiative">{card.plotStats?.initiative}</PlotStat>
+                    <PlotStat type="claim">{card.plotStats?.claim}</PlotStat>
                 </div>
                 <Name unique={card.unique} className="grow flex" style={{ fontSize: px(18) }}>
                     {card.name}
@@ -24,8 +24,8 @@ const Plot = ({ card, scale, orientation, rounded, className, style }: PlotCompo
                 <Watermark>{card.watermark}</Watermark>
                 <div className="flex flex-col items-center" style={{ width: px(35), paddingRight: px(5) }}>
                     <Faction style={{ borderColor: "transparent" }}>{card.faction}</Faction>
-                    <Loyalty>{card.loyal!}</Loyalty>
-                    <PlotStat type="reserve">{card.plotStats!.reserve}</PlotStat>
+                    <Loyalty>{card.loyal}</Loyalty>
+                    <PlotStat type="reserve">{card.plotStats?.reserve}</PlotStat>
                 </div>
             </div>
             <TextBox style={{ paddingBottom: px(0) }}>

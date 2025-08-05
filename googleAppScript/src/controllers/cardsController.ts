@@ -2,11 +2,12 @@ import { DataSheet } from "../spreadsheets/spreadsheet";
 import { CardSerializer, CardSheet } from "../spreadsheets/serializers/cardSerializer";
 import * as RestClient from "../restClient";
 import { JsonPlaytestingCard } from "common/models/cards";
+import { DeepPartial } from "common/types";
 
 export function doGet(path: string[], e: GoogleAppsScript.Events.DoGet) {
     const { latest, filter } = e.parameter;
     // Assume filter is in a valid partial format (eg. no error checking here!!!)
-    const partial = JSON.parse(filter || "{}") as Partial<JsonPlaytestingCard>;
+    const partial = JSON.parse(filter || "{}") as DeepPartial<JsonPlaytestingCard>;
     const readFunc = (values: string[], index: number) => CardSerializer.instance.filter(values, index, partial);
 
     // Defaults to "archive" if latest is not given
@@ -44,7 +45,7 @@ export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
         case "destroy": {
             // Destroys cards from archive
             // Assume filter is in a valid partial format (eg. no error checking here!!!)
-            const partial = JSON.parse(filter || "{}") as Partial<JsonPlaytestingCard>;
+            const partial = JSON.parse(filter || "{}") as DeepPartial<JsonPlaytestingCard>;
             const deleteFunc = (values: string[], index: number) => CardSerializer.instance.filter(values, index, partial);
 
             const destroyed = DataSheet.sheets.archive.delete(deleteFunc);

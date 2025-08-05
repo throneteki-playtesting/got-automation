@@ -4,9 +4,9 @@ import { Outlet } from "react-router-dom";
 
 function App() {
     return (
-        <HeroUIProvider className="bg-default">
+        <HeroUIProvider>
             <NavigationBar />
-            <div className='container mx-auto'>
+            <div className='container'>
                 <Outlet />
             </div>
         </HeroUIProvider>

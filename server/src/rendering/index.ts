@@ -11,6 +11,7 @@ import RenderedCard from "@/data/models/cards/renderedCard";
 import CardCollection from "@/data/models/cards/cardCollection";
 import { logger } from "@/services";
 import { asArray, asSingle } from "common/utils";
+import { SingleOrArray } from "common/types";
 
 export type RenderType = "single" | "batch";
 type RenderHtmlOptions = { copies?: number, perPage?: number, includeCSS?: boolean, includeJS?: boolean };
@@ -67,7 +68,7 @@ class RenderingService {
     }
     public async asPNG(data: RenderedCard): Promise<Buffer>;
     public async asPNG(data: RenderedCard[]): Promise<BufferCollection>;
-    public async asPNG(cards: RenderedCard | RenderedCard[]) {
+    public async asPNG(cards: SingleOrArray<RenderedCard>) {
         const width = 240;
         const height = 333;
         const browser = await this.launchPuppeteer();
@@ -106,7 +107,7 @@ class RenderingService {
         return result;
     }
 
-    public async asPDF(data: RenderedCard | RenderedCard[], options? : { copies: number, perPage: number }) {
+    public async asPDF(data: SingleOrArray<RenderedCard>, options? : { copies: number, perPage: number }) {
         const cards = asArray(data);
         if (cards.length === 0) {
             throw Error("Cannot render PDF with no cards");
@@ -126,7 +127,7 @@ class RenderingService {
         return buffer;
     }
 
-    public async asHtml(mode: RenderType, cards: RenderedCard | RenderedCard[], options?: RenderHtmlOptions) {
+    public async asHtml(mode: RenderType, cards: SingleOrArray<RenderedCard>, options?: RenderHtmlOptions) {
         switch (mode) {
             case "single":
                 const single = asSingle(cards);

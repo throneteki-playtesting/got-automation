@@ -1,4 +1,5 @@
 import * as Cards from "./models/cards";
+import { SingleOrArray } from "./types";
 
 export type SemanticVersion = `${number}.${number}.${number}`;
 // TODO: Replace "Partial" with "Filterable", with the advantage that it also partials inner child objects!
@@ -78,7 +79,7 @@ export function pushSorted<T>(arr: T[], item: T, compareFn: (a: T, b: T) => numb
 /**
  * Ensures a possible single or array of objects are treated as an array of that object
  */
-export function asArray<T>(value: T | T[]) {
+export function asArray<T>(value: SingleOrArray<T>) {
     if (value === undefined) {
         return undefined;
     }
@@ -88,7 +89,7 @@ export function asArray<T>(value: T | T[]) {
 /**
  * Ensures a possible single or array of objects are treated as a single object. If an array is passed in, the first element is returned
  */
-export function asSingle<T>(value: T | T[]) {
+export function asSingle<T>(value: SingleOrArray<T>) {
     if (value === undefined) {
         return undefined;
     }
@@ -105,6 +106,15 @@ export const factionNames = {
     "targaryen": "House Targaryen",
     "tyrell": "House Tyrell",
     "neutral": "Neutral"
+};
+
+export const typeNames = {
+    "character": "Character",
+    "location": "Location",
+    "attachment": "Attachment",
+    "event": "Event",
+    "plot": "Plot",
+    "agenda": "Agenda"
 };
 
 export function parseCardCode(isReleasable: boolean, project: number, number: number) {

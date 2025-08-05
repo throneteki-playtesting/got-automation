@@ -10,18 +10,18 @@ const Character = ({ card, scale, orientation, rounded, className, style }: Card
         <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={classNames("flex flex-col", className)} style={style}>
             <div className="flex grow">
                 <div className="flex relative flex-col" style={{ width: px(35) }}>
-                    <Cost>{card.cost!}</Cost>
+                    <Cost>{card.cost}</Cost>
                     <Type>Character</Type>
                     <ChallengeIcons>{Object.entries(card.icons || {}).filter(([, value]) => value).map(([icon]) => icon as ChallengeIcon)}</ChallengeIcons>
                 </div>
                 <Watermark>{card.watermark}</Watermark>
                 <div className="flex flex-col justify-end">
                     <DeckLimit type={card.type} className="grow" alignment="right">{card.deckLimit}</DeckLimit>
-                    <Loyalty>{card.loyal!}</Loyalty>
+                    <Loyalty>{card.loyal}</Loyalty>
                 </div>
             </div>
             <div className="flex">
-                <Strength>{card.strength!}</Strength>
+                <Strength>{card.strength}</Strength>
                 <Name unique={card.unique} className="self-end grow border-black text-sm flex items-center justify-center" style={{
                     height: px(30),
                     borderTopWidth: px(2),

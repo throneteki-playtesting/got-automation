@@ -4,10 +4,11 @@ import asyncHandler from "express-async-handler";
 import { dataService } from "@/services";
 import * as Schemas from "@/data/schemas";
 import { JsonProject } from "common/models/projects";
+import { SingleOrArray } from "common/types";
 
 const router = express.Router();
 
-type ProjectBody = JsonProject | JsonProject[];
+type ProjectBody = SingleOrArray<JsonProject>;
 
 // TODO: Openapi spec
 // TODO: More endpoint options (get, post = create, put = complete update, patch = partial update)

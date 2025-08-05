@@ -5,6 +5,7 @@ import MongoDataSource from "./dataSources/mongoDataSource";
 import { MongoClient } from "mongodb";
 import Project from "../models/project";
 import { asArray } from "common/utils";
+import { DeepPartial, SingleOrArray } from "common/types";
 
 export default class ProjectsRepository implements IRepository<JsonProject> {
     public database: ProjectDataSource;
@@ -12,22 +13,22 @@ export default class ProjectsRepository implements IRepository<JsonProject> {
         this.database = new ProjectDataSource(mongoClient);
     }
 
-    public async create(creating: JsonProject | JsonProject[]) {
+    public async create(creating: SingleOrArray<JsonProject>) {
         const database = await this.database.create(creating);
         return database.map((json) => new Project(json));
     }
 
-    public async read(reading?: Partial<JsonProject> | Partial<JsonProject>[]) {
+    public async read(reading?: SingleOrArray<DeepPartial<JsonProject>>) {
         const database = await this.database.read(reading);
         return database.map((json) => new Project(json));
     }
 
-    public async update(updating: JsonProject | JsonProject[]) {
+    public async update(updating: SingleOrArray<JsonProject>) {
         const database = await this.database.update(updating);
         return database.map((json) => new Project(json));
     }
 
-    public async destroy(destroying: Partial<JsonProject> | Partial<JsonProject>[]) {
+    public async destroy(destroying: SingleOrArray<DeepPartial<JsonProject>>) {
         return this.database.destroy(destroying);
     }
 }
@@ -37,7 +38,7 @@ class ProjectDataSource extends MongoDataSource<JsonProject> {
         super(client, "projects");
     }
 
-    public async create(creating: JsonProject | JsonProject[]) {
+    public async create(creating: SingleOrArray<JsonProject>) {
         const projects = asArray(creating);
         if (projects.length === 0) {
             return [];
@@ -50,7 +51,7 @@ class ProjectDataSource extends MongoDataSource<JsonProject> {
         return Object.keys(results.insertedIds).map((index) => projects[index] as JsonProject);
     }
 
-    public async read(reading?: Partial<JsonProject> | Partial<JsonProject>[]) {
+    public async read(reading?: SingleOrArray<DeepPartial<JsonProject>>) {
         const query = this.buildFilterQuery(reading);
         const result = await this.collection.find(query).toArray();
 
@@ -58,7 +59,7 @@ class ProjectDataSource extends MongoDataSource<JsonProject> {
         return this.withoutId(result);
     }
 
-    public async update(updating: JsonProject | JsonProject[], { upsert }: { upsert: boolean } = { upsert: true }) {
+    public async update(updating: SingleOrArray<JsonProject>, { upsert }: { upsert: boolean } = { upsert: true }) {
         const projects = asArray(updating);
         if (projects.length === 0) {
             return [];
@@ -78,7 +79,7 @@ class ProjectDataSource extends MongoDataSource<JsonProject> {
         return Object.keys(updatedIds).map((index) => projects[index] as JsonProject);
     }
 
-    public async destroy(deleting: Partial<JsonProject> | Partial<JsonProject>[]) {
+    public async destroy(deleting: SingleOrArray<DeepPartial<JsonProject>>) {
         const query = this.buildFilterQuery(deleting);
         if (Object.keys(query).length === 0) {
             return 0; // Do not delete anything if there are no query parameters

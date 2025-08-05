@@ -2,6 +2,7 @@ import { maxEnum, SemanticVersion } from "common/utils";
 import * as Review from "common/models/reviews";
 import { getProperty, GooglePropertiesType } from "../../settings";
 import { DataSerializer } from "./dataSerializer";
+import { DeepPartial } from "common/types";
 
 class ReviewSerializer extends DataSerializer<Review.JsonPlaytestingReview> {
     richTextColumns: number[] = [ReviewColumn.Decks, ReviewColumn.Additional];
@@ -46,7 +47,7 @@ class ReviewSerializer extends DataSerializer<Review.JsonPlaytestingReview> {
         return values;
     }
 
-    public matches(values: string[], index: number, filter: Partial<Review.JsonPlaytestingReview>) {
+    public matches(values: string[], index: number, filter: DeepPartial<Review.JsonPlaytestingReview>) {
         const compare = (a: number | string | boolean | undefined, b: number | string | boolean) => {
             if (!a) {
                 return false;
@@ -60,7 +61,7 @@ class ReviewSerializer extends DataSerializer<Review.JsonPlaytestingReview> {
             && compare(filter.reviewer, values[ReviewColumn.Reviewer])
         );
     }
-    public filter(values: string[], index: number, filter?: Partial<Review.JsonPlaytestingReview>) {
+    public filter(values: string[], index: number, filter?: DeepPartial<Review.JsonPlaytestingReview>) {
         if (!filter || Object.keys(filter).length === 0) {
             return true;
         }

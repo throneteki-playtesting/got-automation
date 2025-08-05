@@ -15,10 +15,14 @@ export type ChallengeIcon = typeof challengeIcons[number];
 export type PlotStat = typeof plotStats[number];
 
 export type Code = `${Projects.Code}${number}`;
+export type Cost = number | "X" | "-";
+export type Strength = number | "X";
+export type PlotValue = number | "X";
+export type Quantity = 1 | 2 | 3;
 
 export interface JsonCard {
     code: Code,
-    cost?: number | "X" | "-",
+    cost?: Cost,
     deckLimit: number,
     designer?: string,
     faction: Faction,
@@ -28,13 +32,13 @@ export interface JsonCard {
     loyal?: boolean,
     name: string,
     plotStats?: PlotStats,
-    strength?: number | "X",
+    strength?: Strength,
     traits: string[],
     text: string,
     type: Type,
     unique?: boolean,
     // octgnId?: string,
-    quantity: 1 | 2 | 3,
+    quantity: Quantity,
     // errata: ?, Probably not necessary
     imageUrl?: string
 }
@@ -46,10 +50,10 @@ export interface Icons {
 }
 
 export interface PlotStats {
-    income: number | "X",
-    initiative: number | "X",
-    claim: number | "X",
-    reserve: number | "X"
+    income: PlotValue,
+    initiative: PlotValue,
+    claim: PlotValue,
+    reserve: PlotValue
 }
 
 export interface JsonPlaytestingCard extends JsonCard {

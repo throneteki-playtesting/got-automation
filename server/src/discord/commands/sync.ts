@@ -8,6 +8,7 @@ import { updateFormData } from "@/processing/reviews";
 import * as FormController from "gas/controllers/formController";
 import GasClient from "@/google/gasClient";
 import { JsonPlaytestingReview } from "common/models/reviews";
+import { DeepPartial } from "common/types";
 
 const sync = {
     async data() {
@@ -315,7 +316,7 @@ const command = {
                 ...(reviewer && { reviewer: reviewer.nickname || reviewer.displayName }),
                 ...(number && { number }),
                 ...(version && { version })
-            } as Partial<JsonPlaytestingReview>;
+            } as DeepPartial<JsonPlaytestingReview>;
 
             const [project] = await dataService.projects.read({ number: projectId });
             // Get reviews from the form, not from the spreadsheet (as it contains all responses)

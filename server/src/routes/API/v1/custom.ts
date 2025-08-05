@@ -6,12 +6,13 @@ import * as Schemas from "@/data/schemas";
 import { JsonRenderableCard } from "common/models/cards";
 import RenderedCard from "@/data/models/cards/renderedCard";
 import { asArray } from "common/utils";
+import { SingleOrArray } from "common/types";
 
 export type ResourceFormat = "JSON" | "HTML" | "TXT" | "PNG" | "PDF";
 
 const router = express.Router();
 type FormatQuery = { format?: ResourceFormat }
-type CardBody = JsonRenderableCard | JsonRenderableCard[];
+type CardBody = SingleOrArray<JsonRenderableCard>;
 
 router.post("/", celebrate({
     [Segments.QUERY]: {

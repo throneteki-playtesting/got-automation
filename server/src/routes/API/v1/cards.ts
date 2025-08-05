@@ -7,6 +7,7 @@ import { dataService, logger, renderService } from "@/services";
 import { SemanticVersion } from "common/utils";
 import { JsonPlaytestingCard, NoteType } from "common/models/cards";
 import * as Schemas from "@/data/schemas";
+import { DeepPartial, SingleOrArray } from "common/types";
 
 export type ResourceFormat = "JSON" | "HTML" | "TXT" | "PNG" | "PDF";
 
@@ -14,10 +15,10 @@ const router = express.Router();
 
 type ProjectParam = { project: number };
 type CardParam = { number: number };
-type FilterQuery = { filter?: Partial<JsonPlaytestingCard> | Partial<JsonPlaytestingCard>[], hard?: boolean, latest?: boolean }
+type FilterQuery = { filter?: SingleOrArray<DeepPartial<JsonPlaytestingCard>>, hard?: boolean, latest?: boolean }
 type RenderQuery = { copies?: number, perPage?: number };
 type FormatQuery = { format?: ResourceFormat }
-type CardBody = JsonPlaytestingCard | JsonPlaytestingCard[];
+type CardBody = SingleOrArray<JsonPlaytestingCard>;
 
 const handleGetCards = [
     celebrate({
@@ -308,7 +309,7 @@ router.post("/", celebrate({
     logger.verbose(`Recieved ${cards.length} card update(s) from sheets`);
     const latest: JsonPlaytestingCard[] = [];
     const upsert: JsonPlaytestingCard[] = [];
-    const destroy: Partial<JsonPlaytestingCard>[] = [];
+    const destroy: DeepPartial<JsonPlaytestingCard>[] = [];
 
     for (const card of cards) {
         // If card is not in playtesting, push updates

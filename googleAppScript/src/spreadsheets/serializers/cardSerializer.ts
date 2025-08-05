@@ -2,6 +2,7 @@ import { factionNames, maxEnum, parseCardCode } from "common/utils";
 import { getProperty, GooglePropertiesType } from "../../settings";
 import { DataSerializer } from "./dataSerializer";
 import * as Card from "common/models/cards";
+import { DeepPartial } from "common/types";
 
 export type CardSheet = "archive" | "latest";
 class CardSerializer extends DataSerializer<Card.JsonPlaytestingCard> {
@@ -123,7 +124,7 @@ class CardSerializer extends DataSerializer<Card.JsonPlaytestingCard> {
         return values;
     }
 
-    public matches(values: string[], index: number, filter: Partial<Card.JsonPlaytestingCard>) {
+    public matches(values: string[], index: number, filter: DeepPartial<Card.JsonPlaytestingCard>) {
         const compare = (a: number | string | boolean | undefined, b: number | string | boolean) => {
             if (!a) {
                 return false;
@@ -137,7 +138,7 @@ class CardSerializer extends DataSerializer<Card.JsonPlaytestingCard> {
         );
     }
 
-    public filter(values: string[], index: number, filter?: Partial<Card.JsonPlaytestingCard>) {
+    public filter(values: string[], index: number, filter?: DeepPartial<Card.JsonPlaytestingCard>) {
         if (!filter || Object.keys(filter).length === 0) {
             return true;
         }

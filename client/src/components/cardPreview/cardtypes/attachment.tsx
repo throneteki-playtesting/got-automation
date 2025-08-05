@@ -9,7 +9,7 @@ const Attachment = ({ card, scale, orientation, rounded, className, style }: Car
         <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={classNames("flex flex-col", className)} style={style}>
             <div className="flex grow">
                 <div className="flex flex-col" style={{ width: px(35) }}>
-                    <Cost>{card.cost!}</Cost>
+                    <Cost>{card.cost}</Cost>
                     <Type>Attachment</Type>
                     <DeckLimit type={card.type} className="grow">{card.deckLimit}</DeckLimit>
                 </div>
@@ -23,7 +23,7 @@ const Attachment = ({ card, scale, orientation, rounded, className, style }: Car
                         <Designer>{card.designer}</Designer>
                     </AutoSize>
                 </TextBox>
-                <Loyalty>{card.loyal!}</Loyalty>
+                <Loyalty>{card.loyal}</Loyalty>
             </div>
             <div className="flex">
                 <Name unique={card.unique} className="grow" style={{

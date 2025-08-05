@@ -9,7 +9,7 @@ const Event = ({ card, scale, orientation, rounded, className, style }: CardComp
         <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={classNames("flex flex-col", className)} style={style}>
             <div className="grow flex">
                 <div className="flex flex-col" style={{ width: px(35) }}>
-                    <Cost>{card.cost!}</Cost>
+                    <Cost>{card.cost}</Cost>
                     <Type>Event</Type>
                     <DeckLimit type={card.type} className="grow">{card.deckLimit}</DeckLimit>
                 </div>
@@ -25,7 +25,7 @@ const Event = ({ card, scale, orientation, rounded, className, style }: CardComp
                 </div>
                 <div className="flex flex-col" style={{ width: px(35) }}>
                     <Faction>{card.faction}</Faction>
-                    <Loyalty>{card.loyal!}</Loyalty>
+                    <Loyalty>{card.loyal}</Loyalty>
                 </div>
             </div>
             <TextBox>

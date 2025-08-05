@@ -1,6 +1,7 @@
 import { JsonPlaytestingCard } from "common/models/cards";
+import { DeepPartial, SingleOrArray } from "common/types";
 
-type DotPath<T, Prefix extends string = ""> = Partial<
+type DotPath<T, Prefix extends string = ""> = DeepPartial<
   Record<
     {
       [K in keyof T]: T[K] extends object
@@ -55,8 +56,8 @@ export const parseCardFilter = (req: { query: { filter: any } }, res: unknown, n
     }
     try {
         const decoded = decodeURIComponent(filter);
-        let parsed = JSON.parse(decoded) as object | object[];
-        parsed = Array.isArray(parsed) ? parsed.map((p: object) => expandDotPaths(p) as Partial<JsonPlaytestingCard>) : parsed as Partial<JsonPlaytestingCard>;
+        let parsed = JSON.parse(decoded) as SingleOrArray<object>;
+        parsed = Array.isArray(parsed) ? parsed.map((p: object) => expandDotPaths(p) as DeepPartial<JsonPlaytestingCard>) : parsed as DeepPartial<JsonPlaytestingCard>;
         req.query.filter = parsed;
     } catch (err) {
         next(err);
