@@ -2,11 +2,10 @@ import { Ability, Card, Cost, DeckLimit, Designer, Faction, Loyalty, Name, TextB
 import AutoSize from "../components/autoSize";
 import { px } from "../../../utilities";
 import { CardComponentProps } from "../../../types";
-import classNames from "classnames";
 
-const Location = ({ card, scale, orientation, rounded, className, style }: CardComponentProps) => {
+const Location = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (
-        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={classNames("flex flex-row", className)} style={style}>
+        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} classNames={{ inner: "flex flex-row" }} style={style} {...props}>
             <div className="relative flex flex-col" style={{ width: px(35) }}>
                 <Cost>{card.cost}</Cost>
                 <Type>Location</Type>
@@ -24,7 +23,7 @@ const Location = ({ card, scale, orientation, rounded, className, style }: CardC
                 <Faction>{card.faction}</Faction>
                 <Loyalty>{card.loyal}</Loyalty>
             </div>
-            <div className="flex flex-col justify-between">
+            <div className="grow flex flex-col justify-between">
                 <div className="grow relative flex flex-col">
                     <DeckLimit type={card.type} className="absolute self-end h-full" alignment="right">{card.deckLimit}</DeckLimit>
                     <Watermark>{card.watermark}</Watermark>

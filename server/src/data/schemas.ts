@@ -158,7 +158,21 @@ export const Project = {
         formUrl: Joi.string().required(),
         emoji: Joi.string()
     }),
-    Query: {} //TODO
+    Query: Joi.object({
+        number: Joi.number(),
+        name: Joi.string(),
+        code: Joi.string(),
+        active: Joi.boolean(),
+        script: Joi.string(),
+        short: Joi.string(),
+        type: Joi.string().valid(...Projects.types),
+        perFaction: Joi.number(),
+        neutral: Joi.number(),
+        releases: Joi.number(),
+        milestone: Joi.number(),
+        formUrl: Joi.string(),
+        emoji: Joi.string()
+    })
 };
 
 export const PlaytestingReview = {

@@ -1,18 +1,17 @@
 import { Ability, Card, DeckLimit, Designer, Name, TextBox, Traits, Type, Watermark } from "../components/cardComponents";
 import AutoSize from "../components/autoSize";
 import { CardComponentProps } from "../../../types";
-import classNames from "classnames";
 
-const Agenda = ({ card, scale, orientation, rounded, className, style }: CardComponentProps) => {
+const Agenda = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (
-        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={classNames("flex flex-col", className)} style={style}>
+        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} classNames={{ inner: "flex flex-col" }} style={style} {...props}>
             <div>
-                <Name unique={card.unique}>
+                <Name>
                     {card.name}
                 </Name>
                 <Type className="flex items-center justify-center">Agenda</Type>
             </div>
-            <div className="relative">
+            <div className="grow relative flex">
                 <DeckLimit type={card.type} className="absolute h-full">{card.deckLimit}</DeckLimit>
                 <Watermark>{card.watermark}</Watermark>
             </div>

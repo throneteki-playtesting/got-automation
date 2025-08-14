@@ -53,7 +53,7 @@ class BaseCard implements JsonCard {
             code: this.code,
             type: this.type.toLowerCase(),
             name: this.name,
-            octgnId: null,
+            // octgnId: null,
             quantity: this.quantity,
             ...(this.unique !== undefined && { unique: this.unique }),
             faction: this.faction,

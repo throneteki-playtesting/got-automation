@@ -2,11 +2,10 @@ import { Ability, Card, Cost, DeckLimit, Designer, Faction, Loyalty, Name, TextB
 import AutoSize from "../components/autoSize";
 import { px } from "../../../utilities";
 import { CardComponentProps } from "../../../types";
-import classNames from "classnames";
 
-const Attachment = ({ card, scale, orientation, rounded, className, style }: CardComponentProps) => {
+const Attachment = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (
-        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={classNames("flex flex-col", className)} style={style}>
+        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} classNames={{ inner: "flex flex-col" }} style={style} {...props}>
             <div className="flex grow">
                 <div className="flex flex-col" style={{ width: px(35) }}>
                     <Cost>{card.cost}</Cost>
@@ -15,15 +14,15 @@ const Attachment = ({ card, scale, orientation, rounded, className, style }: Car
                 </div>
                 <Watermark style={{ marginRight: px(35) }}>{card.watermark}</Watermark>
             </div>
-            <div className="flex flex-col items-end">
-                <TextBox>
+            <div className="relative flex flex-col items-end">
+                <TextBox className="w-full" style={{ paddingBottom: px(10) }}>
                     <Traits>{card.traits}</Traits>
                     <AutoSize height={90} className="flex flex-col">
                         <Ability>{card.text}</Ability>
                         <Designer>{card.designer}</Designer>
                     </AutoSize>
                 </TextBox>
-                <Loyalty>{card.loyal}</Loyalty>
+                <Loyalty className="absolute bottom-0">{card.loyal}</Loyalty>
             </div>
             <div className="flex">
                 <Name unique={card.unique} className="grow" style={{

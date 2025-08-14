@@ -5,20 +5,10 @@ import ThronesIcon, { Icon } from "../../thronesIcon";
 import AutoSize from "./autoSize";
 import { em, px } from "../../../utilities";
 import { DeepPartial } from "common/types";
+import { memo, useMemo } from "react";
 
 const defaultOrientation = (type?: TypeType) => type === "plot" ? "horizontal" : "vertical";
-export const Card = ({ children, card, orientation = defaultOrientation(card.type), scale = 1, rounded = true, className, style }: CardProps) => {
-    const factionBorder = {
-        baratheon: "border-baratheon",
-        greyjoy: "border-greyjoy",
-        lannister: "border-lannister",
-        martell: "border-martell",
-        thenightswatch: "border-thenightswatch",
-        stark: "border-stark",
-        targaryen: "border-targaryen",
-        tyrell: "border-tyrell",
-        neutral: "border-neutral"
-    };
+export const Card = memo(({ children, card, orientation = defaultOrientation(card.type), scale = 1, rounded = true, className, classNames: classGroups, style, ...props }: CardProps) => {
     const width = 240;
     const height = 333;
 
@@ -29,48 +19,65 @@ export const Card = ({ children, card, orientation = defaultOrientation(card.typ
 
     const rotate = orientation !== defaultOrientation(card.type);
 
-    const innerClassName = classNames("bg-white text-black font-opensans", card.faction ? factionBorder[card.faction] : "border-white",
-        {
-            "origin-top-left": scale !== 1 || rotate,
-            "relative rotate-270 top-full": rotate
-        },
-        className);
+    const innerClassName = useMemo(() => {
+        const factionBorder = {
+            baratheon: "border-baratheon",
+            greyjoy: "border-greyjoy",
+            lannister: "border-lannister",
+            martell: "border-martell",
+            thenightswatch: "border-thenightswatch",
+            stark: "border-stark",
+            targaryen: "border-targaryen",
+            tyrell: "border-tyrell",
+            neutral: "border-neutral"
+        };
+        return classNames("bg-white text-black font-opensans", card.faction ? factionBorder[card.faction] : "border-white",
+            {
+                "origin-top-left": scale !== 1 || rotate,
+                "relative rotate-270 top-full": rotate
+            },
+            classGroups?.inner);
+    }, [card.faction, classGroups?.inner, rotate, scale]);
 
     return (
-        <div style={{
-            width: px(wrapperWidth * scale),
-            height: px(wrapperHeight * scale)
-        }}>
+        <div
+            className={classNames("overflow-hidden", className, classGroups?.wrapper)}
+            style={{
+                width: px(wrapperWidth * scale),
+                height: px(wrapperHeight * scale),
+                ...(rounded && { borderRadius: px(12) }),
+                ...style
+            }}
+            {...props}
+        >
             <div
                 className={innerClassName}
                 style={{
                     width: px(innerWidth),
                     height: px(innerHeight),
                     borderWidth: px(12),
-                    ...(rounded && { borderRadius: px(12) }),
-                    ...(scale !== 1 && { scale }),
-                    ...style
+                    ...(scale !== 1 && { scale })
                 }}
             >
                 {children}
             </div>
         </div>
     );
-};
-type CardProps = BaseElementProps & { card: DeepPartial<JsonRenderableCard>, orientation?: "vertical" | "horizontal", scale?: number, rounded?: boolean };
+});
+type CardProps = BaseElementProps & { classNames?: { wrapper?: string, inner?: string }, card: DeepPartial<JsonRenderableCard>, orientation?: "vertical" | "horizontal", scale?: number, rounded?: boolean } & React.DOMAttributes<HTMLDivElement>;
 
 
-export const Type = ({ children: type, className, style }: TypeProps) => {
+export const Type = memo(({ children: type, className, style }: TypeProps) => {
     return (
         <div className={classNames("relative", className)} style={{ top: px(-5), left: px(2), fontSize: px(8), ...style }}>
             {type}
         </div>
     );
-};
+});
 type TypeProps = Omit<BaseElementProps, "children"> & { children?: string };
 
 
-export const Cost = ({ children, className, style }: CostProps) => {
+export const Cost = memo(({ children, className, style }: CostProps) => {
     return (
         <AutoSize
             height={35}
@@ -88,11 +95,11 @@ export const Cost = ({ children, className, style }: CostProps) => {
             {children}
         </AutoSize>
     );
-};
+});
 type CostProps = Omit<BaseElementProps, "children"> & { children?: CostType };
 
 
-export const ChallengeIcons = ({ children: icons = [], className, style }: ChallengeIconsProps) => {
+export const ChallengeIcons = memo(({ children: icons = [], className, style }: ChallengeIconsProps) => {
     return (
         <div className={classNames("grow flex flex-col", className)} style={style}>
             {challengeIcons.map((icon) =>
@@ -107,11 +114,11 @@ export const ChallengeIcons = ({ children: icons = [], className, style }: Chall
             )}
         </div>
     );
-};
+});
 type ChallengeIconsProps = Omit<BaseElementProps, "children"> & { children?: ChallengeIcon[] };
 
 
-export const Loyalty = ({ children: loyal, className, style }: LoyaltyProps) => {
+export const Loyalty = memo(({ children: loyal, className, style }: LoyaltyProps) => {
     return (
         <div
             className={classNames("flex items-center justify-center", className)}
@@ -120,11 +127,11 @@ export const Loyalty = ({ children: loyal, className, style }: LoyaltyProps) => 
             {loyal && "Loyal"}
         </div>
     );
-};
+});
 type LoyaltyProps = Omit<BaseElementProps, "children"> & { children?: boolean }
 
 
-export const Strength = ({ children: strength, className, style }: StrengthProps) => {
+export const Strength = memo(({ children: strength, className, style }: StrengthProps) => {
     return (
         <AutoSize
             height={35}
@@ -134,11 +141,11 @@ export const Strength = ({ children: strength, className, style }: StrengthProps
             {strength}
         </AutoSize>
     );
-};
+});
 type StrengthProps = Omit<BaseElementProps, "children"> & { children?: StrengthType };
 
 
-export const Name = ({ unique, height, children: name, className, style }: NameProps) => {
+export const Name = memo(({ unique, height, children: name, className, style }: NameProps) => {
     return (
         <AutoSize height={height ?? 35} className={classNames("text-center flex items-center justify-center", className)} style={{
             fontSize: px(14),
@@ -152,11 +159,11 @@ export const Name = ({ unique, height, children: name, className, style }: NameP
             <span className="flex items-center justify-center">{name}</span>
         </AutoSize>
     );
-};
+});
 type NameProps = Omit<BaseElementProps, "children"> & { children?: string, unique?: boolean, height?: number };
 
 
-export const Faction = ({ children: faction, className, style }: FactionBadgeProps) => {
+export const Faction = memo(({ children: faction, className, style }: FactionBadgeProps) => {
     return (
         <div
             className={classNames("border-black box-border flex items-center justify-center", className)}
@@ -165,11 +172,11 @@ export const Faction = ({ children: faction, className, style }: FactionBadgePro
             {faction && <ThronesIcon name={faction} />}
         </div>
     );
-};
+});
 type FactionBadgeProps = Omit<BaseElementProps, "children"> & { children?: FactionType };
 
 
-export const Traits = ({ children: traits = [], className, style }: TraitsProps) => {
+export const Traits = memo(({ children: traits = [], className, style }: TraitsProps) => {
     return (
         <div
             className={classNames("italic font-bold text-center", className)}
@@ -178,21 +185,21 @@ export const Traits = ({ children: traits = [], className, style }: TraitsProps)
             {traits.map((trait) => `${trait}.`).join(" ")}
         </div>
     );
-};
+});
 type TraitsProps = Omit<BaseElementProps, "children"> & { children?: Partial<string[]> };
 
 
-export const TextBox = ({ children, className, style }: TextBoxProps) => {
+export const TextBox = memo(({ children, className, style }: TextBoxProps) => {
     return (
-        <div className={classNames("font-crimson flex flex-col", className)} style={{ fontSize: px(12), lineHeight: 1.1, padding: `${px(5)} ${px(10)} ${px(5)} ${px(10)}`, ...style }}>
+        <div className={classNames("font-crimson flex flex-col", className)} style={{ fontSize: px(12), lineHeight: 1.1, padding: `${px(5)} ${px(10)}`, ...style }}>
             {children}
         </div>
     );
-};
+});
 type TextBoxProps = BaseElementProps;
 
 
-export const Ability = ({ children: text, className, style }: AbilityProps) => {
+export const Ability = memo(({ children: text, className, style }: AbilityProps) => {
     const convertToHtml = (htmlString: string): React.ReactNode[] => {
         const raw = htmlString
             .replace(/(?<=\n?)([^\n]+)(?=\n?)/g, "<p>$1</p>")
@@ -246,28 +253,28 @@ export const Ability = ({ children: text, className, style }: AbilityProps) => {
     return <div className={classNames("grow flex flex-col", className)} style={{ gap: em(0.25), ...style }}>
         {text && convertToHtml(text)}
     </div>;
-};
+});
 type AbilityProps = Omit<BaseElementProps, "children"> & { children?: string };
 
 
-export const Designer = ({ children: designer, className, style }: DesignerProps) => {
+export const Designer = memo(({ children: designer, className, style }: DesignerProps) => {
     return (
         (designer && <div className={classNames("grow font-bold", className)} style={{ fontSize: px(11), paddingTop: em(0.5), ...style }}>
             {designer}
         </div>)
     );
-};
+});
 type DesignerProps = Omit<BaseElementProps, "children"> & { children?: string };
 
 
-export const PlotModifier = ({ className, style, type, modifier, children: value }: PlotModifierProps) => {
+export const PlotModifier = memo(({ className, style, type, modifier, children: value }: PlotModifierProps) => {
     const actualValue = `${modifier}${value}` as `${"+" | "-"}${number}`;
     return (value && <PlotStat className={className} style={style} type={type}>{actualValue}</PlotStat>);
-};
+});
 type PlotModifierProps = Omit<BaseElementProps, "children"> & { type: PlotStatType, modifier: "+" | "-", children?: PlotValueType, inline?: boolean }
 
 
-export const PlotStat = ({ className, style, type, children: value }: PlotStatProps) => {
+export const PlotStat = memo(({ className, style, type, children: value }: PlotStatProps) => {
     const getStatDetails = (): { background: string, clipPath: string } => {
         switch (type) {
             case "income":
@@ -297,10 +304,10 @@ export const PlotStat = ({ className, style, type, children: value }: PlotStatPr
             {value}
         </AutoSize>
     );
-};
+});
 type PlotStatProps = Omit<BaseElementProps, "children"> & { type: PlotStatType, children?: PlotValueType | `${"+" | "-"}${PlotValueType}` }
 
-export const DeckLimit = ({ type, alignment = "left", children: limit, className, style }: DeckLimitProps) => {
+export const DeckLimit = memo(({ type, alignment = "left", children: limit, className, style }: DeckLimitProps) => {
     if (!type || limit === DefaultDeckLimit[type]) {
         return null;
     }
@@ -310,11 +317,11 @@ export const DeckLimit = ({ type, alignment = "left", children: limit, className
             {limit && `Deck Limit: ${limit}`}
         </div>
     );
-};
+});
 type DeckLimitProps = Omit<BaseElementProps, "children"> & { type?: TypeType, alignment?: "left" | "right", children?: number };
 
-
-export const Watermark = ({ children: watermark, className, style }: WatermarkProps) => {
+// TODO: Convert into AutoSize, and eliminate "height" requirement of autosize
+export const Watermark = memo(({ children: watermark, className, style }: WatermarkProps) => {
     return (
         <div
             className={classNames("grow flex flex-col text-gray-200 font-bold justify-center items-center", className)}
@@ -325,5 +332,5 @@ export const Watermark = ({ children: watermark, className, style }: WatermarkPr
             <span>{watermark?.bottom}</span>
         </div>
     );
-};
+});
 type WatermarkProps = Omit<BaseElementProps, "children"> & { children?: Partial<WatermarkType> };

@@ -13,4 +13,4 @@ export type CardComponentProps = Omit<BaseElementProps, "children"> & {
     scale?: number,
     orientation?: "horizontal" | "vertical",
     rounded?: boolean
-};
+} & React.DOMAttributes<HTMLDivElement>;

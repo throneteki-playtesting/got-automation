@@ -1,4 +1,3 @@
-import { JsonPlaytestingCard } from "common/models/cards";
 import { DeepPartial, SingleOrArray } from "common/types";
 
 type DotPath<T, Prefix extends string = ""> = DeepPartial<
@@ -49,7 +48,7 @@ function expandDotPaths<T extends object>(flat: DotPath<T>): T {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const parseCardFilter = (req: { query: { filter: any } }, res: unknown, next: (arg?: unknown) => void) => {
+export const parseFilter = (req: { query: { filter: any } }, res: unknown, next: (arg?: unknown) => void) => {
     const { filter } = req.query;
     if (!filter) {
         return next();
@@ -57,7 +56,8 @@ export const parseCardFilter = (req: { query: { filter: any } }, res: unknown, n
     try {
         const decoded = decodeURIComponent(filter);
         let parsed = JSON.parse(decoded) as SingleOrArray<object>;
-        parsed = Array.isArray(parsed) ? parsed.map((p: object) => expandDotPaths(p) as DeepPartial<JsonPlaytestingCard>) : parsed as DeepPartial<JsonPlaytestingCard>;
+        const convert = (o: object) => expandDotPaths(o);
+        parsed = Array.isArray(parsed) ? parsed.map(convert) : convert(parsed);
         req.query.filter = parsed;
     } catch (err) {
         next(err);

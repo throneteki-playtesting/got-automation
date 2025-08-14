@@ -49,6 +49,27 @@ class Project implements JsonProject {
         return new Project(clonedJsonData);
     }
 
+    /**
+     * Converts card into format appropriate for general JSON
+     */
+    toJSON() {
+        const obj = {
+            number: this.number,
+            name: this.name,
+            code: this.code,
+            active: this.active,
+            type: this.type,
+            script: this.script,
+            perFaction: this.perFaction,
+            neutral: this.neutral,
+            version: this.version,
+            milestone: this.milestone,
+            formUrl: this.formUrl,
+            emoji: this.emoji
+        } as JsonProject;
+        return obj;
+    }
+
     toString() {
         return this.name;
     }

@@ -1,20 +1,37 @@
-import { JsonRenderableCard } from "common/models/cards";
+import { Code, JsonPlaytestingCard } from "common/models/cards";
 import { BaseElementProps } from "../../types";
 import classNames from "classnames";
 import CardPreview from ".";
+import { useMemo, useState } from "react";
+import { toRenderableCard } from "../../utilities";
 
 const CardGrid = ({ children: cards, className, style, scale }: CardPreviewProps) => {
+    const [focused, setFocused] = useState<Code>();
+
+    const rendering = useMemo(() => cards?.map((card) => {
+        const isFocused = focused === card.code;
+        return (
+            <CardPreview
+                key={card.code}
+                card={toRenderableCard(card)}
+                scale={scale}
+                orientation="vertical"
+                rounded={true}
+                className={classNames("cursor-pointer transition-all", { "blur-xs": focused !== undefined && !isFocused })}
+                onClick={() => isFocused ? setFocused(undefined) : setFocused(card.code)}
+            />
+        );
+    }) ?? [], [cards, focused, scale]);
+
     return (
-        <div className={classNames("flex flex-wrap", className)} style={style}>
-            {cards.map((card, index) => {
-                return <CardPreview key={index} card={card} scale={scale} orientation="vertical" rounded={false} />;
-            })}
+        <div className={classNames("flex flex-wrap justify-center", className)} style={style}>
+            {rendering}
         </div>
     );
 };
 
 type CardPreviewProps = Omit<BaseElementProps, "children"> & {
-    children: JsonRenderableCard[],
+    children?: JsonPlaytestingCard[],
     scale?: number
 }
 

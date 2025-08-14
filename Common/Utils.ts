@@ -131,10 +131,12 @@ export function buildUrl(baseUrl: string, queryParameters?: { [key: string]: unk
     let url = baseUrl;
     if (queryParameters && Object.keys(queryParameters).length > 0) {
         const queryString = Object.entries(queryParameters)
-            .filter(([, value]) => !!value)
+            .filter(([, value]) => value != undefined)
             .map(([key, value]) => `${key}=${encodeURIComponent(JSON.stringify(value))}`)
             .join("&");
-        url += "?" + queryString;
+        if (queryString) {
+            url += "?" + queryString;
+        }
     }
     return url;
 }

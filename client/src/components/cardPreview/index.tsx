@@ -1,4 +1,3 @@
-import { JsonRenderableCard } from "common/models/cards";
 import Character from "./cardtypes/character";
 import Location from "./cardtypes/location";
 import Attachment from "./cardtypes/attachment";
@@ -7,10 +6,10 @@ import Plot from "./cardtypes/plot";
 import Agenda from "./cardtypes/agenda";
 import { CardComponentProps } from "../../types";
 import { Card } from "./components/cardComponents";
-import { DeepPartial } from "common/types";
+import { useMemo } from "react";
 
-const CardPreview = ({ card, scale, orientation, rounded, className, style }: CardPreviewProps) => {
-    const getComponentFor = (card: DeepPartial<JsonRenderableCard>) => {
+const CardPreview = ({ card, scale, orientation, rounded, className, style, ...props }: CardPreviewProps) => {
+    const CardComponent = useMemo(() => {
         switch (card.type) {
             case "character":
                 return Character;
@@ -27,10 +26,9 @@ const CardPreview = ({ card, scale, orientation, rounded, className, style }: Ca
             default:
                 return Card;
         }
-    };
+    }, [card.type]);
 
-    const CardComponent = getComponentFor(card);
-    return <CardComponent card={card} scale={scale} orientation={orientation} rounded={rounded} className={className} style={style}/>;
+    return <CardComponent card={card} scale={scale} orientation={orientation} rounded={rounded} className={className} style={style} {...props} />;
 };
 export type CardPreviewProps = CardComponentProps;
 
