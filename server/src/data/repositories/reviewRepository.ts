@@ -1,6 +1,5 @@
 import MongoDataSource from "./dataSources/mongoDataSource";
 import { MongoClient } from "mongodb";
-import { IRepository } from "..";
 import { dataService, logger } from "@/services";
 import { JsonPlaytestingReview } from "common/models/reviews";
 import { asArray, groupBy } from "common/utils";
@@ -9,11 +8,11 @@ import GASDataSource from "./dataSources/GASDataSource";
 import ReviewCollection from "../models/reviewCollection";
 import { DeepPartial, SingleOrArray } from "common/types";
 
-export default class ReviewsRepository implements IRepository<JsonPlaytestingReview> {
-    public database: ReviewMongoDataSource;
+export default class ReviewsRepository {
+    public database: MongoDataSource<JsonPlaytestingReview>;
     public spreadsheet: ReviewDataSource;
     constructor(mongoClient: MongoClient) {
-        this.database = new ReviewMongoDataSource(mongoClient);
+        this.database = new MongoDataSource<JsonPlaytestingReview>(mongoClient, "reviews", { project: 1, number: 1, version: 1, reviewer: 1 });
         this.spreadsheet = new ReviewDataSource();
     }
     public async create(creating: SingleOrArray<JsonPlaytestingReview>) {
@@ -43,63 +42,6 @@ export default class ReviewsRepository implements IRepository<JsonPlaytestingRev
     public async destroy(destroying: SingleOrArray<DeepPartial<JsonPlaytestingReview>>) {
         await this.database.destroy(destroying);
         await this.spreadsheet.destroy(destroying);
-    }
-}
-
-class ReviewMongoDataSource extends MongoDataSource<JsonPlaytestingReview> {
-    constructor(client: MongoClient) {
-        super(client, "reviews");
-    }
-    public async create(creating: SingleOrArray<JsonPlaytestingReview>) {
-        const reviews = asArray(creating);
-        if (reviews.length === 0) {
-            return [];
-        }
-        const results = await this.collection.insertMany(reviews, { ordered: false });
-
-        logger.verbose(`Inserted ${results.insertedCount} values into ${this.name} collection`);
-
-        // Return reviews which were actually inserted (no duplicates)
-        return Object.keys(results.insertedIds).map((index) => reviews[index] as JsonPlaytestingReview);
-    }
-    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingReview>>) {
-        const query = this.buildFilterQuery(reading);
-        const result = await this.collection.find(query).toArray();
-
-        logger.verbose(`Read ${result.length} values from ${this.name} collection`);
-        return this.withoutId(result);
-    }
-
-    public async update(updating: SingleOrArray<JsonPlaytestingReview>, { upsert }: { upsert: boolean } = { upsert: true }) {
-        const reviews = asArray(updating);
-        if (reviews.length === 0) {
-            return [];
-        }
-        const results = await this.collection.bulkWrite(reviews.map((review) => ({
-            replaceOne: {
-                filter: { "number": review.number, "version": review.version, "reviewer": review.reviewer },
-                replacement: review,
-                upsert
-            }
-        })), { ordered: false });
-
-        logger.verbose(`${upsert ? "Upserted" : "Updated"} ${results.modifiedCount + results.upsertedCount} values out of ${results.matchedCount} into ${this.name} collection`);
-
-        const updatedIds = { ... results.insertedIds, ...results.upsertedIds };
-        // Return reviews which were actually inserted or upserted
-        return Object.keys(updatedIds).map((index) => reviews[index] as JsonPlaytestingReview);
-    }
-
-    public async destroy(deleting: SingleOrArray<DeepPartial<JsonPlaytestingReview>>) {
-        const query = this.buildFilterQuery(deleting);
-        if (Object.keys(query).length === 0) {
-            return 0; // Do not delete anything if there are no query parameters
-        }
-        // Collect all which are to be deleted
-        const results = await this.collection.deleteMany(query);
-
-        logger.verbose(`Deleted ${results.deletedCount} values from ${this.name} collection`);
-        return results.deletedCount;
     }
 }
 

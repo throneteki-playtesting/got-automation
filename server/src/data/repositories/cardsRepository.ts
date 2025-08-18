@@ -1,5 +1,4 @@
-import { MongoClient } from "mongodb";
-import { IRepository } from "..";
+import { BulkWriteOptions, MongoClient } from "mongodb";
 import { dataService, logger, renderService } from "@/services";
 import { asArray, groupBy } from "common/utils";
 import * as CardsController from "gas/controllers/cardsController";
@@ -11,7 +10,7 @@ import CardCollection from "../models/cards/cardCollection";
 import PlaytestingCard from "../models/cards/playtestingCard";
 import { DeepPartial, SingleOrArray } from "common/types";
 
-export default class CardsRepository implements IRepository<JsonPlaytestingCard> {
+export default class CardsRepository {
     public database: CardMongoDataSource;
     public spreadsheet: CardDataSource;
     constructor(mongoClient: MongoClient) {
@@ -49,67 +48,23 @@ export default class CardsRepository implements IRepository<JsonPlaytestingCard>
 
 class CardMongoDataSource extends MongoDataSource<JsonPlaytestingCard> {
     constructor(client: MongoClient) {
-        super(client, "cards");
-        // Index on number & version, and allow _id to be a uuid
-        this.collection.createIndex({ number: 1, version: 1 }, { unique: true });
+        super(client, "cards", { number: 1, version: 1 });
     }
 
-    public async create(creating: SingleOrArray<JsonPlaytestingCard>) {
+    public override async create(creating: SingleOrArray<JsonPlaytestingCard>, options?: BulkWriteOptions) {
         const cards = asArray(creating);
-        if (cards.length === 0) {
-            return [];
-        }
         await renderService.syncImages(new CardCollection(cards));
-        const results = await this.collection.insertMany(cards, { ordered: false });
-
-        logger.verbose(`Inserted ${results.insertedCount} values into ${this.name} collection`);
-
-        // Return cards which were actually inserted (no duplicates)
-        return Object.keys(results.insertedIds).map((index) => cards[index] as JsonPlaytestingCard);
+        const result = await this.insertMany(cards, options);
+        return result;
     }
 
-    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingCard>>) {
-        const query = this.buildFilterQuery(reading);
-        const result = await this.collection.find(query).toArray();
-
-        logger.verbose(`Read ${result.length} values from ${this.name} collection`);
-        return this.withoutId(result);
-    }
-
-    public async update(updating: SingleOrArray<JsonPlaytestingCard>, { upsert }: { upsert: boolean } = { upsert: true }) {
+    public override async update(updating: SingleOrArray<JsonPlaytestingCard>, options?: BulkWriteOptions & { upsert?: boolean }) {
         const cards = asArray(updating);
-        if (cards.length === 0) {
-            return [];
-        }
         await renderService.syncImages(new CardCollection(cards), true);
-        const results = await this.collection.bulkWrite(cards.map((card) => ({
-            replaceOne: {
-                filter: { "number": card.number, "version": card.version },
-                replacement: card,
-                upsert
-            }
-        })), { ordered: false });
-
-        logger.verbose(`${upsert ? "Upserted" : "Updated"} ${results.modifiedCount + results.upsertedCount} values into ${this.name} collection`);
-
-        const updatedIds = { ... results.insertedIds, ...results.upsertedIds };
-        // Return cards which were actually inserted or upserted
-        return Object.keys(updatedIds).map((index) => cards[index] as JsonPlaytestingCard);
-    }
-
-    public async destroy(deleting: SingleOrArray<DeepPartial<JsonPlaytestingCard>>) {
-        const query = this.buildFilterQuery(deleting);
-        if (Object.keys(query).length === 0) {
-            return 0; // Do not delete anything if there are no query parameters
-        }
-        // Collect all which are to be deleted
-        const results = await this.collection.deleteMany(query);
-
-        logger.verbose(`Deleted ${results.deletedCount} values from ${this.name} collection`);
-        return results.deletedCount;
+        const result = await this.bulkWrite(cards, options);
+        return result;
     }
 }
-
 class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
     public async create(creating: SingleOrArray<JsonPlaytestingCard>) {
         const cards = asArray(creating);

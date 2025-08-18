@@ -5,9 +5,11 @@ import compression from "compression";
 import cors from "cors";
 import { errors } from "celebrate";
 import api from "./routes/API/index";
-import basicAuth from "express-basic-auth";
+import auth from "./routes/auth/index";
 import { logger } from "@/services";
 import swaggerRouter from "./swagger";
+import cookieParser from "cookie-parser";
+import { authenticate } from "./middleware/auth";
 
 export const apiUrl = config.get("server.host") || `http://localhost:${config.get("server.ports.api")}`;
 function initialise(apiHost: string, serverPort: number, clientPort: number) {
@@ -23,12 +25,13 @@ function initialise(apiHost: string, serverPort: number, clientPort: number) {
     app.use(express.static("public"));
     app.use(express.json());
 
-    // Register routes
-    app.use("/api", basicAuth({
-        users: config.get("server.auth"),
-        challenge: true,
-        unauthorizedResponse: "Unauthorized access. Please provide valid credentials."
-    }), api);
+    app.use(cookieParser());
+
+    // Register API
+    app.use("/api", authenticate, api);
+
+    // Route authentication services (eg. Discord)
+    app.use("/auth", auth);
 
     app.use(swaggerRouter);
 

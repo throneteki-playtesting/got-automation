@@ -1,10 +1,12 @@
 import { HeroUIProvider, ToastProvider } from "@heroui/react";
-import NavigationBar from "../components/navigationBar";
-import { Outlet } from "react-router-dom";
+import NavigationBar from "../components/navigation";
+import { Outlet, useHref, useNavigate } from "react-router-dom";
 
 function App() {
+    const navigate = useNavigate();
+
     return (
-        <HeroUIProvider>
+        <HeroUIProvider navigate={navigate} useHref={useHref}>
             <NavigationBar />
             <ToastProvider placement="top-right"/>
             <div className="container">

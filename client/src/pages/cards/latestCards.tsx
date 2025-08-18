@@ -1,10 +1,10 @@
 import { JsonPlaytestingCard } from "common/models/cards";
 import { DeepPartial, SingleOrArray } from "common/types";
-import { useGetCardsQuery } from "../../api/cardsApi";
 import { BaseElementProps } from "../../types";
 import CardGrid from "../../components/cardPreview/cardGrid";
 import { Skeleton } from "@heroui/react";
 import classNames from "classnames";
+import { useGetCardsQuery } from "../../api";
 
 const LatestCards = ({ className, style, filter }: LatestCardsProps) => {
     const { data: cards, isLoading, error } = useGetCardsQuery({ filter, latest: true });

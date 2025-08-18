@@ -5,15 +5,17 @@
         "ports": {
             "api": 8080,
             "client": 4000
-        },
-        "auth": {
-            "username": "password"
         }
     },
     "discord": {
         "token": "",
         "clientId": "",
-        "developmentGuildId": ""
+        "clientSecret": "",
+        "guildId": {
+            "primary": "",
+            "development": ""
+        },
+        "authRedirectUri": ""
     },
     "google": {
         "privateKey": "",
@@ -27,5 +29,6 @@
     },
     "database": {
         "url": ""
-    }
+    },
+    "jwt": ""
 }

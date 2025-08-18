@@ -8,6 +8,8 @@ import { SemanticVersion } from "common/utils";
 import { JsonPlaytestingCard, NoteType } from "common/models/cards";
 import * as Schemas from "@/data/schemas";
 import { DeepPartial, SingleOrArray } from "common/types";
+import { requiresPermission } from "@/middleware/permissions";
+import { Permission } from "common/models/user";
 
 export type ResourceFormat = "JSON" | "HTML" | "TXT" | "PNG" | "PDF";
 
@@ -21,6 +23,7 @@ type FormatQuery = { format?: ResourceFormat }
 type CardBody = SingleOrArray<JsonPlaytestingCard>;
 
 const handleGetCards = [
+    // requiresPermission(Permission.READ_CARDS),
     celebrate({
         [Segments.QUERY]: {
             filter: Joi.alternatives().try(Schemas.PlaytestingCard.Query, Joi.array().items(Schemas.PlaytestingCard.Query)),
@@ -293,63 +296,66 @@ router.get("/:project/:number", celebrate({
  *       200:
  *         description: Success
  */
-router.post("/", celebrate({
-    [Segments.BODY]: Joi.alternatives().try(Schemas.PlaytestingCard.Body, Joi.array().items(Schemas.PlaytestingCard.Body))
-}), asyncHandler<unknown, unknown, CardBody, unknown>(async (req, res) => {
-    const body = req.body;
-    const cards = Array.isArray(body) ? body.map((b) => new PlaytestingCard(b)) as [] : [new PlaytestingCard(body)];
+router.post("/",
+    // requiresPermission(Permission.CREATE_CARDS),
+    celebrate({
+        [Segments.BODY]: Joi.alternatives().try(Schemas.PlaytestingCard.Body, Joi.array().items(Schemas.PlaytestingCard.Body))
+    }),
+    asyncHandler<unknown, unknown, CardBody, unknown>(async (req, res) => {
+        const body = req.body;
+        const cards = Array.isArray(body) ? body.map((b) => new PlaytestingCard(b)) as [] : [new PlaytestingCard(body)];
 
-    const incType = (type: NoteType) => {
-        switch (type) {
-            case "replaced": return "major";
-            case "reworked": return "minor";
-            case "updated": return "patch";
-        }
-    };
-    logger.verbose(`Recieved ${cards.length} card update(s) from sheets`);
-    const latest: JsonPlaytestingCard[] = [];
-    const upsert: JsonPlaytestingCard[] = [];
-    const destroy: DeepPartial<JsonPlaytestingCard>[] = [];
+        const incType = (type: NoteType) => {
+            switch (type) {
+                case "replaced": return "major";
+                case "reworked": return "minor";
+                case "updated": return "patch";
+            }
+        };
+        logger.verbose(`Recieved ${cards.length} card update(s) from sheets`);
+        const latest: JsonPlaytestingCard[] = [];
+        const upsert: JsonPlaytestingCard[] = [];
+        const destroy: DeepPartial<JsonPlaytestingCard>[] = [];
 
-    for (const card of cards) {
+        for (const card of cards) {
         // If card is not in playtesting, push updates
-        if (!card.playtesting) {
-            upsert.push(card);
-        }
-
-        // If card is currently being drafted (eg. edited)
-        if (card.isDraft) {
-            const expectedVersion = inc(card.playtesting, incType(card.note.type));
-            // If it's version has not been incremented, increment it, and push new id card to database/archive
-            if (card.version !== expectedVersion) {
-                const newCard = card.clone();
-                // Setting the incremented version of "latest" (card) for sheet and to the newly upserted card into database
-                card.version = newCard.version = inc(card.playtesting, incType(card.note.type)) as SemanticVersion;
-                upsert.push(newCard);
-            } else {
+            if (!card.playtesting) {
                 upsert.push(card);
             }
-            // Either way, push changes to latest to properly sync
-            latest.push(card);
-        }
-        // If versions do not match (and is not in draft), then a draft has been reverted, and thus should be deleted in database/archive, and version reverted in latest
-        else if (card.version !== card.playtesting) {
-            destroy.push({ project: card.project, number: card.number, version: card.version });
-            card.version = card.playtesting;
-            latest.push(card);
-        }
-    }
 
-    await dataService.cards.update(upsert, true);
-    if (destroy.length > 0) {
-        await dataService.cards.destroy(destroy);
-    }
-    await dataService.cards.spreadsheet.update(latest, { sheets: ["latest"] });
+            // If card is currently being drafted (eg. edited)
+            if (card.isDraft) {
+                const expectedVersion = inc(card.playtesting, incType(card.note.type));
+                // If it's version has not been incremented, increment it, and push new id card to database/archive
+                if (card.version !== expectedVersion) {
+                    const newCard = card.clone();
+                    // Setting the incremented version of "latest" (card) for sheet and to the newly upserted card into database
+                    card.version = newCard.version = inc(card.playtesting, incType(card.note.type)) as SemanticVersion;
+                    upsert.push(newCard);
+                } else {
+                    upsert.push(card);
+                }
+                // Either way, push changes to latest to properly sync
+                latest.push(card);
+            }
+            // If versions do not match (and is not in draft), then a draft has been reverted, and thus should be deleted in database/archive, and version reverted in latest
+            else if (card.version !== card.playtesting) {
+                destroy.push({ project: card.project, number: card.number, version: card.version });
+                card.version = card.playtesting;
+                latest.push(card);
+            }
+        }
 
-    res.send({
-        updated: upsert.length + latest.length,
-        deleted: destroy.length
-    });
-}));
+        await dataService.cards.update(upsert, true);
+        if (destroy.length > 0) {
+            await dataService.cards.destroy(destroy);
+        }
+        await dataService.cards.spreadsheet.update(latest, { sheets: ["latest"] });
+
+        res.send({
+            updated: upsert.length + latest.length,
+            deleted: destroy.length
+        });
+    }));
 
 export default router;

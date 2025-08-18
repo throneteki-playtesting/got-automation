@@ -1,6 +1,6 @@
 import { useState } from "react";
-import CardEditor from "../components/cardEditor";
-import CardPreview from "../components/cardPreview";
+import CardEditor from "../../components/cardEditor";
+import CardPreview from "../../components/cardPreview";
 import { JsonRenderableCard } from "common/models/cards";
 import { DeepPartial } from "common/types";
 

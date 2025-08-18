@@ -30,6 +30,7 @@ export const thronesIcons: { [key: string]: string } = {
     plot: "\ue60c",
     agenda: "\ue611"
 };
+
 type RenderConversionInput = DeepPartial<JsonPlaytestingCard & JsonRenderableCard>;
 type RenderConversionOutput = DeepPartial<JsonRenderableCard>;
 export function toRenderableCard(cards?: RenderConversionInput[]): RenderConversionOutput[];

@@ -138,6 +138,21 @@ class DiscordService {
         }
         return result || null;
     }
+
+    /**
+     * Finds a guild role by id
+     * @param guild Guild to search
+     * @param id Id of role
+     * @returns The found Role, or null if none can be found within the given Guild
+     */
+    public async findRoleById(guild: Guild, id: string) {
+        let result = guild.roles.cache.find((r) => r.id === id);
+        if (!result) {
+            const fetched = await guild.roles.fetch();
+            result = fetched.find((r) => r.id === id);
+        }
+        return result || null;
+    }
 }
 
 export default DiscordService;
