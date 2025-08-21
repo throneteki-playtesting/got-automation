@@ -1,4 +1,3 @@
-import config from "config";
 import { celebrate, Joi, Segments } from "celebrate";
 import express from "express";
 import asyncHandler from "express-async-handler";
@@ -10,19 +9,12 @@ import { JWTPayload } from "@/types";
 
 const router = express.Router();
 
-// TODO: Move all settings to ENV variables (and access through that instead)
-const JWT_SECRET = config.get("jwt") as string;
-const GUILD_ID = config.get("discord.guildId.development") as string;
-const CLIENT_ID = config.get("discord.clientId") as string;
-const CLIENT_SECRET = config.get("discord.clientSecret") as string;
-const REDIRECT_URI = config.get("discord.authRedirectUri") as string;
 const SCOPES = [
     "identify",
     "guilds",
     "guilds.members.read"
 ];
-const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${REDIRECT_URI}&scope=${SCOPES.join("+")}`;
-const API_BASE_URL = "https://discord.com/api";
+const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&response_type=code&redirect_uri=${process.env.DISCORD_AUTH_REDIRECT}&scope=${SCOPES.join("+")}`;
 
 router.get("/discord", (req, res) => {
     res.redirect(encodeURI(DISCORD_AUTH_URL));
@@ -43,7 +35,7 @@ router.get("/discord/callback",
         const authToken = await getAuthenticationToken(code);
 
         // 2. Fetch discord user & member info
-        const discordMember = await get<APIGuildMember>(`users/@me/guilds/${GUILD_ID}/member`, authToken);
+        const discordMember = await get<APIGuildMember>(`users/@me/guilds/${discordService.primaryGuild.id}/member`, authToken);
         const discordUser = discordMember.user;
         const roleNames = await Promise.all(discordMember.roles.map((roleId) => discordService.findRoleById(discordService.primaryGuild, roleId)));
 
@@ -68,8 +60,7 @@ router.get("/discord/callback",
             sameSite: "lax"
         });
 
-        // TODO: Update this
-        res.redirect("http://localhost:5173/");
+        res.redirect(process.env.CLIENT_HOST);
     })
 );
 
@@ -78,11 +69,11 @@ async function getAuthenticationToken(code: string) {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
-            client_id: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
+            client_id: process.env.DISCORD_CLIENT_ID,
+            client_secret: process.env.DISCORD_CLIENT_SECRET,
             grant_type: "authorization_code",
             code,
-            redirect_uri: REDIRECT_URI
+            redirect_uri: process.env.DISCORD_AUTH_REDIRECT
         })
     });
     if (!response.ok) {
@@ -96,7 +87,7 @@ async function getAuthenticationToken(code: string) {
 
 async function get<T>(url: string, authToken: string) {
     const response = await fetch(
-        `${API_BASE_URL}/${url}`,
+        `https://discord.com/api/${url}`,
         { headers: { Authorization: authToken } }
     );
     if (!response.ok) {
@@ -114,7 +105,7 @@ function createJwtFor(user: User) {
         username: user.username,
         permissions
     } as JWTPayload;
-    return jwt.sign(payload, JWT_SECRET, {
+    return jwt.sign(payload, process.env.JWT_SECRET, {
         algorithm: "HS256",
         expiresIn: "1h"
     });

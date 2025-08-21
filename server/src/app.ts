@@ -1,4 +1,4 @@
-import config from "config";
+import "@/config";
 import express, { NextFunction, Request, Response } from "express";
 import partials from "express-partials";
 import compression from "compression";
@@ -11,14 +11,13 @@ import swaggerRouter from "./swagger";
 import cookieParser from "cookie-parser";
 import { authenticate } from "./middleware/auth";
 
-export const apiUrl = config.get("server.host") || `http://localhost:${config.get("server.ports.api")}`;
-function initialise(apiHost: string, serverPort: number, clientPort: number) {
+function initialise() {
     // Add express
     const app = express();
 
     // Add middleware
     app.use(cors({
-        origin: `${apiHost}:${clientPort}`
+        origin: process.env.CLIENT_HOST
     }));
     app.use(partials());
     app.use(compression());
@@ -42,9 +41,9 @@ function initialise(apiHost: string, serverPort: number, clientPort: number) {
         res.status(404).send("Route does not exist");
     });
 
-    app.listen(serverPort, () => {
-        logger.info(`Server running on port ${serverPort}: ${apiUrl}`);
-        logger.info(`Environment configured as "${process.env.NODE_ENV || "development"}"`);
+    app.listen(process.env.SERVER_PORT, () => {
+        logger.info(`Server running on port ${process.env.SERVER_PORT}: ${process.env.SERVER_HOST}`);
+        logger.info(`Environment configured as "${process.env.NODE_ENV}"`);
     });
 
     return app;
@@ -53,11 +52,16 @@ function initialise(apiHost: string, serverPort: number, clientPort: number) {
 const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
     logger.error(err);
     if (process.env.NODE_ENV !== "production") {
-        res.status(500).send(err);
+        res.status(500).json({
+            name: err.name,
+            message: err.message,
+            cause: err.cause,
+            stack: err.stack
+        });
     } else {
         res.status(500).send("Internal Server Error");
     }
     next();
 };
 
-initialise(config.get("server.host"), config.get("server.ports.api"), config.get("server.ports.client"));
+initialise();

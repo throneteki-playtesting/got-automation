@@ -6,10 +6,11 @@ import { updateFormData } from "../processing/reviews";
 
 class DiscordService {
     private client: Client;
-    private isDevelopment: boolean;
-    constructor(private token: string, private clientId: string, private primaryGuildId: string, private developmentGuildId: string) {
-        // When in development, primaryGuildId is assumed to be development guild's id
-        this.isDevelopment = process.env.NODE_ENV !== "production";
+    private guildId: string;
+    constructor() {
+        this.guildId = process.env.DISCORD_GUILD_ID;
+        const token = process.env.DISCORD_TOKEN;
+        const clientId = process.env.DISCORD_CLIENT_ID;
 
         this.client = new Client({
             intents: ["Guilds", "GuildMessages", "DirectMessages", "GuildPresences"],
@@ -21,7 +22,7 @@ class DiscordService {
         });
 
         buildCommands().then((available) => {
-            const deployOptions = { token: this.token, clientId: this.clientId };
+            const deployOptions = { token, clientId };
             this.client.on(Events.GuildCreate, async (guild) => {
                 if (this.isValidGuild(guild)) {
                     await deployCommands(available, { ...deployOptions, guild });
@@ -74,11 +75,11 @@ class DiscordService {
     }
 
     private isValidGuild(guild: Guild) {
-        return this.isDevelopment === (guild.id === this.developmentGuildId);
+        return this.guildId === guild.id;
     }
 
     get primaryGuild() {
-        return this.client.guilds.cache.find((guild) => guild.id = this.primaryGuildId);
+        return this.client.guilds.cache.find((guild) => guild.id = this.guildId);
     }
 
     public async getGuilds() {

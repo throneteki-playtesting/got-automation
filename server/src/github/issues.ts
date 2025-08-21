@@ -4,7 +4,6 @@ import { emojis, githubify } from "./utils";
 import path from "path";
 import { fileURLToPath } from "url";
 import Project from "../data/models/project";
-import { apiUrl } from "@/app";
 import { NoteType } from "common/models/cards";
 import PlaytestingCard from "@/data/models/cards/playtestingCard";
 
@@ -116,8 +115,8 @@ export class Issue {
         const notes = noteTypeOrdered.map((nt) => notesMap.get(nt)).flat().filter((n) => n);
         const number = project.version + 1;
         const pdf = {
-            all: encodeURI(`${apiUrl}/pdf/${project.code}/${number}_all.pdf`),
-            updated: cards.some((card) => card.isChanged) ? encodeURI(`${apiUrl}/pdf/${project.code}/${number}_updated.pdf`) : undefined
+            all: encodeURI(`${process.env.SERVER_HOST}/pdf/${project.code}/${number}_all.pdf`),
+            updated: cards.some((card) => card.isChanged) ? encodeURI(`${process.env.SERVER_HOST}/pdf/${project.code}/${number}_updated.pdf`) : undefined
         };
         const date = new Date().toDateString();
         const body = Issue.renderTemplate({ type: "Playtesting Update", emojis, number, project, pdf, notesLegend, notes, date });

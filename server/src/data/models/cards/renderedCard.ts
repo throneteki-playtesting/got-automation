@@ -1,4 +1,3 @@
-import { apiUrl } from "@/app";
 import { JsonRenderableCard, Watermark } from "common/models/cards";
 import BaseCard from "./baseCard";
 
@@ -32,7 +31,7 @@ class RenderedCard extends BaseCard implements JsonRenderableCard {
     }
 
     private generateDevImageUrl(project: number, number: number, version: string) {
-        return encodeURI(`${apiUrl}/img/${project}/${number}@${version}.png`);
+        return encodeURI(`${process.env.SERVER_HOST}/img/${project}/${number}@${version}.png`);
     }
 }
 

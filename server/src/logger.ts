@@ -14,7 +14,7 @@ export default class LoggerService {
         return info;
     });
 
-    public static initialise(verbose: boolean = false) {
+    public static initialise() {
         const baseFormat = [
             winston.format.timestamp({ format: "YYYY-MM-DD hh:mm:ss" }),
             this.formatError(),
@@ -26,7 +26,7 @@ export default class LoggerService {
                 new winston.transports.Console({
                     forceConsole: true,
                     format: winston.format.combine(...(process.env.NODE_ENV === "production" ? [] : [winston.format.colorize({ level: true })]), ...baseFormat),
-                    level: verbose ? "verbose" : "info"
+                    level: process.env.VERBOSE ? "verbose" : "info"
                 }),
                 ...(process.env.NODE_ENV === "production" ? [
                     new winston.transports.File({ filename: "logs\\error.log", level: "error", handleExceptions: true }),

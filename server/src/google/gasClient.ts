@@ -1,4 +1,3 @@
-import config from "config";
 import { JWT } from "google-auth-library";
 import { Response } from "gas/restClient";
 import { buildUrl } from "common/utils";
@@ -9,8 +8,8 @@ export default class GasClient {
     private clientEmail: string;
     private privateKey: string;
     constructor() {
-        this.clientEmail = config.get("google.clientEmail");
-        this.privateKey = config.get("google.privateKey");
+        this.clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+        this.privateKey = process.env.GOOGLE_PRIVATE_KEY;
         this.scriptSuffix = process.env.NODE_ENV !== "production" ? "dev" : "exec";
     }
 

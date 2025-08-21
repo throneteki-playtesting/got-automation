@@ -29,7 +29,7 @@ apiVersions.forEach((apiVersion) => {
                 description: "Automation for the Global Operations Team for the Game of Thrones Card Game LCG 2nd edition Community",
                 version: apiVersion
             },
-            servers: [ { url: "http://localhost:8080/api/v1" }],
+            servers: [ { url: `${process.env.SERVER_HOST}/api/v1` }],
             consumes: [ "application/json" ],
             produces: [ "application/json" ],
             components: {

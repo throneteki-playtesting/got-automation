@@ -15,9 +15,9 @@ class DataService {
     private _reviews: ReviewsRepository;
     private _users: UsersRepository;
 
-    constructor(databaseUrl: string) {
+    constructor() {
         this.isConnected = false;
-        this.client = new MongoClient(databaseUrl, { ignoreUndefined: true });
+        this.client = new MongoClient(process.env.DATABASE_URL, { ignoreUndefined: true });
         this.client.db().command({ ping: 1 })
             .then(() => {
                 this.isConnected = true;

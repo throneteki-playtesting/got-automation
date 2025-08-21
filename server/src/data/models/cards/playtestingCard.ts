@@ -1,5 +1,4 @@
 import * as Ver from "semver";
-import { apiUrl } from "@/app";
 import { GithubDetails, JsonPlaytestingCard, JsonRenderableCard, NoteDetails, ReleaseDetails } from "common/models/cards";
 import { parseCardCode, SemanticVersion } from "common/utils";
 import BaseCard from "./baseCard";
@@ -101,7 +100,7 @@ class PlaytestingCard extends BaseCard implements JsonPlaytestingCard {
     }
 
     private generateDevImageUrl(project: number, number: number, version: string) {
-        return encodeURI(`${apiUrl}/img/${project}/${number}@${version}.png`);
+        return encodeURI(`${process.env.SERVER_HOST}/img/${project}/${number}@${version}.png`);
     }
 
     override get imageUrl() {

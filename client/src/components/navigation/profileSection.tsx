@@ -27,7 +27,7 @@ const ProfileSection = ({ children: items = [] }: ProfileSectionProps) => {
 
     const onLogin = () => {
         setIsProcessing(true);
-        window.location.href = "http://localhost:8080/auth/discord";
+        window.location.href = `${import.meta.env.VITE_SERVER_HOST}/auth/discord`;
     };
 
     const onLogout = async () => {

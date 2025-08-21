@@ -14,7 +14,12 @@ export type PullRequestDetail = { number: number, state: string, html_url: strin
 class GithubService {
     private client: Octokit & { paginate: import("@octokit/plugin-paginate-rest").PaginateInterface; } & import("@octokit/plugin-paginate-graphql").paginateGraphQLInterface & import("@octokit/plugin-rest-endpoint-methods").Api & { retry: { retryRequest: (error: RequestError, retries: number, retryAfter: number) => RequestError; }; };
     private repoDetails: { owner: string, repo: string };
-    constructor(owner: string, repository: string, appId: string, privateKey: string) {
+    constructor() {
+        const owner = process.env.GITHUB_OWNER;
+        const repository = process.env.GITHUB_REPOSITORY;
+        const appId = process.env.GITHUB_APP_ID;
+        const privateKey = process.env.GITHUB_PRIVATE_KEY;
+
         this.repoDetails = { owner, repo: repository };
 
         this.getClient(appId, privateKey).then((octokit) => {

@@ -1,6 +1,5 @@
 import { dataService } from "@/services";
 import { JWTPayload } from "@/types";
-import config from "config";
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
 
@@ -13,8 +12,7 @@ export const authenticate = asyncHandler<unknown, unknown, unknown, unknown>(
         }
 
         try {
-            const secret = config.get("jwt") as string;
-            const decoded = jwt.verify(token, secret) as JWTPayload;
+            const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
             const [user] = await dataService.users.read({ username: decoded.username });
             req["user"] = user;
             next();

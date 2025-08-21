@@ -12,3 +12,5 @@ server/public/img
 server/public/pdf
 server/public/css/*.css
 server/public/css/*.css.map
+
+*.env
