@@ -5,7 +5,11 @@ import Card from "./pages/card";
 import Suggestions from "./pages/suggestions";
 import Home from "./pages/home";
 import Error from "./components/error";
-import Admin from "./pages/admin";
+import Users from "./pages/admin/users";
+import Page from "./pages/page";
+import { Permission } from "common/models/user";
+import Roles from "./pages/admin/roles";
+import AuthRedirect from "./pages/authRedirect";
 
 const router = createBrowserRouter([
     {
@@ -14,23 +18,31 @@ const router = createBrowserRouter([
         children: [
             {
                 path: "/",
-                element: <Home />
+                element: <Page><Home /></Page>
             },
             {
-                path: "/admin",
-                element: <Admin />
+                path: "/authRedirect",
+                element: <AuthRedirect />
+            },
+            {
+                path: "/users",
+                element: <Page required={Permission.READ_USERS}><Users /></Page>
+            },
+            {
+                path: "/roles",
+                element: <Page required={Permission.READ_ROLES}><Roles /></Page>
             },
             {
                 path: "/cards",
-                element: <Cards />
+                element: <Page required={Permission.READ_CARDS}><Cards /></Page>
             },
             {
                 path: "/cards/:project/:number",
-                element: <Card />
+                element: <Page required={Permission.READ_CARDS}><Card /></Page>
             },
             {
                 path: "/suggestions",
-                element: <Suggestions />
+                element: <Page required={Permission.SUGGEST_CARDS}><Suggestions /></Page>
             }
         ]
     }

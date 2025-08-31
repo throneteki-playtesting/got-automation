@@ -56,3 +56,14 @@ export function toRenderableCard(cards?: SingleOrArray<RenderConversionInput>) {
         return convert(cards);
     }
 }
+
+export function enumToArray<T extends { [key: string]: string | number }>(
+    e: T
+): { key: T[keyof T]; value: Extract<keyof T, string> }[] {
+    return Object.keys(e)
+        .filter(k => isNaN(Number(k)))
+        .map(k => ({
+            key: e[k as keyof T],
+            value: k as Extract<keyof T, string>
+        }));
+}

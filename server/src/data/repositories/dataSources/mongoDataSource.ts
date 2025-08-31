@@ -77,6 +77,12 @@ export default class MongoDataSource<T> {
 
         logger.verbose(`[Mongo] Inserted ${results.insertedCount} documents into ${this.name} collection`);
 
+        // Sanitise docs in case _id was added
+        docs.forEach((doc) => {
+            if (doc["_id"]) {
+                delete doc["_id"];
+            }
+        });
         // Return docs which were actually inserted (no duplicates)
         return Object.keys(results.insertedIds).map((index) => docs[index] as T);
     }
@@ -111,6 +117,7 @@ export default class MongoDataSource<T> {
         const updatedIds = { ... results.insertedIds, ...results.upsertedIds };
 
         // Return docs which were actually inserted or upserted
+        // TODO: Need to find out how to also include "Updated" objects, as they are not included in insertedIds or upsertedIds
         return Object.keys(updatedIds).map((index) => docs[index] as T);
     }
 

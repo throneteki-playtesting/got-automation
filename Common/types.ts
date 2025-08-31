@@ -3,3 +3,5 @@ export type DeepPartial<T> = T extends object ? {
 } : T;
 
 export type SingleOrArray<T> = T | T[];
+
+export type AuthStatus = "success" | "error" | "unauthorized";

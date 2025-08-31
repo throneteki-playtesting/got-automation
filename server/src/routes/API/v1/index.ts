@@ -1,5 +1,6 @@
 import express from "express";
 import users from "./users";
+import roles from "./roles";
 import cards from "./cards";
 import projects from "./projects";
 import packs from "./packs";
@@ -9,14 +10,15 @@ import { parseFilter } from "@/middleware/filters";
 
 const router = express.Router();
 router.use("/users", parseFilter, users);
+router.use("/roles", parseFilter, roles);
 router.use("/cards", parseFilter, cards);
 router.use("/projects", parseFilter, projects);
 router.use("/packs", parseFilter, packs);
 router.use("/reviews", parseFilter, reviews);
 router.use("/custom", parseFilter, custom);
 
-router.get("/login", (req, res) => {
-    res.json(req["user"]);
+router.post("/login", (req, res) => {
+    res.redirect("auth/discord");
 });
 
 router.post("/logout", (req, res) => {

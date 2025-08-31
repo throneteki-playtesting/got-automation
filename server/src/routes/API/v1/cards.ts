@@ -23,10 +23,10 @@ type FormatQuery = { format?: ResourceFormat }
 type CardBody = SingleOrArray<JsonPlaytestingCard>;
 
 const handleGetCards = [
-    // requiresPermission(Permission.READ_CARDS),
+    requiresPermission(Permission.READ_CARDS),
     celebrate({
         [Segments.QUERY]: {
-            filter: Joi.alternatives().try(Schemas.PlaytestingCard.Query, Joi.array().items(Schemas.PlaytestingCard.Query)),
+            filter: Schemas.SingleOrArray(Schemas.PlaytestingCard.Partial),
             hard: Joi.boolean().default(false),
             latest: Joi.boolean().default(true),
             format: Joi.string().insensitive().valid("JSON", "HTML", "PNG", "PDF").default("JSON"),
@@ -297,9 +297,9 @@ router.get("/:project/:number", celebrate({
  *         description: Success
  */
 router.post("/",
-    // requiresPermission(Permission.CREATE_CARDS),
+    requiresPermission(Permission.CREATE_CARDS),
     celebrate({
-        [Segments.BODY]: Joi.alternatives().try(Schemas.PlaytestingCard.Body, Joi.array().items(Schemas.PlaytestingCard.Body))
+        [Segments.BODY]: Schemas.SingleOrArray(Schemas.PlaytestingCard.Full)
     }),
     asyncHandler<unknown, unknown, CardBody, unknown>(async (req, res) => {
         const body = req.body;

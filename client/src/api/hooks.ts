@@ -1,6 +1,7 @@
-import { useSelector } from "react-redux";
-import { RootState } from "./store";
+import { useLocation } from "react-router-dom";
+import { useMemo } from "react";
 
-export const useAuth = () => useSelector(
-    (state: RootState) => state.auth
-);
+export function useQueryParams() {
+    const { search } = useLocation();
+    return useMemo(() => new URLSearchParams(search), [search]);
+}

@@ -35,18 +35,18 @@ apiVersions.forEach((apiVersion) => {
             components: {
                 schemas: {
                     card: {
-                        body: j2s(Schemas.Card.Body).swagger,
-                        query: j2s(Schemas.Card.Query).swagger
+                        full: j2s(Schemas.Card.Full).swagger,
+                        partial: j2s(Schemas.Card.Partial).swagger
                     },
                     playtestingCard: {
-                        body: j2s(Schemas.PlaytestingCard.Body).swagger,
-                        query: j2s(Schemas.PlaytestingCard.Query).swagger
+                        full: j2s(Schemas.PlaytestingCard.Full).swagger,
+                        partial: j2s(Schemas.PlaytestingCard.Partial).swagger
                     },
                     project: {
-                        body: j2s(Schemas.Project.Body).swagger
+                        full: j2s(Schemas.Project.Full).swagger
                     },
                     review: {
-                        body: j2s(Schemas.PlaytestingReview.Body).swagger
+                        full: j2s(Schemas.PlaytestingReview.Full).swagger
                     }
                 }
             },

@@ -1,4 +1,4 @@
-import { HeroUIProvider, ToastProvider } from "@heroui/react";
+import { Card, HeroUIProvider, ToastProvider } from "@heroui/react";
 import NavigationBar from "../components/navigation";
 import { Outlet, useHref, useNavigate } from "react-router-dom";
 
@@ -6,12 +6,12 @@ function App() {
     const navigate = useNavigate();
 
     return (
-        <HeroUIProvider navigate={navigate} useHref={useHref}>
+        <HeroUIProvider navigate={navigate} useHref={useHref} className="h-full">
             <NavigationBar />
             <ToastProvider placement="top-right"/>
-            <div className="container">
+            <Card className="container" radius="none">
                 <Outlet />
-            </div>
+            </Card>
         </HeroUIProvider>
     );
 }

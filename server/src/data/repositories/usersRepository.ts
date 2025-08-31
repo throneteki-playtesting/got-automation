@@ -6,7 +6,7 @@ import { DeepPartial, SingleOrArray } from "common/types";
 export default class UsersRepository {
     private database: MongoDataSource<User>;
     constructor(mongoClient: MongoClient) {
-        this.database = new MongoDataSource<User>(mongoClient, "users", { username: 1 });
+        this.database = new MongoDataSource<User>(mongoClient, "users", { discordId: 1 });
     }
     public async create(creating: SingleOrArray<User>) {
         return await this.database.create(creating);

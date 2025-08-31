@@ -18,7 +18,7 @@ router.post("/", celebrate({
     [Segments.QUERY]: {
         format: Joi.string().insensitive().valid("JSON", "HTML", "PDF", "PNG").default("PNG")
     },
-    [Segments.BODY]: Joi.alternatives(Schemas.RenderedCard.Body, Joi.array().items(Schemas.RenderedCard.Body))
+    [Segments.BODY]: Schemas.SingleOrArray(Schemas.RenderedCard.Full)
 }), asyncHandler<unknown, unknown, CardBody, FormatQuery>(async (req, res) => {
     const { format } = req.query;
     const body = req.body;

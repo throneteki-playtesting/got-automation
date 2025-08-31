@@ -13,8 +13,12 @@ const JoiXDashNumber = Joi.alternatives().try(
     Joi.string().valid("X", "-")
 );
 
+const Permission = Joi.number();
+
+export const SingleOrArray = (object: Joi.ObjectSchema) => Joi.alternatives().try(object, Joi.array().items(object));
+
 export const Card = {
-    Body: Joi.object({
+    Full: Joi.object({
         code: Joi.string().regex(Regex.Card.code).required(),
         faction: Joi.string().required().valid(...Cards.factions),
         name: Joi.string().required(),
@@ -60,7 +64,7 @@ export const Card = {
             }).required()
         })
     }),
-    Query: Joi.object({
+    Partial: Joi.object({
         code: Joi.string().regex(Regex.Card.code),
         faction: Joi.string().valid(...Cards.factions),
         name: Joi.string(),
@@ -91,7 +95,7 @@ export const Card = {
 };
 
 export const PlaytestingCard = {
-    Body: Card.Body.keys({
+    Full: Card.Full.keys({
         project: Joi.number().required(),
         version: Joi.string().required().regex(Regex.SemanticVersion),
         number: Joi.number().required(),
@@ -112,7 +116,7 @@ export const PlaytestingCard = {
             number: Joi.number().required()
         })
     }),
-    Query: Card.Query.keys({
+    Partial: Card.Partial.keys({
         project: Joi.number(),
         version: Joi.string().regex(Regex.SemanticVersion),
         number: Joi.number(),
@@ -133,7 +137,14 @@ export const PlaytestingCard = {
 };
 
 export const RenderedCard = {
-    Body: Card.Body.keys({
+    Full: Card.Full.keys({
+        watermark: Joi.object({
+            top: Joi.string(),
+            middle: Joi.string(),
+            bottom: Joi.string()
+        })
+    }),
+    Partial: Card.Partial.keys({
         watermark: Joi.object({
             top: Joi.string(),
             middle: Joi.string(),
@@ -143,7 +154,7 @@ export const RenderedCard = {
 };
 
 export const Project = {
-    Body: Joi.object({
+    Full: Joi.object({
         number: Joi.number().required(),
         name: Joi.string().required(),
         code: Joi.string().required(),
@@ -158,7 +169,7 @@ export const Project = {
         formUrl: Joi.string().required(),
         emoji: Joi.string()
     }),
-    Query: Joi.object({
+    Partial: Joi.object({
         number: Joi.number(),
         name: Joi.string(),
         code: Joi.string(),
@@ -176,7 +187,7 @@ export const Project = {
 };
 
 export const PlaytestingReview = {
-    Body: Joi.object({
+    Full: Joi.object({
         reviewer: Joi.string().required(),
         project: Joi.number().required(),
         number: Joi.number().required(),
@@ -193,5 +204,55 @@ export const PlaytestingReview = {
         additional: Joi.string(),
         epoch: Joi.number().required()
     }),
-    Query: {} //TODO
+    Partial: Joi.object({
+        reviewer: Joi.string(),
+        project: Joi.number(),
+        number: Joi.number(),
+        version: Joi.string().regex(Regex.SemanticVersion),
+        decks: Joi.array().items(Joi.string()),
+        played: Joi.string().valid(...playedRanges),
+        statements: Joi.object({
+            boring: Joi.string().valid(...statementAnswers),
+            competitive: Joi.string().valid(...statementAnswers),
+            creative: Joi.string().valid(...statementAnswers),
+            balanced: Joi.string().valid(...statementAnswers),
+            releasable: Joi.string().valid(...statementAnswers)
+        }),
+        additional: Joi.string(),
+        epoch: Joi.number()
+    })
+};
+
+export const Role = {
+    Full: Joi.object({
+        discordId: Joi.string().required(),
+        name: Joi.string().required(),
+        permissions: Joi.array().items(Permission).default([])
+    }),
+    Partial: Joi.object({
+        discordId: Joi.string(),
+        name: Joi.string(),
+        permissions: Joi.array().items(Permission)
+    })
+};
+
+export const User = {
+    Full: Joi.object({
+        username: Joi.string().required(),
+        displayname: Joi.string().required(),
+        discordId: Joi.string().required(),
+        avatarUrl: Joi.string().required(),
+        lastLogin: Joi.date(),
+        permissions: Joi.array().items(Permission).default([]),
+        roles: Joi.array().items(Role.Full).default([])
+    }),
+    Partial: Joi.object({
+        username: Joi.string(),
+        displayname: Joi.string(),
+        discordId: Joi.string(),
+        avatarUrl: Joi.string(),
+        lastLogin: Joi.date(),
+        permissions: Joi.array().items(Permission),
+        roles: Joi.array().items(Role.Partial)
+    })
 };

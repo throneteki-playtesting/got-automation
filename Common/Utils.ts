@@ -1,17 +1,8 @@
 import * as Cards from "./models/cards";
+import { Permission, User } from "./models/user";
 import { SingleOrArray } from "./types";
 
 export type SemanticVersion = `${number}.${number}.${number}`;
-// TODO: Replace "Partial" with "Filterable", with the advantage that it also partials inner child objects!
-// type Filter<T> =
-//   T extends (...args: unknown[]) => unknown
-//     ? T
-//     : T extends Array<infer U>
-//       ? Array<Filter<U>>
-//       : T extends object
-//         ? { [P in keyof T]?: Filter<T[P]> }
-//         : T;
-// export type Filterable<T> = Filter<T> | Filter<T>[];
 
 export function maxEnum(o: object) {
     return Math.max(...Object.keys(o).filter(obj => !isNaN(parseInt(obj))).map(obj => parseInt(obj))) + 1;
@@ -79,7 +70,8 @@ export function pushSorted<T>(arr: T[], item: T, compareFn: (a: T, b: T) => numb
 /**
  * Ensures a possible single or array of objects are treated as an array of that object
  */
-export function asArray<T>(value: SingleOrArray<T>) {
+export function asArray<T>(value: SingleOrArray<T>): T[]
+export function asArray<T>(value?: SingleOrArray<T>): T[] | undefined {
     if (value === undefined) {
         return undefined;
     }
@@ -132,11 +124,35 @@ export function buildUrl(baseUrl: string, queryParameters?: { [key: string]: unk
     if (queryParameters && Object.keys(queryParameters).length > 0) {
         const queryString = Object.entries(queryParameters)
             .filter(([, value]) => value != undefined)
-            .map(([key, value]) => `${key}=${encodeURIComponent(JSON.stringify(value))}`)
+            .map(([key, value]) => `${key}=${encodeURIComponent(typeof value === "string" ? value : JSON.stringify(value))}`)
             .join("&");
         if (queryString) {
             url += "?" + queryString;
         }
     }
     return url;
+}
+
+export function hasPermission(user?: User, ...permissions: Permission[]) {
+    if (permissions.length === 0) {
+        return true;
+    }
+
+    if (!user) {
+        return false;
+    }
+
+    const includesPermission = (ps: Permission[]) => {
+        return permissions.some((a) => ps.some((b) => a === b));
+    };
+
+    if (includesPermission(user.permissions)) {
+        return true;
+    }
+
+    if (user.roles.some((role) => includesPermission(role.permissions))) {
+        return true;
+    }
+
+    return false;
 }

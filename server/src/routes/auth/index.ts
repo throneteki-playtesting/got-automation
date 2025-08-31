@@ -1,11 +1,13 @@
 import { celebrate, Joi, Segments } from "celebrate";
 import express from "express";
 import asyncHandler from "express-async-handler";
-import { dataService, discordService } from "@/services";
+import { dataService, discordService, logger } from "@/services";
 import { APIGuildMember, RESTPostOAuth2AccessTokenResult } from "discord.js";
-import { Role, User } from "common/models/user";
+import { User } from "common/models/user";
 import jwt from "jsonwebtoken";
 import { JWTPayload } from "@/types";
+import { buildUrl } from "common/utils";
+import { AuthStatus } from "common/types";
 
 const router = express.Router();
 
@@ -15,6 +17,7 @@ const SCOPES = [
     "guilds.members.read"
 ];
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&response_type=code&redirect_uri=${process.env.DISCORD_AUTH_REDIRECT}&scope=${SCOPES.join("+")}`;
+const REDIRECT_URL = `${process.env.CLIENT_HOST}/authRedirect`;
 
 router.get("/discord", (req, res) => {
     res.redirect(encodeURI(DISCORD_AUTH_URL));
@@ -29,38 +32,61 @@ router.get("/discord/callback",
         }
     }),
     asyncHandler<unknown, unknown, unknown, DiscordCallbackQuery>(async (req, res) => {
-        const { code } = req.query;
+        try {
+            const { code } = req.query;
 
-        // 1. Get Access Token
-        const authToken = await getAuthenticationToken(code);
+            // 1. Get Access Token
+            const authToken = await getAuthenticationToken(code);
 
-        // 2. Fetch discord user & member info
-        const discordMember = await get<APIGuildMember>(`users/@me/guilds/${discordService.primaryGuild.id}/member`, authToken);
-        const discordUser = discordMember.user;
-        const roleNames = await Promise.all(discordMember.roles.map((roleId) => discordService.findRoleById(discordService.primaryGuild, roleId)));
+            // 2. Fetch discord user & member info
+            const discordMember = await get<APIGuildMember>(`users/@me/guilds/${discordService.primaryGuild.id}/member`, authToken);
+            const discordUser = discordMember.user;
+            const discordRoles = await Promise.all(discordMember.roles.map((roleId) => discordService.findRoleById(discordService.primaryGuild, roleId)));
 
-        const user = {
-            discordId: discordUser.id,
-            username: discordUser.username,
-            displayname: discordMember.nick ?? discordUser.username,
-            avatarUrl: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`,
-            lastLogin: new Date(),
-            permissions: [],
-            roles: roleNames.map((role) => ({ name: role.name, permissions: [] }) as Role)
-        } as User;
+            // 3. Fetch user from database
+            let [user] = await dataService.users.read({ discordId: discordUser.id });
 
-        // 3. Fetch user from database
-        await dataService.users.update(user);
+            if (!user) {
+                user = {
+                    discordId: discordUser.id,
+                    permissions: [],
+                    roles: []
+                } as User;
+            }
+            // 4. Add/Update user data from discord
+            user.username = discordUser.username;
+            user.displayname = discordMember.nick ?? discordUser.username;
+            user.avatarUrl = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
+            user.lastLogin = new Date();
 
-        // 4. Create JWT and save as HTTP cookie (so not accessible by JS frontend)
-        const jsonWebToken = createJwtFor(user);
-        res.cookie("jwt", jsonWebToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax"
-        });
+            // Fetch and (if missing) save roles
+            if (discordRoles.length > 0) {
+                const roles = await dataService.roles.read(discordRoles.map(({ name }) => ({ name })));
+                const missingRoles = discordRoles.filter(({ id }) => !roles.some((role) => role.discordId === id));
+                if (missingRoles.length > 0) {
+                    const creating = missingRoles.map(({ id, name }) => ({ discordId: id, name, permissions: [] }));
+                    await dataService.roles.create(creating);
+                    roles.push(...creating);
+                }
 
-        res.redirect(process.env.CLIENT_HOST);
+                user.roles = roles;
+            }
+
+            // 5. Push potential user changes back to database
+            await dataService.users.update(user);
+
+            // 6. Create JWT and save as HTTP cookie (so not accessible by JS frontend)
+            const jsonWebToken = createJwtFor(user);
+            res.cookie("jwt", jsonWebToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax"
+            });
+            res.redirect(buildUrl(REDIRECT_URL, { status: "success" } as { status: AuthStatus }));
+        } catch (err) {
+            logger.error(err);
+            res.redirect(buildUrl(REDIRECT_URL, { status: "error" } as { status: AuthStatus }));
+        }
     })
 );
 

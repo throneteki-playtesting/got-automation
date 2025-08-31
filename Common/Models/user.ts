@@ -9,6 +9,7 @@ export interface User {
 }
 
 export interface Role {
+    discordId: string,
     name: string,
     permissions: Permission[]
 }
@@ -18,5 +19,9 @@ export enum Permission {
     EDIT_CARDS,
     CREATE_CARDS,
     DELETE_CARDS,
-    SUGGEST_CARDS
+    SUGGEST_CARDS,
+    READ_USERS,
+    EDIT_USERS,
+    READ_ROLES,
+    EDIT_ROLES,
 }

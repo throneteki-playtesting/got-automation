@@ -4,6 +4,7 @@ import CardsRepository from "./repositories/cardsRepository";
 import ProjectsRepository from "./repositories/projectsRepository";
 import ReviewsRepository from "./repositories/reviewRepository";
 import UsersRepository from "./repositories/usersRepository";
+import RolesRepository from "./repositories/rolesRepository";
 
 class DataService {
     private client: MongoClient;
@@ -14,6 +15,7 @@ class DataService {
     private _cards: CardsRepository;
     private _reviews: ReviewsRepository;
     private _users: UsersRepository;
+    private _roles: RolesRepository;
 
     constructor() {
         this.isConnected = false;
@@ -28,6 +30,7 @@ class DataService {
                 this._cards = new CardsRepository(this.client);
                 this._reviews = new ReviewsRepository(this.client);
                 this._users = new UsersRepository(this.client);
+                this._roles = new RolesRepository(this.client);
             })
             .catch(logger.error);
     }
@@ -57,6 +60,10 @@ class DataService {
 
     get users() {
         return this.getRepository<UsersRepository>("users");
+    }
+
+    get roles() {
+        return this.getRepository<RolesRepository>("roles");
     }
 }
 
