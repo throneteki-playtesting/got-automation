@@ -4,7 +4,7 @@ import { BaseElementProps } from "../../types";
 import CardStack from "../../components/cardPreview/cardStack";
 import { useMemo, useState } from "react";
 import CardEditor from "../../components/cardEditor";
-import { JsonPlaytestingCard, JsonRenderableCard, NoteDetails, NoteType, noteTypes } from "common/models/cards";
+import { PlaytestableCard, RenderableCard, NoteDetails, NoteType, noteTypes } from "common/models/cards";
 import { DeepPartial } from "common/types";
 import { useGetCardQuery, useGetProjectQuery, usePushCardsMutation } from "../../api";
 
@@ -13,7 +13,7 @@ const CardDetail = ({ className, style, project: projectNumber, number }: CardDe
     const { data: project, ...projectQuery } = useGetProjectQuery({ number: projectNumber });
     // const [collapsed, setCollapsed] = useState(false);
     const [isCreatingNew, setIsCreatingNew] = useState(false);
-    const [draftCard, setDraftCard] = useState<DeepPartial<JsonRenderableCard>>();
+    const [draftCard, setDraftCard] = useState<DeepPartial<RenderableCard>>();
 
     const latest = useMemo(() => cards ? cards[cards.length - 1] : undefined, [cards]);
     const stack = useMemo(() => {
@@ -83,7 +83,7 @@ const CardDetail = ({ className, style, project: projectNumber, number }: CardDe
 };
 
 const CreateNewVersion = ({ className, style, card, onUpdate, onSave, onCancel }: CreateNewVersionProps) => {
-    // const [card, setCard] = useState<DeepPartial<JsonPlaytestingCard & JsonRenderableCard>>(card);
+    // const [card, setCard] = useState<DeepPartial<PlaytestableCard & RenderableCard>>(card);
     const [pushCardUpdate, pushCardsMutation] = usePushCardsMutation();
     const [noteType, setNoteType] = useState<NoteType>();
     const [noteText, setNoteText] = useState<string>();
@@ -92,12 +92,12 @@ const CreateNewVersion = ({ className, style, card, onUpdate, onSave, onCancel }
         // TODO: VALIDATE!!!!
         delete card.watermark;
         try {
-            const response = await pushCardUpdate(card as JsonPlaytestingCard).unwrap();
+            const response = await pushCardUpdate(card as PlaytestableCard).unwrap();
 
         } catch (err) {
             addToast({ title: "Error", color: "danger", description: "There was an error!" });
         }
-        onSave(card as JsonPlaytestingCard, { type: noteType, text: noteText } as NoteDetails);
+        onSave(card as PlaytestableCard, { type: noteType, text: noteText } as NoteDetails);
     };
 
     return (
@@ -132,7 +132,7 @@ const CreateNewVersion = ({ className, style, card, onUpdate, onSave, onCancel }
     );
 };
 
-type CreateNewVersionProps = Omit<BaseElementProps, "children"> & { card: DeepPartial<JsonRenderableCard>, onUpdate: (card: DeepPartial<JsonPlaytestingCard>) => void, onSave: (card: JsonPlaytestingCard, note: NoteDetails) => void, onCancel: () => void };
+type CreateNewVersionProps = Omit<BaseElementProps, "children"> & { card: DeepPartial<RenderableCard>, onUpdate: (card: DeepPartial<PlaytestableCard>) => void, onSave: (card: PlaytestableCard, note: NoteDetails) => void, onCancel: () => void };
 
 // const EditLatest = () => {
 

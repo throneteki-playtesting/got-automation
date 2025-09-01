@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import { BaseElementProps } from "../../../types";
-import { Cost as CostType, Strength as StrengthType, PlotValue as PlotValueType, ChallengeIcon, challengeIcons, DefaultDeckLimit, Faction as FactionType, JsonRenderableCard, PlotStat as PlotStatType, Type as TypeType, Watermark as WatermarkType } from "common/models/cards";
+import { Cost as CostType, Strength as StrengthType, PlotValue as PlotValueType, ChallengeIcon, challengeIcons, DefaultDeckLimit, Faction as FactionType, RenderableCard, PlotStat as PlotStatType, Type as TypeType, Watermark as WatermarkType } from "common/models/cards";
 import ThronesIcon, { Icon } from "../../thronesIcon";
 import AutoSize from "./autoSize";
 import { em, px } from "../../../utilities";
@@ -64,7 +64,7 @@ export const Card = memo(({ children, card, orientation = defaultOrientation(car
         </div>
     );
 });
-type CardProps = BaseElementProps & { classNames?: { wrapper?: string, inner?: string }, card: DeepPartial<JsonRenderableCard>, orientation?: "vertical" | "horizontal", scale?: number, rounded?: boolean } & React.DOMAttributes<HTMLDivElement>;
+type CardProps = BaseElementProps & { classNames?: { wrapper?: string, inner?: string }, card: DeepPartial<RenderableCard>, orientation?: "vertical" | "horizontal", scale?: number, rounded?: boolean } & React.DOMAttributes<HTMLDivElement>;
 
 
 export const Type = memo(({ children: type, className, style }: TypeProps) => {

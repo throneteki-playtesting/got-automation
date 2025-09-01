@@ -1,4 +1,4 @@
-import { JsonPlaytestingCard, JsonRenderableCard } from "common/models/cards";
+import { PlaytestableCard, RenderableCard } from "common/models/cards";
 import { BaseElementProps } from "../../types";
 import CardPreview from ".";
 import classNames from "classnames";
@@ -44,6 +44,6 @@ const CardStack = ({ children: cards, scale, collapsed = false, className, class
     );
 };
 
-type CardStackProps = Omit<BaseElementProps, "children"> & { classNames?: { wrapper?: string, card?: string }, children?: DeepPartial<JsonPlaytestingCard & JsonRenderableCard>[], scale?: number, collapsed?: boolean };
+type CardStackProps = Omit<BaseElementProps, "children"> & { classNames?: { wrapper?: string, card?: string }, children?: DeepPartial<PlaytestableCard & RenderableCard>[], scale?: number, collapsed?: boolean };
 
 export default CardStack;

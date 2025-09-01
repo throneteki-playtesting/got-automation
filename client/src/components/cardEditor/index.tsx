@@ -1,4 +1,4 @@
-import { DefaultDeckLimit, JsonRenderableCard } from "common/models/cards";
+import { DefaultDeckLimit, RenderableCard } from "common/models/cards";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChallengeIconButtons, CostInput, FactionSelect, LoyalButton, PlotStatInputs, StrengthInput, TraitsInput, TypeSelect, UniqueButton, WatermarkInput } from "./components/editorComponents";
 import AbilityTextEditor from "./components/abilityEditor";
@@ -52,7 +52,7 @@ const CardEditor = ({ className, style, card, disable = [], hide = [], onUpdate 
             icons,
             watermark,
             deckLimit
-        } as DeepPartial<JsonRenderableCard>;
+        } as DeepPartial<RenderableCard>;
 
         onUpdate(updated);
     // Note: updating on "onUpdate" changing is causing useEffect loop :(
@@ -117,6 +117,6 @@ const CardEditor = ({ className, style, card, disable = [], hide = [], onUpdate 
 };
 
 // TODO: Implement "cannotEdit", so that you can only allow edits on valid values
-type CardEditorProps = Omit<BaseElementProps, "children"> & { card?: DeepPartial<JsonRenderableCard>, disable?: string[], hide?: string[], onUpdate?: (card: DeepPartial<JsonRenderableCard>) => void }
+type CardEditorProps = Omit<BaseElementProps, "children"> & { card?: DeepPartial<RenderableCard>, disable?: string[], hide?: string[], onUpdate?: (card: DeepPartial<RenderableCard>) => void }
 
 export default CardEditor;

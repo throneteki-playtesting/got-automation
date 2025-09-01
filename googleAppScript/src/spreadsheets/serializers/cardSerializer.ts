@@ -5,7 +5,7 @@ import * as Card from "common/models/cards";
 import { DeepPartial } from "common/types";
 
 export type CardSheet = "archive" | "latest";
-class CardSerializer extends DataSerializer<Card.JsonPlaytestingCard> {
+class CardSerializer extends DataSerializer<Card.PlaytestableCard> {
     public richTextColumns = [CardColumn.Textbox, CardColumn.Flavor, CardColumn.NoteText, CardColumn.GithubIssue];
     private deserializeTypedNumber<T>(value: string) {
         try {
@@ -43,7 +43,7 @@ class CardSerializer extends DataSerializer<Card.JsonPlaytestingCard> {
                 short: values[CardColumn.PackShort],
                 number: parseInt(values[CardColumn.ReleaseNumber])
             } : undefined
-        } as Card.JsonPlaytestingCard;
+        } as Card.PlaytestableCard;
         model.code = parseCardCode(!!model.release, project, model.number);
 
         switch (model.type) {
@@ -75,7 +75,7 @@ class CardSerializer extends DataSerializer<Card.JsonPlaytestingCard> {
         return model;
     }
 
-    public serialize(model: Card.JsonPlaytestingCard) {
+    public serialize(model: Card.PlaytestableCard) {
         // Initialise "empty" values, with dashes for all dashable columns (eg. Loyal, Unique, ...)
         const values: string[] = Array.from({ length: maxEnum(CardColumn) }, (v, i) => [CardColumn.Loyal, CardColumn.Unique, CardColumn.Cost, CardColumn.Strength, CardColumn.Icons, CardColumn.Traits].includes(i) ? "-" : "");
         values[CardColumn.Number] = model.number.toString();
@@ -124,7 +124,7 @@ class CardSerializer extends DataSerializer<Card.JsonPlaytestingCard> {
         return values;
     }
 
-    public matches(values: string[], index: number, filter: DeepPartial<Card.JsonPlaytestingCard>) {
+    public matches(values: string[], index: number, filter: DeepPartial<Card.PlaytestableCard>) {
         const compare = (a: number | string | boolean | undefined, b: number | string | boolean) => {
             if (!a) {
                 return false;
@@ -138,7 +138,7 @@ class CardSerializer extends DataSerializer<Card.JsonPlaytestingCard> {
         );
     }
 
-    public filter(values: string[], index: number, filter?: DeepPartial<Card.JsonPlaytestingCard>) {
+    public filter(values: string[], index: number, filter?: DeepPartial<Card.PlaytestableCard>) {
         if (!filter || Object.keys(filter).length === 0) {
             return true;
         }

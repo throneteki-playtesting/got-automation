@@ -1,12 +1,12 @@
-import { JsonRenderableCard, Watermark } from "common/models/cards";
+import { RenderableCard, Watermark } from "common/models/cards";
 import BaseCard from "./baseCard";
 
 
-class RenderedCard extends BaseCard implements JsonRenderableCard {
+class RenderedCard extends BaseCard implements RenderableCard {
     // Playtesting specific properties
     public watermark: Watermark;
 
-    constructor(data: JsonRenderableCard) {
+    constructor(data: RenderableCard) {
         super(data);
         this.watermark = data.watermark;
     }
@@ -16,7 +16,7 @@ class RenderedCard extends BaseCard implements JsonRenderableCard {
         const obj = {
             ...base,
             ...(this.watermark !== undefined && { watermark: this.watermark })
-        } as JsonRenderableCard;
+        } as RenderableCard;
         return obj;
     }
 
@@ -25,7 +25,7 @@ class RenderedCard extends BaseCard implements JsonRenderableCard {
         const data = {
             ...base,
             watermark: this.watermark
-        } as JsonRenderableCard;
+        } as RenderableCard;
 
         return new RenderedCard(data);
     }

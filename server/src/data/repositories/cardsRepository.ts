@@ -5,7 +5,7 @@ import * as CardsController from "gas/controllers/cardsController";
 import { CardSheet } from "gas/spreadsheets/serializers/cardSerializer";
 import MongoDataSource from "./dataSources/mongoDataSource";
 import GASDataSource from "./dataSources/GASDataSource";
-import { JsonPlaytestingCard } from "common/models/cards";
+import { PlaytestableCard } from "common/models/cards";
 import CardCollection from "../models/cards/cardCollection";
 import PlaytestingCard from "../models/cards/playtestingCard";
 import { DeepPartial, SingleOrArray } from "common/types";
@@ -22,8 +22,8 @@ export default class CardsRepository {
         await this.spreadsheet.create(creating);
     }
 
-    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingCard>>, hard = false) {
-        let cards: JsonPlaytestingCard[];
+    public async read(reading?: SingleOrArray<DeepPartial<PlaytestableCard>>, hard = false) {
+        let cards: PlaytestableCard[];
         // Force hard refresh from spreadsheet (slow)
         if (hard) {
             const fetched = await this.spreadsheet.read(reading);
@@ -35,42 +35,42 @@ export default class CardsRepository {
         }
         return new CardCollection(cards);
     }
-    public async update(updating: SingleOrArray<JsonPlaytestingCard>, upsert = true) {
+    public async update(updating: SingleOrArray<PlaytestableCard>, upsert = true) {
         await this.database.update(updating, { upsert });
         await this.spreadsheet.update(updating, { upsert });
     }
 
-    public async destroy(destroying: SingleOrArray<DeepPartial<JsonPlaytestingCard>>) {
+    public async destroy(destroying: SingleOrArray<DeepPartial<PlaytestableCard>>) {
         await this.database.destroy(destroying);
         await this.spreadsheet.destroy(destroying);
     }
 }
 
-class CardMongoDataSource extends MongoDataSource<JsonPlaytestingCard> {
+class CardMongoDataSource extends MongoDataSource<PlaytestableCard> {
     constructor(client: MongoClient) {
         super(client, "cards", { number: 1, version: 1 });
     }
 
-    public override async create(creating: SingleOrArray<JsonPlaytestingCard>, options?: BulkWriteOptions) {
+    public override async create(creating: SingleOrArray<PlaytestableCard>, options?: BulkWriteOptions) {
         const cards = asArray(creating);
         await renderService.syncImages(new CardCollection(cards));
         const result = await this.insertMany(cards, options);
         return result;
     }
 
-    public override async update(updating: SingleOrArray<JsonPlaytestingCard>, options?: BulkWriteOptions & { upsert?: boolean }) {
+    public override async update(updating: SingleOrArray<PlaytestableCard>, options?: BulkWriteOptions & { upsert?: boolean }) {
         const cards = asArray(updating);
         await renderService.syncImages(new CardCollection(cards), true);
         const result = await this.bulkWrite(cards, options);
         return result;
     }
 }
-class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
-    public async create(creating: SingleOrArray<JsonPlaytestingCard>) {
+class CardDataSource extends GASDataSource<PlaytestableCard> {
+    public async create(creating: SingleOrArray<PlaytestableCard>) {
         const cards = asArray(creating);
         const groups = groupBy(cards, (card) => card.project);
 
-        const created: JsonPlaytestingCard[] = [];
+        const created: PlaytestableCard[] = [];
         for (const [pNumber, pCards] of groups.entries()) {
             const [project] = await dataService.projects.read({ number: pNumber });
 
@@ -83,7 +83,7 @@ class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
         return created;
     }
 
-    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingCard>>) {
+    public async read(reading?: SingleOrArray<DeepPartial<PlaytestableCard>>) {
         const cards = asArray(reading);
         const groups = groupBy(cards, (card) => card.project);
         // If no project is specified, read that from all active projects
@@ -93,7 +93,7 @@ class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
             allActiveProjects.forEach((project) => groups.set(project.number, noProjectCards));
             groups.delete(undefined);
         }
-        const read: JsonPlaytestingCard[] = [];
+        const read: PlaytestableCard[] = [];
         for (const [pNumber, pCards] of groups.entries()) {
             const [project] = await dataService.projects.read({ number: pNumber });
             // TODO: Error if project is missing
@@ -108,10 +108,10 @@ class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
         return read;
     }
 
-    public async update(updating: SingleOrArray<JsonPlaytestingCard>, { upsert = true, sheets }: { upsert?: boolean; sheets?: CardSheet[] } = {}) {
+    public async update(updating: SingleOrArray<PlaytestableCard>, { upsert = true, sheets }: { upsert?: boolean; sheets?: CardSheet[] } = {}) {
         const cards = asArray(updating);
         const groups = groupBy(cards, (card) => card.project);
-        const updated: JsonPlaytestingCard[] = [];
+        const updated: PlaytestableCard[] = [];
         for (const [pNumber, pCards] of groups.entries()) {
             const [project] = await dataService.projects.read({ number: pNumber });
             // TODO: Error if project is missing
@@ -125,7 +125,7 @@ class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
         return updated;
     }
 
-    public async destroy(destroying: SingleOrArray<DeepPartial<JsonPlaytestingCard>>) {
+    public async destroy(destroying: SingleOrArray<DeepPartial<PlaytestableCard>>) {
         const cards = asArray(destroying);
         const groups = groupBy(cards, (card) => card.project);
         // If no project is specified, read that from all active projects
@@ -135,7 +135,7 @@ class CardDataSource extends GASDataSource<JsonPlaytestingCard> {
             allActiveProjects.forEach((project) => groups.set(project.number, noProjectCards));
             groups.delete(undefined);
         }
-        const destroyed: JsonPlaytestingCard[] = [];
+        const destroyed: PlaytestableCard[] = [];
         for (const [pNumber, pCards] of groups.entries()) {
             const [project] = await dataService.projects.read({ number: pNumber });
 

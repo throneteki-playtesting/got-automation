@@ -1,4 +1,4 @@
-import { JsonPlaytestingCard } from "common/models/cards";
+import { PlaytestableCard } from "common/models/cards";
 import { DeepPartial, SingleOrArray } from "common/types";
 import { BaseElementProps } from "../../types";
 import CardGrid from "../../components/cardPreview/cardGrid";
@@ -24,6 +24,6 @@ const LatestCards = ({ className, style, filter }: LatestCardsProps) => {
     );
 };
 
-type LatestCardsProps = Omit<BaseElementProps, "children"> & { filter?: SingleOrArray<DeepPartial<JsonPlaytestingCard>> };
+type LatestCardsProps = Omit<BaseElementProps, "children"> & { filter?: SingleOrArray<DeepPartial<PlaytestableCard>> };
 
 export default LatestCards;

@@ -1,7 +1,7 @@
 import * as Ver from "semver";
 import PlaytestingCard from "./playtestingCard";
 import { pushSorted, SemanticVersion } from "common/utils";
-import { JsonPlaytestingCard } from "common/models/cards";
+import { PlaytestableCard } from "common/models/cards";
 
 /**
  * An ordered collection of cards, split into latest, playtesting, and draft cards
@@ -15,11 +15,11 @@ class CardCollection implements CardNumberCollection {
     public draft: PlaytestingCard[] = [];
     [number: number]: CardVersionCollection;
 
-    constructor(jsonCards: JsonPlaytestingCard[]) {
+    constructor(Cards: PlaytestableCard[]) {
         const nMap = new Map<number, CardVersionCollection>();
         const compareFn = (a: PlaytestingCard, b: PlaytestingCard) => a.project - b.project || a.number - b.number || Ver.compare(a.version, b.version);
-        for (const jsonCard of jsonCards) {
-            const card = new PlaytestingCard(jsonCard);
+        for (const Card of Cards) {
+            const card = new PlaytestingCard(Card);
             pushSorted(this.all, card, compareFn);
 
             const { number, version } = card;

@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { JsonPlaytestingCard } from "common/models/cards";
+import { PlaytestableCard } from "common/models/cards";
 import { JsonProject } from "common/models/projects";
 import { Role, User } from "common/models/user";
 import { DeepPartial, SingleOrArray } from "common/types";
@@ -110,19 +110,19 @@ const api = createApi({
             }
         }),
         // Cards API
-        getCards: builder.query<JsonPlaytestingCard[], { filter?: SingleOrArray<DeepPartial<JsonPlaytestingCard>>, latest?: boolean } | void>({
+        getCards: builder.query<PlaytestableCard[], { filter?: SingleOrArray<DeepPartial<PlaytestableCard>>, latest?: boolean } | void>({
             query: (options) => {
                 const url = buildUrl("cards", { filter: options?.filter, latest: options?.latest });
                 return { url, method: "GET" };
             }
         }),
-        getCard: builder.query<JsonPlaytestingCard[], { project: number, number: number, latest?: boolean }>({
+        getCard: builder.query<PlaytestableCard[], { project: number, number: number, latest?: boolean }>({
             query: (options) => {
                 const url = buildUrl(`cards/${options.project}/${options.number}`, { latest: options.latest });
                 return { url, method: "GET" };
             }
         }),
-        pushCards: builder.mutation<JsonPlaytestingCard[], SingleOrArray<JsonPlaytestingCard>>({
+        pushCards: builder.mutation<PlaytestableCard[], SingleOrArray<PlaytestableCard>>({
             query: (cards) => {
                 const url = buildUrl("cards");
                 const body = asArray(cards);

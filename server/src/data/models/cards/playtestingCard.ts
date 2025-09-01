@@ -1,5 +1,5 @@
 import * as Ver from "semver";
-import { GithubDetails, JsonPlaytestingCard, JsonRenderableCard, NoteDetails, ReleaseDetails } from "common/models/cards";
+import { GithubDetails, PlaytestableCard, RenderableCard, NoteDetails, ReleaseDetails } from "common/models/cards";
 import { parseCardCode, SemanticVersion } from "common/utils";
 import BaseCard from "./baseCard";
 import RenderedCard from "./renderedCard";
@@ -7,7 +7,7 @@ import RenderedCard from "./renderedCard";
 type ImplementationStatus = "not implemented" | "recently implemented" | "implemented";
 
 
-class PlaytestingCard extends BaseCard implements JsonPlaytestingCard {
+class PlaytestingCard extends BaseCard implements PlaytestableCard {
     // Playtesting specific properties
     public project: number;
     public number: number;
@@ -17,7 +17,7 @@ class PlaytestingCard extends BaseCard implements JsonPlaytestingCard {
     public github?: GithubDetails;
     public release?: ReleaseDetails;
 
-    constructor(data: JsonPlaytestingCard) {
+    constructor(data: PlaytestableCard) {
         super(data);
         this.version = data.version;
         this.project = data.project;
@@ -50,7 +50,7 @@ class PlaytestingCard extends BaseCard implements JsonPlaytestingCard {
             playtesting: this.playtesting,
             ...(this.github !== undefined && { github: this.github }),
             ...(this.release !== undefined && { release: this.release })
-        } as JsonPlaytestingCard;
+        } as PlaytestableCard;
         return obj;
     }
 
@@ -59,7 +59,7 @@ class PlaytestingCard extends BaseCard implements JsonPlaytestingCard {
         return {
             ...base,
             version: this.version
-        } as JsonPlaytestingCard;
+        } as PlaytestableCard;
     }
 
     override clone() {
@@ -82,7 +82,7 @@ class PlaytestingCard extends BaseCard implements JsonPlaytestingCard {
                 short: this.release.short,
                 number: this.release.number
             } : undefined
-        } as JsonPlaytestingCard;
+        } as PlaytestableCard;
 
         return new PlaytestingCard(data);
     }
@@ -95,7 +95,7 @@ class PlaytestingCard extends BaseCard implements JsonPlaytestingCard {
                 middle: `v${this.version}`,
                 bottom: "Work In Progress"
             }
-        } as JsonRenderableCard;
+        } as RenderableCard;
         return new RenderedCard(data);
     }
 

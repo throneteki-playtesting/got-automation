@@ -1,4 +1,4 @@
-import { JsonRenderableCard } from "common/models/cards";
+import { RenderableCard } from "common/models/cards";
 import { DeepPartial } from "common/types";
 import { CSSProperties } from "react";
 
@@ -9,7 +9,7 @@ export type BaseElementProps = {
 }
 
 export type CardComponentProps = Omit<BaseElementProps, "children"> & {
-    card: DeepPartial<JsonRenderableCard>,
+    card: DeepPartial<RenderableCard>,
     scale?: number,
     orientation?: "horizontal" | "vertical",
     rounded?: boolean

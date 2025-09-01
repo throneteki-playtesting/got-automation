@@ -1,11 +1,11 @@
 import { useState } from "react";
 import CardEditor from "../../components/cardEditor";
 import CardPreview from "../../components/cardPreview";
-import { JsonRenderableCard } from "common/models/cards";
+import { RenderableCard } from "common/models/cards";
 import { DeepPartial } from "common/types";
 
 const Suggestions = () => {
-    const [card, setCard] = useState({} as DeepPartial<JsonRenderableCard>);
+    const [card, setCard] = useState({} as DeepPartial<RenderableCard>);
 
 
     return (

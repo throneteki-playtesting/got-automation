@@ -5,7 +5,7 @@ import PlaytestingCard from "@/data/models/cards/playtestingCard";
 import { inc } from "semver";
 import { dataService, logger, renderService } from "@/services";
 import { SemanticVersion } from "common/utils";
-import { JsonPlaytestingCard, NoteType } from "common/models/cards";
+import { PlaytestableCard, NoteType } from "common/models/cards";
 import * as Schemas from "@/data/schemas";
 import { DeepPartial, SingleOrArray } from "common/types";
 import { requiresPermission } from "@/middleware/permissions";
@@ -17,10 +17,10 @@ const router = express.Router();
 
 type ProjectParam = { project: number };
 type CardParam = { number: number };
-type FilterQuery = { filter?: SingleOrArray<DeepPartial<JsonPlaytestingCard>>, hard?: boolean, latest?: boolean }
+type FilterQuery = { filter?: SingleOrArray<DeepPartial<PlaytestableCard>>, hard?: boolean, latest?: boolean }
 type RenderQuery = { copies?: number, perPage?: number };
 type FormatQuery = { format?: ResourceFormat }
-type CardBody = SingleOrArray<JsonPlaytestingCard>;
+type CardBody = SingleOrArray<PlaytestableCard>;
 
 const handleGetCards = [
     requiresPermission(Permission.READ_CARDS),
@@ -313,9 +313,9 @@ router.post("/",
             }
         };
         logger.verbose(`Recieved ${cards.length} card update(s) from sheets`);
-        const latest: JsonPlaytestingCard[] = [];
-        const upsert: JsonPlaytestingCard[] = [];
-        const destroy: DeepPartial<JsonPlaytestingCard>[] = [];
+        const latest: PlaytestableCard[] = [];
+        const upsert: PlaytestableCard[] = [];
+        const destroy: DeepPartial<PlaytestableCard>[] = [];
 
         for (const card of cards) {
         // If card is not in playtesting, push updates

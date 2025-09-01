@@ -1,4 +1,4 @@
-import { Code, JsonPlaytestingCard } from "common/models/cards";
+import { Code, PlaytestableCard } from "common/models/cards";
 import { BaseElementProps } from "../../types";
 import classNames from "classnames";
 import CardPreview from ".";
@@ -31,7 +31,7 @@ const CardGrid = ({ children: cards, className, style, scale }: CardPreviewProps
 };
 
 type CardPreviewProps = Omit<BaseElementProps, "children"> & {
-    children?: JsonPlaytestingCard[],
+    children?: PlaytestableCard[],
     scale?: number
 }
 

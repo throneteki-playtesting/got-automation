@@ -1,4 +1,4 @@
-import { JsonPlaytestingCard, JsonRenderableCard } from "common/models/cards";
+import { PlaytestableCard, RenderableCard } from "common/models/cards";
 import { DeepPartial, SingleOrArray } from "common/types";
 
 export const px = (value: number) => `${value}px`;
@@ -31,8 +31,8 @@ export const thronesIcons: { [key: string]: string } = {
     agenda: "\ue611"
 };
 
-type RenderConversionInput = DeepPartial<JsonPlaytestingCard & JsonRenderableCard>;
-type RenderConversionOutput = DeepPartial<JsonRenderableCard>;
+type RenderConversionInput = DeepPartial<PlaytestableCard & RenderableCard>;
+type RenderConversionOutput = DeepPartial<RenderableCard>;
 export function toRenderableCard(cards?: RenderConversionInput[]): RenderConversionOutput[];
 export function toRenderableCard(cards?: RenderConversionInput): RenderConversionOutput;
 export function toRenderableCard(cards?: SingleOrArray<RenderConversionInput>) {

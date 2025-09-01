@@ -1,6 +1,6 @@
-import { Code, Cost, Faction, Icons, JsonCard, PlotStats, Strength, Type } from "common/models/cards";
+import { Code, Cost, Faction, Icons, Card, PlotStats, Strength, Type } from "common/models/cards";
 
-class BaseCard implements JsonCard {
+class BaseCard implements Card {
     public code: Code;
     public cost?: Cost;
     public deckLimit: number;
@@ -20,7 +20,7 @@ class BaseCard implements JsonCard {
     public quantity: 1 | 2 | 3;
     private _imageUrl: string;
 
-    constructor(data: JsonCard) {
+    constructor(data: Card) {
         this.code = data.code;
         this.cost = data.cost;
         this.deckLimit = data.deckLimit;
@@ -69,7 +69,7 @@ class BaseCard implements JsonCard {
             illustrator: this.illustrator || "?",
             ...(this.designer && { designer: this.designer }),
             imageUrl: this.imageUrl
-        } as JsonCard;
+        } as Card;
         return obj;
     }
 
@@ -111,7 +111,7 @@ class BaseCard implements JsonCard {
             type: this.type,
             unique: this.unique,
             quantity: this.quantity
-        } as JsonCard;
+        } as Card;
 
         return new BaseCard(data);
     }

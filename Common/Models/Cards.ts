@@ -20,7 +20,7 @@ export type Strength = number | "X";
 export type PlotValue = number | "X";
 export type Quantity = 1 | 2 | 3;
 
-export interface JsonCard {
+export interface Card {
     code: Code,
     cost?: Cost,
     deckLimit: number,
@@ -56,7 +56,7 @@ export interface PlotStats {
     reserve: PlotValue
 }
 
-export interface JsonPlaytestingCard extends JsonCard {
+export interface PlaytestableCard extends Card {
     project: number,
     number: number,
     // latest: boolean,
@@ -67,7 +67,7 @@ export interface JsonPlaytestingCard extends JsonCard {
     release?: ReleaseDetails
 }
 
-export interface JsonRenderableCard extends JsonCard {
+export interface RenderableCard extends Card {
     watermark: Watermark
 }
 

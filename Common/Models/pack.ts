@@ -1,4 +1,4 @@
-import { JsonCard, JsonPlaytestingCard } from "./cards";
+import { Card, PlaytestableCard } from "./cards";
 
 export type ReleaseDate = `${number}-${number}-${number}`;
 
@@ -8,10 +8,10 @@ export interface JsonPack {
     name: string,
     releaseDate: ReleaseDate,
     workInProgress?: boolean,
-    cards: JsonCard[]
+    cards: Card[]
 }
 
 export interface JsonPlaytestingPack extends JsonPack {
     workInProgress: true,
-    cards: JsonPlaytestingCard[]
+    cards: PlaytestableCard[]
 }
