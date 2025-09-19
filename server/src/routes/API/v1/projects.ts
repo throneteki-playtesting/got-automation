@@ -2,7 +2,7 @@ import express, { Request } from "express";
 import { celebrate, Joi, Segments } from "celebrate";
 import asyncHandler from "express-async-handler";
 import { dataService } from "@/services";
-import * as Schemas from "@/data/schemas";
+import * as Schemas from "common/models/schemas";
 import { JsonProject } from "common/models/projects";
 import { DeepPartial, SingleOrArray } from "common/types";
 

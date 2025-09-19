@@ -3,7 +3,7 @@ import { celebrate, Joi, Segments } from "celebrate";
 import asyncHandler from "express-async-handler";
 import { dataService, discordService } from "@/services";
 import ReviewThreads from "@/discord/reviewThreads";
-import * as Schemas from "@/data/schemas";
+import * as Schemas from "common/models/schemas";
 import { JsonPlaytestingReview } from "common/models/reviews";
 import { asArray } from "common/utils";
 import { SingleOrArray } from "common/types";

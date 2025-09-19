@@ -1,11 +1,12 @@
 import { dataService } from "@/services";
 import { celebrate, Joi, Segments } from "celebrate";
-import * as Schemas from "@/data/schemas";
+import * as Schemas from "common/models/schemas";
 import express, { Request } from "express";
 import asyncHandler from "express-async-handler";
 import { DeepPartial, SingleOrArray } from "common/types";
 import { Permission, User } from "common/models/user";
-import { requiresPermission } from "@/middleware/permissions";
+import { validateRequest } from "@/middleware/permissions";
+import { hasPermission } from "common/utils";
 
 const router = express.Router();
 
@@ -19,7 +20,7 @@ router.get("/auth",
 );
 
 const handleGetUsers = [
-    requiresPermission(Permission.READ_USERS),
+    validateRequest((user) => hasPermission(user, Permission.READ_USERS)),
     celebrate({
         [Segments.QUERY]: {
             filter: Schemas.SingleOrArray(Schemas.User.Partial)

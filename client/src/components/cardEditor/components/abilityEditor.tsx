@@ -17,7 +17,7 @@ function convertOutgoingHtml(html: string) {
     return html.replace(/<br\s*\/?>/gi, "\n").replace(/<span>\[(\w+)\]<\/span>/g, "[$1]");
 }
 
-export const AbilityEditor = ({ value: text, setValue: setText, isDisabled }: AbilityTextEditorProps<string>) => {
+export const AbilityEditor = ({ value: text, setValue: setText, isDisabled, errorMessage }: AbilityTextEditorProps<string>) => {
     const TextDocument = Document.extend({
         content: "inline*",
         marks: "_"
@@ -60,11 +60,12 @@ export const AbilityEditor = ({ value: text, setValue: setText, isDisabled }: Ab
                 }
             </div>
             <EditorContent editor={editor}/>
+            {errorMessage && <div className="text-tiny text-danger">{errorMessage}</div>}
         </div>
     );
 };
 
-type AbilityTextEditorProps<T> = Omit<BaseElementProps, "children"> & { value?: T, setValue: Dispatch<SetStateAction<T | undefined>>, isDisabled?: boolean };
+type AbilityTextEditorProps<T> = Omit<BaseElementProps, "children"> & { value?: T, setValue: Dispatch<SetStateAction<T | undefined>>, isDisabled?: boolean, errorMessage?: string };
 
 
 export default AbilityEditor;

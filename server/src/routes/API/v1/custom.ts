@@ -2,11 +2,13 @@ import express from "express";
 import { celebrate, Joi, Segments } from "celebrate";
 import asyncHandler from "express-async-handler";
 import { renderService } from "@/services";
-import * as Schemas from "@/data/schemas";
+import * as Schemas from "common/models/schemas";
 import { RenderableCard } from "common/models/cards";
 import RenderedCard from "@/data/models/cards/renderedCard";
 import { asArray } from "common/utils";
 import { SingleOrArray } from "common/types";
+import { ApiErrorResponse } from "@/errors";
+import { StatusCodes } from "http-status-codes";
 
 export type ResourceFormat = "JSON" | "HTML" | "TXT" | "PNG" | "PDF";
 
@@ -40,10 +42,8 @@ router.post("/", celebrate({
             res.send(pdf);
         }
         case "PNG": {
-            // TODO: Make this handling more generic
             if (cards.length > 1) {
-                res.status(400).json({ message: `Cannot render PNG for multiple cards: found ${cards.length} cards. Use PDF instead` });
-                break;
+                throw new ApiErrorResponse(StatusCodes.BAD_REQUEST, "Invalid Arguments", `Cannot render PNG for multiple cards: found ${cards.length} cards. Use PDF instead`);
             }
             const png = await renderService.asPNG(cards[0]);
             res.type("png");

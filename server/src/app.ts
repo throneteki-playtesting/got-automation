@@ -1,15 +1,16 @@
 import "@/config";
-import express, { NextFunction, Request, Response } from "express";
+import express from "express";
 import partials from "express-partials";
 import compression from "compression";
 import cors from "cors";
-import { errors } from "celebrate";
 import api from "./routes/API/index";
 import auth from "./routes/auth/index";
 import { logger } from "@/services";
 import swaggerRouter from "./swagger";
 import cookieParser from "cookie-parser";
 import { authenticate } from "./middleware/auth";
+import { errorHandler } from "./errors";
+import { StatusCodes } from "http-status-codes";
 
 function initialise() {
     // Add express
@@ -34,11 +35,10 @@ function initialise() {
 
     app.use(swaggerRouter);
 
-    app.use(errors());
     app.use(errorHandler);
 
     app.use((req, res) => {
-        res.status(404).send("Route does not exist");
+        res.status(StatusCodes.NOT_FOUND).send("Not Found");
     });
 
     app.listen(process.env.SERVER_PORT, () => {
@@ -48,20 +48,5 @@ function initialise() {
 
     return app;
 }
-
-const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
-    logger.error(err);
-    if (process.env.NODE_ENV !== "production") {
-        res.status(500).json({
-            name: err.name,
-            message: err.message,
-            cause: err.cause,
-            stack: err.stack
-        });
-    } else {
-        res.status(500).send("Internal Server Error");
-    }
-    next();
-};
 
 initialise();

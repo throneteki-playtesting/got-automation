@@ -1,6 +1,3 @@
-import { PlaytestableCard, RenderableCard } from "common/models/cards";
-import { DeepPartial, SingleOrArray } from "common/types";
-
 export const px = (value: number) => `${value}px`;
 export const em = (value: number) => `${value}em`;
 
@@ -30,32 +27,6 @@ export const thronesIcons: { [key: string]: string } = {
     plot: "\ue60c",
     agenda: "\ue611"
 };
-
-type RenderConversionInput = DeepPartial<PlaytestableCard & RenderableCard>;
-type RenderConversionOutput = DeepPartial<RenderableCard>;
-export function toRenderableCard(cards?: RenderConversionInput[]): RenderConversionOutput[];
-export function toRenderableCard(cards?: RenderConversionInput): RenderConversionOutput;
-export function toRenderableCard(cards?: SingleOrArray<RenderConversionInput>) {
-    if (cards === undefined) {
-        return undefined;
-    }
-    const convert = (card: RenderConversionInput) => {
-        const watermark = {
-            top: card.watermark?.top ?? card.code ?? "Unkown Code",
-            middle: card.watermark?.middle ?? (card.version ? `v${card.version}` : "No Version"),
-            bottom: card.watermark?.bottom ?? "Work In Progress"
-        };
-        return {
-            ...card,
-            watermark
-        } as RenderConversionOutput;
-    };
-    if (Array.isArray(cards)) {
-        return cards?.map(convert) ?? [];
-    } else {
-        return convert(cards);
-    }
-}
 
 export function enumToArray<T extends { [key: string]: string | number }>(
     e: T

@@ -1,38 +1,32 @@
-import { Code, PlaytestableCard } from "common/models/cards";
 import { BaseElementProps } from "../../types";
 import classNames from "classnames";
-import CardPreview from ".";
-import { useMemo, useState } from "react";
-import { toRenderableCard } from "../../utilities";
+import { ReactElement, useMemo } from "react";
+import { Skeleton } from "@heroui/react";
 
-const CardGrid = ({ children: cards, className, style, scale }: CardPreviewProps) => {
-    const [focused, setFocused] = useState<Code>();
-
-    const rendering = useMemo(() => cards?.map((card) => {
-        const isFocused = focused === card.code;
-        return (
-            <CardPreview
-                key={card.code}
-                card={toRenderableCard(card)}
-                scale={scale}
-                orientation="vertical"
-                rounded={true}
-                className={classNames("cursor-pointer transition-all", { "blur-xs": focused !== undefined && !isFocused })}
-                onClick={() => isFocused ? setFocused(undefined) : setFocused(card.code)}
-            />
-        );
-    }) ?? [], [cards, focused, scale]);
+const CardGrid = function<T>({ cards, children: renderMapFunc, className, style, isLoading, isError, emptyContent = (<span>No cards</span>), errorContent = (<span>An unexpected error has occurred</span>) }: CardPreviewProps<T>) {
+    const rendering = useMemo(() => {
+        if (cards?.length > 0) {
+            return cards.map(renderMapFunc);
+        }
+        return emptyContent;
+    }, [cards, emptyContent, renderMapFunc]);
 
     return (
-        <div className={classNames("flex flex-wrap justify-center", className)} style={style}>
-            {rendering}
-        </div>
+        <Skeleton isLoaded={!isLoading} className="rounded-lg h-fit">
+            <div className={classNames("flex flex-wrap justify-center gap-1 min-h-64 bg-default-50 rounded-lg", className)} style={style}>
+                {isError ? errorContent : rendering}
+            </div>
+        </Skeleton>
     );
 };
 
-type CardPreviewProps = Omit<BaseElementProps, "children"> & {
-    children?: PlaytestableCard[],
-    scale?: number
+type CardPreviewProps<T> = Omit<BaseElementProps, "children"> & {
+    cards: T[],
+    children: (card: T) => ReactElement
+    isLoading?: boolean,
+    isError?: boolean,
+    emptyContent?: ReactElement,
+    errorContent?: ReactElement
 }
 
 export default CardGrid;

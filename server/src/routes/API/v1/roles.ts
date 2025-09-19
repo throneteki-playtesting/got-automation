@@ -1,11 +1,12 @@
 import { dataService } from "@/services";
 import { celebrate, Segments } from "celebrate";
-import * as Schemas from "@/data/schemas";
+import * as Schemas from "common/models/schemas";
 import express from "express";
 import asyncHandler from "express-async-handler";
 import { DeepPartial, SingleOrArray } from "common/types";
 import { Permission, Role } from "common/models/user";
-import { requiresPermission } from "@/middleware/permissions";
+import { validateRequest } from "@/middleware/permissions";
+import { hasPermission } from "common/utils";
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ type RoleParam = { discordId: string };
 type FilterQuery = { filter?: SingleOrArray<DeepPartial<Role>> }
 
 const handleGetRoles = [
-    requiresPermission(Permission.READ_ROLES),
+    validateRequest((user) => hasPermission(user, Permission.READ_ROLES)),
     celebrate({
         [Segments.QUERY]: {
             filter: Schemas.SingleOrArray(Schemas.Role.Partial)

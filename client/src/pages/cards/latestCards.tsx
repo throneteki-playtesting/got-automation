@@ -2,9 +2,9 @@ import { PlaytestableCard } from "common/models/cards";
 import { DeepPartial, SingleOrArray } from "common/types";
 import { BaseElementProps } from "../../types";
 import CardGrid from "../../components/cardPreview/cardGrid";
-import { Skeleton } from "@heroui/react";
-import classNames from "classnames";
 import { useGetCardsQuery } from "../../api";
+import CardPreview from "../../components/cardPreview";
+import { renderPlaytestingCard } from "common/utils";
 
 const LatestCards = ({ className, style, filter }: LatestCardsProps) => {
     const { data: cards, isLoading, error } = useGetCardsQuery({ filter, latest: true });
@@ -16,11 +16,16 @@ const LatestCards = ({ className, style, filter }: LatestCardsProps) => {
     }
 
     return (
-        <Skeleton isLoaded={!isLoading} className="rounded-b-xl">
-            <CardGrid className={classNames("gap-1", { "h-64": isLoading }, className)} style={style}>
-                {cards}
-            </CardGrid>
-        </Skeleton>
+        <CardGrid cards={cards ?? []} className={className} style={style} isLoading={isLoading}>
+            {(card) => (
+                <CardPreview
+                    key={card.code}
+                    card={renderPlaytestingCard(card)}
+                    orientation="vertical"
+                    rounded={true}
+                    className={"transition-all"}
+                />)}
+        </CardGrid>
     );
 };
 

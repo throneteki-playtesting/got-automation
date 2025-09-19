@@ -1,0 +1,87 @@
+import { Permission, User } from "common/models/user";
+import { SingleOrArray } from "common/types";
+import { asArray, hasPermission } from "common/utils";
+import Home from "./home";
+import { ReactElement } from "react";
+import Cards from "./cards";
+import Suggestions from "./suggestions";
+import Users from "./admin/users";
+import Roles from "./admin/roles";
+
+export type NavItem = PageItem | MenuItem;
+export type PageItem = BaseNav & { path: string, element: ReactElement };
+export type MenuItem = BaseNav & { subPages: NavItem[] }
+type BaseNav = { label: string, permission?: SingleOrArray<Permission> }
+
+export const navItems: NavItem[] = [
+    {
+        path: "/",
+        label: "Home",
+        element: <Home />
+    },
+    {
+        path: "/cards",
+        label: "Cards",
+        permission: Permission.READ_CARDS,
+        element: <Cards />
+    },
+    {
+        path: "/suggestions",
+        label: "Suggestions",
+        permission: [
+            Permission.READ_SUGGESTIONS,
+            Permission.MAKE_SUGGESTIONS,
+            Permission.EDIT_SUGGESTIONS,
+            Permission.DELETE_SUGGESTIONS
+        ],
+        element: <Suggestions />
+    },
+    {
+        label: "Admin",
+        subPages: [
+            {
+                path: "/users",
+                label: "Users",
+                permission: Permission.READ_USERS,
+                element: <Users />
+            },
+            {
+                path: "/roles",
+                label: "Roles",
+                permission: Permission.READ_ROLES,
+                element: <Roles />
+            }
+        ]
+    }
+];
+export const profileItems: PageItem[] = [
+    {
+        // TODO: Add profile page
+        path: "/profile",
+        label: "Profile",
+        element: <div />
+    }
+];
+
+export const isVisibleFor = (page: NavItem, user?: User): boolean => {
+    const pagePermissions = asArray(page.permission ?? []);
+
+    let isVisible = false;
+    if (isMenuItem(page) && page.subPages.length > 0) {
+        isVisible = page.subPages.some((subPage) => isVisibleFor(subPage, user));
+
+        if (!isVisible && pagePermissions.length > 0) {
+            isVisible = hasPermission(user, ...pagePermissions);
+        }
+    } else {
+        isVisible = hasPermission(user, ...pagePermissions);
+    }
+    return isVisible;
+};
+
+export function isPageItem(navItem: NavItem): navItem is PageItem {
+    return "element" in navItem;
+}
+export function isMenuItem(navItem: NavItem): navItem is MenuItem {
+    return "subPages" in navItem;
+}

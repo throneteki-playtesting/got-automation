@@ -2,11 +2,11 @@ import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { addToast, Avatar, Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Link, Skeleton, Spinner } from "@heroui/react";
 import { useEffect, useState } from "react";
-import { PageInfo } from "../../pages";
 import { useNavigate } from "react-router-dom";
 import api, { useLogoutMutation } from "../../api";
 import { useDispatch } from "react-redux";
 import { setUser } from "../../api/authSlice";
+import { PageItem } from "../../pages";
 
 const ProfileSection = ({ children: items = [] }: ProfileSectionProps) => {
     const dispatch = useDispatch();
@@ -80,6 +80,6 @@ const ProfileSection = ({ children: items = [] }: ProfileSectionProps) => {
     );
 };
 
-type ProfileSectionProps = { children?: PageInfo[] }
+type ProfileSectionProps = { children?: PageItem[] }
 
 export default ProfileSection;

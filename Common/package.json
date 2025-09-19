@@ -5,5 +5,9 @@
   "scripts": {},
   "author": "Stephen Patane",
   "type": "module",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "http-status-codes": "^2.3.0",
+    "joi": "^17.13.3"
+  }
 }

@@ -1,21 +1,23 @@
-import { BulkWriteOptions, Collection, DeleteOptions, Filter, FindOptions, IndexSpecification, MongoClient, OptionalUnlessRequiredId, WithId } from "mongodb";
+import { BulkWriteOptions, Collection, DeleteOptions, Filter as MongoFilter, FindOptions, IndexSpecification, MongoClient, OptionalUnlessRequiredId, WithId } from "mongodb";
 import { flatten } from "flat";
 import { DeepPartial, SingleOrArray } from "common/types";
 import { logger } from "@/services";
 import { asArray } from "common/utils";
 
 export default class MongoDataSource<T> {
-    protected collection: Collection<T>;
+    public collection: Collection<T>;
     protected primaryKeys: string[];
-    constructor(client: MongoClient, protected name: string, primaryKeys: IndexSpecification) {
+    constructor(client: MongoClient, protected name: string, primaryKeys: IndexSpecification = {}) {
         this.collection = client.db().collection<T>(name);
         this.primaryKeys = Object.keys(primaryKeys);
-        if (this.primaryKeys.length === 0) {
-            throw Error(`At least one primary key/index must be supplied for ${this.name} collection`);
+        if (this.primaryKeys.length > 0) {
+            this.collection.createIndex(primaryKeys, { unique: true });
+        } else {
+            // If no primary keys supplied, use _id
+            this.primaryKeys.push("_id");
         }
-        this.collection.createIndex(primaryKeys, { unique: true });
     }
-    protected buildFilterQuery(values?: SingleOrArray<DeepPartial<T>>): Filter<T> {
+    protected buildFilterQuery(values?: SingleOrArray<DeepPartial<T>>): MongoFilter<T> {
         let query = {};
 
         if (values) {
@@ -35,8 +37,9 @@ export default class MongoDataSource<T> {
                 query[key] = { $exists: true };
             }
         }
-        return query as Filter<T>;
+        return query as MongoFilter<T>;
     }
+
     protected withoutId(values: WithId<T>[]) {
         return values.map((value) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -87,7 +90,7 @@ export default class MongoDataSource<T> {
         return Object.keys(results.insertedIds).map((index) => docs[index] as T);
     }
 
-    protected async find(query: Filter<T>, options?: FindOptions) {
+    protected async find(query: MongoFilter<T>, options?: FindOptions) {
         const result = await this.collection.find(query, options).toArray();
 
         logger.verbose(`[Mongo] Read ${result.length} documents from ${this.name} collection`);
@@ -121,7 +124,7 @@ export default class MongoDataSource<T> {
         return Object.keys(updatedIds).map((index) => docs[index] as T);
     }
 
-    protected async deleteMany(query: Filter<T>, options?: DeleteOptions) {
+    protected async deleteMany(query: MongoFilter<T>, options?: DeleteOptions) {
         if (Object.keys(query).length === 0) {
             return 0; // Do not delete anything if there are no query parameters
         }

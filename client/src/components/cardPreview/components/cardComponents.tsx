@@ -324,7 +324,7 @@ type DeckLimitProps = Omit<BaseElementProps, "children"> & { type?: TypeType, al
 export const Watermark = memo(({ children: watermark, className, style }: WatermarkProps) => {
     return (
         <div
-            className={classNames("grow flex flex-col text-gray-200 font-bold justify-center items-center", className)}
+            className={classNames("grow flex flex-col text-gray-200 font-bold justify-center items-center text-center", className)}
             style={{ fontSize: px(14), ...style }}
         >
             <span>{watermark?.top}</span>

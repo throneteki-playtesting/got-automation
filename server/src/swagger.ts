@@ -5,7 +5,7 @@ import express from "express";
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import j2s from "joi-to-swagger";
-import * as Schemas from "@/data/schemas";
+import * as Schemas from "common/models/schemas";
 
 
 const __filename = fileURLToPath(import.meta.url);

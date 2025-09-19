@@ -1,8 +1,8 @@
-import { Joi } from "celebrate";
-import * as Cards from "common/models/cards";
-import * as Projects from "common/models/projects";
-import { playedRanges, statementAnswers } from "common/models/reviews";
-import { Regex } from "common/utils";
+import Joi from "joi";
+import * as Cards from "../models/cards";
+import * as Projects from "../models/projects";
+import { playedRanges, statementAnswers } from "../models/reviews";
+import { Regex } from "../utils";
 
 const JoiXNumber = Joi.alternatives().try(
     Joi.number(),
@@ -14,6 +14,8 @@ const JoiXDashNumber = Joi.alternatives().try(
 );
 
 const Permission = Joi.number();
+
+export type SchemaType = Joi.ObjectSchema<unknown>;
 
 export const SingleOrArray = (object: Joi.ObjectSchema) => Joi.alternatives().try(object, Joi.array().items(object));
 
@@ -150,6 +152,31 @@ export const RenderedCard = {
             middle: Joi.string(),
             bottom: Joi.string()
         })
+    })
+};
+
+export const CardSuggestion = {
+    Full: Card.Full.keys({
+        _id: Joi.string(),
+        code: Joi.forbidden(), // Code not required (from card schema)
+        suggestedBy: Joi.string().required(),
+        created: Joi.date().required(),
+        updated: Joi.date().required(),
+        threadId: Joi.string(),
+        likedBy: Joi.array().items(Joi.string()).default([]),
+        approvedBy: Joi.string(),
+        tags: Joi.array().items(Joi.string()).default([])
+    }),
+    Partial: Card.Partial.keys({
+        _id: Joi.string(),
+        code: Joi.forbidden(), // Code not required (from card schema)
+        suggestedBy: Joi.string(),
+        created: Joi.date(),
+        updated: Joi.date(),
+        threadId: Joi.string(),
+        likedBy: Joi.array().items(Joi.string()),
+        approvedBy: Joi.string(),
+        tags: Joi.array().items(Joi.string())
     })
 };
 

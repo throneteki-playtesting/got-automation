@@ -1,0 +1,16 @@
+import { ReactElement } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "../api/store";
+import { SingleOrArray } from "common/types";
+import { asArray, validate, ValidationStep } from "common/utils";
+
+const PermissionGate = ({ children, requires }: PermissionGateProps) => {
+    const user = useSelector((state: RootState) => state.auth.user);
+    if (validate(user, ...asArray(requires))) {
+        return children;
+    }
+    return null;
+};
+
+type PermissionGateProps = { children?: SingleOrArray<ReactElement>, requires: SingleOrArray<ValidationStep> }
+export default PermissionGate;

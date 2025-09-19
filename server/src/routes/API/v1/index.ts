@@ -6,6 +6,7 @@ import projects from "./projects";
 import packs from "./packs";
 import reviews from "./reviews";
 import custom from "./custom";
+import suggestions from "./suggestions";
 import { parseFilter } from "@/middleware/filters";
 
 const router = express.Router();
@@ -16,6 +17,7 @@ router.use("/projects", parseFilter, projects);
 router.use("/packs", parseFilter, packs);
 router.use("/reviews", parseFilter, reviews);
 router.use("/custom", parseFilter, custom);
+router.use("/suggestions", parseFilter, suggestions);
 
 router.post("/login", (req, res) => {
     res.redirect("auth/discord");

@@ -1,6 +1,6 @@
 import * as Ver from "semver";
-import { GithubDetails, PlaytestableCard, RenderableCard, NoteDetails, ReleaseDetails } from "common/models/cards";
-import { parseCardCode, SemanticVersion } from "common/utils";
+import { GithubDetails, PlaytestableCard, NoteDetails, ReleaseDetails } from "common/models/cards";
+import { parseCardCode, renderPlaytestingCard, SemanticVersion } from "common/utils";
 import BaseCard from "./baseCard";
 import RenderedCard from "./renderedCard";
 
@@ -88,14 +88,7 @@ class PlaytestingCard extends BaseCard implements PlaytestableCard {
     }
 
     toRenderedCard() {
-        const data = {
-            ...this.toJSON(),
-            watermark: {
-                top: `#${this.code}`,
-                middle: `v${this.version}`,
-                bottom: "Work In Progress"
-            }
-        } as RenderableCard;
+        const data = renderPlaytestingCard(this);
         return new RenderedCard(data);
     }
 

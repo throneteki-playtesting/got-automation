@@ -2,6 +2,8 @@ import { dataService } from "@/services";
 import { JWTPayload } from "@/types";
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
+import { ApiErrorResponse } from "@/errors";
+import { StatusCodes } from "http-status-codes";
 
 export const authenticate = asyncHandler<unknown, unknown, unknown, unknown>(
     async (req, res, next) => {
@@ -11,23 +13,25 @@ export const authenticate = asyncHandler<unknown, unknown, unknown, unknown>(
             const decoded = Buffer.from(encoded, "base64").toString();
             const [username, password] = decoded.split(":");
             if (username !== process.env.BASIC_USERNAME || password !== process.env.BASIC_PASSWORD) {
-                res.status(401).json({ message: "Invalid basic credentials" });
+                throw new ApiErrorResponse(StatusCodes.UNAUTHORIZED, "Invalid Authentication", "Basic credentials are invalid or missing");
             }
             next();
         } else {
             const token = (req.cookies?.jwt || req.header("Authorization")?.replace("Bearer ", "")) as string;
 
             if (!token) {
-                res.status(401).json({ message: "No authentication token provided" });
-                return;
+                throw new ApiErrorResponse(StatusCodes.UNAUTHORIZED, "Invalid Authentication", "No authentication token provided");
             }
             try {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
                 const [user] = await dataService.users.read({ username: decoded.username });
                 req["user"] = user;
                 next();
-            } catch {
-                res.status(401).json({ message: "Invalid or expired token" });
+            } catch (err) {
+                if ("name" in err && err.name === "TokenExpiredError") {
+                    throw new ApiErrorResponse(StatusCodes.UNAUTHORIZED, "Invalid Authentication", "Token Expired");
+                }
+                throw new ApiErrorResponse(StatusCodes.UNAUTHORIZED, "Invalid Authentication", "Token Invalid");
             }
         }
     }

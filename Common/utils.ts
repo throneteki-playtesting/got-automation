@@ -1,6 +1,6 @@
 import * as Cards from "./models/cards";
 import { Permission, User } from "./models/user";
-import { SingleOrArray } from "./types";
+import { ApiError, SingleOrArray } from "./types";
 
 export type SemanticVersion = `${number}.${number}.${number}`;
 
@@ -133,6 +133,21 @@ export function buildUrl(baseUrl: string, queryParameters?: { [key: string]: unk
     return url;
 }
 
+export type ValidationStep = Permission | ((user: User) => boolean);
+export function validate(user?: User, ...steps: ValidationStep[]) {
+    const { checks, permissions } = steps.reduce<{ checks: ((user: User) => boolean)[], permissions: Permission[] }>(
+        (results, step) => {
+            if (typeof step === "function") {
+                results.checks.push(step);
+            } else {
+                results.permissions.push(step);
+            }
+            return results;
+        }, { checks: [], permissions: [] }
+    );
+    return hasPermission(user, ...permissions) && checks.every((check) => !!user && check(user));
+};
+
 export function hasPermission(user?: User, ...permissions: Permission[]) {
     if (permissions.length === 0) {
         return true;
@@ -155,4 +170,35 @@ export function hasPermission(user?: User, ...permissions: Permission[]) {
     }
 
     return false;
+}
+
+export function isApiError(err: unknown): err is ApiError {
+    if (err instanceof Error && "code" in err && "message" in err && "error" in err) {
+        return true;
+    }
+    return false;
+}
+
+export function renderPlaytestingCard(card: Cards.PlaytestableCard) {
+    return {
+        ...card,
+        key: `${card.code}@${card.version}`,
+        watermark: {
+            top: card.code ?? "Unkown Code",
+            middle: (card.version ? `v${card.version}` : "0.0.0"),
+            bottom: "Work In Progress"
+        }
+    } as Cards.RenderableCard;
+}
+
+export function renderCardSuggestion(card: Cards.CardSuggestion) {
+    return {
+        ...card,
+        key: card.id,
+        watermark: {
+            top: undefined,
+            middle: "Custom",
+            bottom: "Card Suggestion"
+        }
+    } as Cards.RenderableCard;
 }

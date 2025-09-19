@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { PlaytestableCard } from "common/models/cards";
+import { CardSuggestion, PlaytestableCard } from "common/models/cards";
 import { JsonProject } from "common/models/projects";
 import { Role, User } from "common/models/user";
 import { DeepPartial, SingleOrArray } from "common/types";
@@ -10,6 +10,8 @@ const tag = {
     User: "User",
     Role: "Role",
     Card: "Card",
+    Suggestion: "Suggestion",
+    Tag: "Tag",
     Project: "Project"
 };
 
@@ -114,12 +116,18 @@ const api = createApi({
             query: (options) => {
                 const url = buildUrl("cards", { filter: options?.filter, latest: options?.latest });
                 return { url, method: "GET" };
-            }
+            },
+            providesTags: [{ type: tag.Card, id: "LIST" }]
         }),
         getCard: builder.query<PlaytestableCard[], { project: number, number: number, latest?: boolean }>({
             query: (options) => {
                 const url = buildUrl(`cards/${options.project}/${options.number}`, { latest: options.latest });
                 return { url, method: "GET" };
+            },
+            providesTags: (result) => {
+                return result && result.length > 0 ? [
+                    { type: tag.Card, id: result[0].code }
+                ] : [];
             }
         }),
         pushCards: builder.mutation<PlaytestableCard[], SingleOrArray<PlaytestableCard>>({
@@ -127,7 +135,80 @@ const api = createApi({
                 const url = buildUrl("cards");
                 const body = asArray(cards);
                 return { url, method: "POST", body };
+            },
+            invalidatesTags: (_result, _error, arg) => {
+                return [
+                    ...asArray(arg).map((a) => ({ type: tag.Card, id: a.code })),
+                    { type: tag.Card, id: "LIST" }
+                ];
             }
+        }),
+        // Suggestions API
+        getSuggestions: builder.query<CardSuggestion[], { filter?: SingleOrArray<DeepPartial<CardSuggestion>> } | void>({
+            query: (options) => {
+                const url = buildUrl("suggestions", { filter: options?.filter });
+                return { url, method: "GET" };
+            },
+            providesTags: [{ type: tag.Suggestion, id: "LIST" }]
+        }),
+        getSuggestionsBy: builder.query<CardSuggestion[], { discordId: string, filter?: SingleOrArray<DeepPartial<CardSuggestion>> }>({
+            query: (options) => {
+                const url = buildUrl(`suggestions/${options.discordId}`, { filter: options?.filter });
+                return { url, method: "GET" };
+            },
+            providesTags: (result) => {
+                return result && result.length > 0 ? [
+                    { type: tag.Suggestion, id: result[0].suggestedBy }
+                ] : [];
+            }
+        }),
+        submitSuggestion: builder.mutation<CardSuggestion, CardSuggestion>({
+            query: (card) => {
+                const url = buildUrl("suggestions");
+                const body = card;
+                return { url, method: "POST", body };
+            },
+            invalidatesTags: (_result, _error, arg) => {
+                return [
+                    { type: tag.Suggestion, id: arg.suggestedBy },
+                    { type: tag.Suggestion, id: "LIST" },
+                    { type: tag.Tag, id: "LIST" }
+                ];
+            }
+        }),
+        updateSuggestion: builder.mutation<CardSuggestion, CardSuggestion>({
+            query: (card) => {
+                const { id, ...body } = card;
+                const url = buildUrl(`suggestions/${id}`);
+                return { url, method: "PUT", body };
+            },
+            invalidatesTags: (_result, _error, arg) => {
+                return [
+                    { type: tag.Suggestion, id: arg.suggestedBy },
+                    { type: tag.Suggestion, id: "LIST" },
+                    { type: tag.Tag, id: "LIST" }
+                ];
+            }
+        }),
+        deleteSuggestion: builder.mutation<number, CardSuggestion>({
+            query: (card) => {
+                const url = buildUrl(`suggestions/${card.id}`);
+                return { url, method: "DELETE" };
+            },
+            invalidatesTags: (_result, _error, arg) => {
+                return [
+                    { type: tag.Suggestion, id: arg.suggestedBy },
+                    { type: tag.Suggestion, id: "LIST" },
+                    { type: tag.Tag, id: "LIST" }
+                ];
+            }
+        }),
+        getTags: builder.query<string[], void>({
+            query: () => {
+                const url = buildUrl("suggestions/tags");
+                return { url, method: "GET" };
+            },
+            providesTags: [{ type: tag.Tag, id: "LIST" }]
         }),
         // Projects API
         getProject: builder.query<JsonProject, { number: number }>({
@@ -150,6 +231,12 @@ export const {
     useGetCardsQuery,
     useGetCardQuery,
     usePushCardsMutation,
+    useGetSuggestionsQuery,
+    useGetSuggestionsByQuery,
+    useSubmitSuggestionMutation,
+    useUpdateSuggestionMutation,
+    useDeleteSuggestionMutation,
+    useGetTagsQuery,
     useGetProjectQuery
 } = api;
 

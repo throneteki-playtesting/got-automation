@@ -1,9 +1,8 @@
-import { PlaytestableCard, RenderableCard } from "common/models/cards";
+import { RenderableCard } from "common/models/cards";
 import { BaseElementProps } from "../../types";
 import CardPreview from ".";
 import classNames from "classnames";
 import { useMemo, useState } from "react";
-import { toRenderableCard } from "../../utilities";
 import { DeepPartial } from "common/types";
 
 const CardStack = ({ children: cards, scale, collapsed = false, className, classNames: classGroups, style }: CardStackProps) => {
@@ -22,7 +21,7 @@ const CardStack = ({ children: cards, scale, collapsed = false, className, class
                 onPointerLeave={() => setHighlighted(undefined)}
             >
                 <CardPreview
-                    card={toRenderableCard(card)}
+                    card={card}
                     scale={scale}
                     rounded
                     className={classNames("relative", classGroups?.card)}
@@ -44,6 +43,6 @@ const CardStack = ({ children: cards, scale, collapsed = false, className, class
     );
 };
 
-type CardStackProps = Omit<BaseElementProps, "children"> & { classNames?: { wrapper?: string, card?: string }, children?: DeepPartial<PlaytestableCard & RenderableCard>[], scale?: number, collapsed?: boolean };
+type CardStackProps = Omit<BaseElementProps, "children"> & { classNames?: { wrapper?: string, card?: string }, children?: DeepPartial<RenderableCard>[], scale?: number, collapsed?: boolean };
 
 export default CardStack;

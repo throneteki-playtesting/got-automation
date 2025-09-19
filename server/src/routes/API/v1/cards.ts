@@ -4,12 +4,14 @@ import asyncHandler from "express-async-handler";
 import PlaytestingCard from "@/data/models/cards/playtestingCard";
 import { inc } from "semver";
 import { dataService, logger, renderService } from "@/services";
-import { SemanticVersion } from "common/utils";
+import { hasPermission, SemanticVersion } from "common/utils";
 import { PlaytestableCard, NoteType } from "common/models/cards";
-import * as Schemas from "@/data/schemas";
+import * as Schemas from "common/models/schemas";
 import { DeepPartial, SingleOrArray } from "common/types";
-import { requiresPermission } from "@/middleware/permissions";
 import { Permission } from "common/models/user";
+import { ApiErrorResponse } from "@/errors";
+import { StatusCodes } from "http-status-codes";
+import { validateRequest } from "@/middleware/permissions";
 
 export type ResourceFormat = "JSON" | "HTML" | "TXT" | "PNG" | "PDF";
 
@@ -23,7 +25,7 @@ type FormatQuery = { format?: ResourceFormat }
 type CardBody = SingleOrArray<PlaytestableCard>;
 
 const handleGetCards = [
-    requiresPermission(Permission.READ_CARDS),
+    validateRequest((user) => hasPermission(user, Permission.READ_CARDS)),
     celebrate({
         [Segments.QUERY]: {
             filter: Schemas.SingleOrArray(Schemas.PlaytestingCard.Partial),
@@ -49,10 +51,8 @@ const handleGetCards = [
                 res.send(html);
                 break;
             case "PNG":
-                // TODO: Make this handling more generic
                 if (cards.length > 1) {
-                    res.status(400).json({ message: `Cannot render PNG for multiple cards: found ${cards.length} cards. Refine filter, use PDF, or set latest=true` });
-                    break;
+                    throw new ApiErrorResponse(StatusCodes.BAD_REQUEST, "Invalid Arguments", `Cannot render PNG for multiple cards: found ${cards.length} cards. Refine filter, use PDF, or set latest=true`);
                 }
                 const png = await renderService.asPNG(cards[0].toRenderedCard());
                 res.type("png");
@@ -63,8 +63,6 @@ const handleGetCards = [
                 res.contentType("application/pdf");
                 res.send(pdf);
                 break;
-            default:
-                throw Error(`"${req.query.format as string}" not implemented yet`);
         }
     })
 ];
@@ -297,7 +295,7 @@ router.get("/:project/:number", celebrate({
  *         description: Success
  */
 router.post("/",
-    requiresPermission(Permission.CREATE_CARDS),
+    validateRequest((user) => hasPermission(user, Permission.CREATE_CARDS)),
     celebrate({
         [Segments.BODY]: Schemas.SingleOrArray(Schemas.PlaytestingCard.Full)
     }),
