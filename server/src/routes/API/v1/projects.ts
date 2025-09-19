@@ -45,10 +45,10 @@ router.get("/:number",
                 filter.number = number;
             }
             req.query.filter = filter;
+            next();
         } catch (err) {
             next(err);
         }
-        next();
     }, ...handleGetProjects, (req, res) => res.json(req.body[0] ?? {}));
 
 // TODO: Openapi spec

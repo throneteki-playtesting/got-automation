@@ -53,10 +53,10 @@ router.get("/:discordId",
                 filter.discordId = discordId;
             }
             req.query.filter = filter;
+            next();
         } catch (err) {
             next(err);
         }
-        next();
     },
     ...handleGetUsers,
     (req, res) => res.json(req.body[0] ?? {})

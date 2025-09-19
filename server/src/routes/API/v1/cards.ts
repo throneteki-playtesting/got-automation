@@ -156,10 +156,10 @@ router.get("/:project", celebrate({
             filter.project = project;
         }
         req.query.filter = filter;
+        next();
     } catch (err) {
         next(err);
     }
-    next();
 }, ...handleGetCards);
 
 /**
@@ -266,10 +266,10 @@ router.get("/:project/:number", celebrate({
             filter.number = number;
         }
         req.query.filter = filter;
+        next();
     } catch (err) {
         next(err);
     }
-    next();
 }, ...handleGetCards);
 
 

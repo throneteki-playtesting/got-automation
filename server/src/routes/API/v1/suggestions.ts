@@ -60,10 +60,10 @@ router.get("/:id",
                 filter.id = id;
             }
             req.query.filter = filter;
+            next();
         } catch (err) {
             next(err);
         }
-        next();
     },
     ...handleGetSuggestions,
     (req, res) => res.json(req.body[0] ?? {})
@@ -85,10 +85,10 @@ router.get("/:suggestedBy",
                 filter.suggestedBy = suggestedBy;
             }
             req.query.filter = filter;
+            next();
         } catch (err) {
             next(err);
         }
-        next();
     },
     ...handleGetSuggestions,
     (req, res) => res.json(req.body)
