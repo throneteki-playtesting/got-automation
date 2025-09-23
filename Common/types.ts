@@ -9,10 +9,15 @@ export type DeepPartial<T> =
 
 export type SingleOrArray<T> = T | T[];
 
-export type AuthStatus = "success" | "error" | "unauthorized";
+export type AuthStatus = "success" | "error" | "cancelled";
 
-export type ApiError = {
+export interface ApiError {
     code: StatusCodes,
     error: string,
     message: string,
+}
+
+export interface RefreshAuthResponse {
+    status: "success" | "failure",
+    message?: string
 }

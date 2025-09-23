@@ -1,9 +1,11 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { BaseQueryFn, createApi, FetchArgs, fetchBaseQuery, FetchBaseQueryError, FetchBaseQueryMeta } from "@reduxjs/toolkit/query/react";
 import { CardSuggestion, PlaytestableCard } from "common/models/cards";
 import { JsonProject } from "common/models/projects";
 import { Role, User } from "common/models/user";
-import { DeepPartial, SingleOrArray } from "common/types";
+import { DeepPartial, RefreshAuthResponse, SingleOrArray } from "common/types";
 import { asArray, buildUrl } from "common/utils";
+import { clearUser } from "./authSlice";
+import { StatusCodes } from "http-status-codes";
 
 const tag = {
     Me: "Me",
@@ -20,12 +22,35 @@ const baseQuery = fetchBaseQuery({
     credentials: "include"
 });
 
+const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError>
+    = async (args, api, extraOptions) =>
+    {
+        let result = await baseQuery(args, api, extraOptions);
+        if (result.meta?.response?.status === StatusCodes.UNAUTHORIZED) {
+            // Attempt to refresh token
+            const baseAuthQuery = fetchBaseQuery({ baseUrl: "/auth", credentials: "include" }) as BaseQueryFn<string | FetchArgs, RefreshAuthResponse, FetchBaseQueryError, unknown, FetchBaseQueryMeta>;
+            const refreshResult = await baseAuthQuery("/refresh", api, extraOptions);
+
+            if (refreshResult.data?.status === "success") {
+                result = await baseQuery(args, api, extraOptions);
+            } else {
+                api.dispatch(clearUser());
+                // Expired refresh token should result in reauthentication
+                if (refreshResult.meta?.response?.status === StatusCodes.FORBIDDEN) {
+                    // TODO: Move this into a more stable process, possibly it's own api slice for /login & /logout
+                    window.location.href = `${import.meta.env.VITE_SERVER_HOST}/auth/discord`;
+                }
+            }
+        }
+        return result;
+    };
+
 const api = createApi({
     reducerPath: "api",
-    baseQuery,
+    baseQuery: baseQueryWithReauth,
     tagTypes: Object.values(tag),
     endpoints: (builder) => ({
-        // Login API (only used in authSlice.ts)
+        // Login API
         login: builder.mutation<void, void>({
             query: () => ({
                 url: "login",
@@ -49,9 +74,9 @@ const api = createApi({
                     url,
                     method: "GET",
                     // 401 (eg. no authentication provided) is treated as an undefined user rather than an error
-                    validateStatus: (response) => [200, 401].includes(response.status) };
+                    validateStatus: (response) => [StatusCodes.OK, StatusCodes.UNAUTHORIZED].includes(response.status) };
             },
-            transformResponse: (response: User, meta) => (meta?.response?.status === 401 ? undefined : response),
+            transformResponse: (response: User, meta: FetchBaseQueryMeta) => (meta?.response?.status === StatusCodes.UNAUTHORIZED ? undefined : response),
             providesTags: (result) => {
                 return result ? [
                     { type: tag.Me, id: result.discordId },

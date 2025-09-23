@@ -1,9 +1,9 @@
 import { dataService } from "@/services";
-import { JWTPayload } from "@/types";
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
 import { ApiErrorResponse } from "@/errors";
 import { StatusCodes } from "http-status-codes";
+import { AccessTokenPayload } from "@/types";
 
 export const authenticate = asyncHandler<unknown, unknown, unknown, unknown>(
     async (req, res, next) => {
@@ -17,14 +17,14 @@ export const authenticate = asyncHandler<unknown, unknown, unknown, unknown>(
             }
             next();
         } else {
-            const token = (req.cookies?.jwt || req.header("Authorization")?.replace("Bearer ", "")) as string;
+            const { accessToken } = req.cookies;
 
-            if (!token) {
-                throw new ApiErrorResponse(StatusCodes.UNAUTHORIZED, "Invalid Authentication", "No authentication token provided");
+            if (!accessToken) {
+                throw new ApiErrorResponse(StatusCodes.UNAUTHORIZED, "Invalid Authentication", "No access token provided");
             }
             try {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
-                const [user] = await dataService.users.read({ username: decoded.username });
+                const { discordId } = jwt.verify(accessToken, process.env.JWT_SECRET) as AccessTokenPayload;
+                const [user] = await dataService.users.read({ discordId });
                 req["user"] = user;
                 next();
             } catch (err) {

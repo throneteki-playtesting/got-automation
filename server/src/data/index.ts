@@ -6,6 +6,7 @@ import ReviewsRepository from "./repositories/reviewRepository";
 import UsersRepository from "./repositories/usersRepository";
 import RolesRepository from "./repositories/rolesRepository";
 import SuggestionsRepository from "./repositories/suggestionsRepository";
+import AuthRepository from "./repositories/authRepository";
 
 class DataService {
     private client: MongoClient;
@@ -18,6 +19,7 @@ class DataService {
     private _users: UsersRepository;
     private _roles: RolesRepository;
     private _suggestions: SuggestionsRepository;
+    private _auth: AuthRepository;
 
     constructor() {
         this.client = new MongoClient(`${process.env.DATABASE_URL}?retryWrites=true&retryReads=true`, { ignoreUndefined: true, maxPoolSize: 10, connectTimeoutMS: 5000 });
@@ -36,6 +38,7 @@ class DataService {
             this._users = new UsersRepository(this.client);
             this._roles = new RolesRepository(this.client);
             this._suggestions = new SuggestionsRepository(this.client);
+            this._auth = new AuthRepository(this.client);
             return true;
         } catch (err) {
             logger.error(err);
@@ -76,6 +79,10 @@ class DataService {
 
     get suggestions() {
         return this.getRepository<SuggestionsRepository>("suggestions");
+    }
+
+    get auth() {
+        return this.getRepository<AuthRepository>("auth");
     }
 }
 

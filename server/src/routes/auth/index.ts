@@ -1,13 +1,17 @@
 import { celebrate, Joi, Segments } from "celebrate";
-import express from "express";
+import express, { Response } from "express";
 import asyncHandler from "express-async-handler";
 import { dataService, discordService, logger } from "@/services";
 import { APIGuildMember, RESTPostOAuth2AccessTokenResult } from "discord.js";
 import { User } from "common/models/user";
 import jwt from "jsonwebtoken";
-import { JWTPayload } from "@/types";
 import { buildUrl } from "common/utils";
-import { AuthStatus } from "common/types";
+import { AuthStatus, RefreshAuthResponse } from "common/types";
+import { createHash, randomUUID } from "crypto";
+import { RefreshToken } from "common/models/auth";
+import { ApiErrorResponse } from "@/errors";
+import { StatusCodes } from "http-status-codes";
+import { AccessTokenPayload } from "@/types";
 
 const router = express.Router();
 
@@ -23,18 +27,22 @@ router.get("/discord", (req, res) => {
     res.redirect(encodeURI(DISCORD_AUTH_URL));
 });
 
-type DiscordCallbackQuery = { code: string };
+type DiscordCallbackQuery = { code?: string };
 
 router.get("/discord/callback",
     celebrate({
         [Segments.QUERY]: {
-            code: Joi.string().required()
+            code: Joi.string()
         }
-    }),
+    }, { allowUnknown: true }),
     asyncHandler<unknown, unknown, unknown, DiscordCallbackQuery>(async (req, res) => {
         try {
             const { code } = req.query;
 
+            if (!code) {
+                res.redirect(buildUrl(REDIRECT_URL, { status: "cancelled" } as { status: AuthStatus }));
+                return;
+            }
             // 1. Get Access Token
             const authToken = await getAuthenticationToken(code);
 
@@ -75,13 +83,9 @@ router.get("/discord/callback",
             // 5. Push potential user changes back to database
             await dataService.users.update(user);
 
-            // 6. Create JWT and save as HTTP cookie (so not accessible by JS frontend)
-            const jsonWebToken = createJwtFor(user);
-            res.cookie("jwt", jsonWebToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax"
-            });
+            // 6. Creates accessToken & refreshToken, and adds to response as HTTP only cookie
+            await applyTokensToResponse(res, user.discordId);
+
             res.redirect(buildUrl(REDIRECT_URL, { status: "success" } as { status: AuthStatus }));
         } catch (err) {
             logger.error(err);
@@ -90,6 +94,28 @@ router.get("/discord/callback",
     })
 );
 
+router.get("/refresh",
+    asyncHandler<unknown, unknown, unknown, unknown>(async (req, res) => {
+        const { refreshToken } = req.cookies;
+        if (!refreshToken) {
+            throw new ApiErrorResponse(StatusCodes.UNAUTHORIZED, "Invalid Refresh Token", "No refresh token provided");
+        }
+
+        const tokenHash = generateHash(refreshToken);
+        const stored = await dataService.auth.popRefreshToken(tokenHash);
+
+        if (!stored || stored.expiresAt < new Date()) {
+            throw new ApiErrorResponse(StatusCodes.FORBIDDEN, "Expired or Invalid Refresh Token", "Refresh token is either missing or expired");
+        }
+
+        await applyTokensToResponse(res, stored.discordId);
+
+        const response: RefreshAuthResponse = { status: "success" };
+        res.json(response);
+    })
+);
+
+// Helper functions
 async function getAuthenticationToken(code: string) {
     const response = await fetch("https://discord.com/api/oauth2/token", {
         method: "POST",
@@ -123,17 +149,53 @@ async function get<T>(url: string, authToken: string) {
     return response.json() as T;
 }
 
-function createJwtFor(user: User) {
-    const permissions = user.permissions;
-    user.roles.forEach((role) => permissions.push(...role.permissions));
+function createAccessToken(discordId: string) {
+    const payload: AccessTokenPayload = {
+        discordId,
+        expiresAt: new Date(Date.now() + Number.parseInt(process.env.ACCESS_TOKEN_TTL) * 1000)
+    };
+    return jwt.sign(
+        payload,
+        process.env.JWT_SECRET,
+        {
+            expiresIn: Number.parseInt(process.env.ACCESS_TOKEN_TTL)
+        }
+    );
+}
 
-    const payload = {
-        username: user.username,
-        permissions
-    } as JWTPayload;
-    return jwt.sign(payload, process.env.JWT_SECRET, {
-        algorithm: "HS256",
-        expiresIn: "1h"
+async function createRefreshToken(discordId: string) {
+    const rawToken = randomUUID();
+    const tokenHash = generateHash(rawToken);
+    const expiresAt = new Date(Date.now() + Number.parseInt(process.env.REFRESH_TOKEN_TTL) * 1000);
+    const createdAt = new Date();
+    const refreshToken: RefreshToken = {
+        discordId,
+        tokenHash,
+        expiresAt,
+        createdAt
+    };
+    await dataService.auth.addRefreshToken(refreshToken);
+
+    return rawToken;
+}
+
+function generateHash(raw: string) {
+    return createHash("sha256").update(raw).digest("hex");
+}
+
+async function applyTokensToResponse(res: Response, discordId: string) {
+    const accessToken = createAccessToken(discordId);
+    const refreshToken = await createRefreshToken(discordId);
+
+    res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax"
+    });
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax"
     });
 }
 

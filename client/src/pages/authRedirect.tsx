@@ -14,9 +14,8 @@ const AuthRedirect = () => {
         const process = async function() {
             if (status === "error") {
                 addToast({ title: "Failed to login", description: "An error has occurred during login process. Please contact an administrator", color: "danger" });
-            } else if (status === "unauthorized") {
-                // TODO: maybe remove this in favor of just limited pages and instructions on how to join discord
-                addToast({ title: "Unauthorized", description: "Failed to authorize your discord details. Please make sure you are within the appropriate discord server", color: "warning" });
+            } else if (status === "success") {
+                addToast({ title: "Success", description: "Successfully logged in!" });
             }
             navigate("/", { replace: true });
         };

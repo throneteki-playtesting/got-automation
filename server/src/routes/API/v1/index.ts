@@ -20,11 +20,16 @@ router.use("/custom", parseFilter, custom);
 router.use("/suggestions", parseFilter, suggestions);
 
 router.post("/login", (req, res) => {
-    res.redirect("auth/discord");
+    res.redirect("/auth/discord");
 });
 
 router.post("/logout", (req, res) => {
-    res.clearCookie("jwt", {
+    res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax"
+    });
+    res.clearCookie("refreshToken", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax"

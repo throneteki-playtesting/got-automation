@@ -40,21 +40,34 @@ export default class MongoDataSource<T> {
         return query as MongoFilter<T>;
     }
 
-    protected withoutId(values: WithId<T>[]) {
-        return values.map((value) => {
+    protected withoutId(values: WithId<T>[]): T[];
+    protected withoutId(values: WithId<T>): T;
+    protected withoutId(values: SingleOrArray<WithId<T>>) {
+        const stripId = (value: WithId<T>) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { _id, ...rest } = value;
             return rest as T;
-        });
+        };
+        if (Array.isArray(values)) {
+            return values.map(stripId);
+        }
+        return values ? stripId(values) : values;
     }
     public async create(creating: SingleOrArray<T>, options?: BulkWriteOptions) {
         const docs = asArray(creating);
         const result = await this.insertMany(docs, options);
         return result;
     }
+
     public async read(reading?: SingleOrArray<DeepPartial<T>>, options?: FindOptions) {
         const query = this.buildFilterQuery(reading);
         const result = await this.find(query, options);
+        return result;
+    }
+
+    public async readOne(reading?: DeepPartial<T>, options?: FindOptions) {
+        const query = this.buildFilterQuery(reading);
+        const result = await this.findOne(query, options);
         return result;
     }
 
@@ -94,6 +107,13 @@ export default class MongoDataSource<T> {
         const result = await this.collection.find(query, options).toArray();
 
         logger.verbose(`[Mongo] Read ${result.length} documents from ${this.name} collection`);
+        return this.withoutId(result);
+    }
+
+    protected async findOne(query: MongoFilter<T>, options?: FindOptions) {
+        const result = await this.collection.findOne(query, options);
+
+        logger.verbose(`[Mongo] Read ${result ? "1" : "0"} documents from ${this.name} collection`);
         return this.withoutId(result);
     }
 

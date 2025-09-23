@@ -4,26 +4,26 @@ import { addToast, Avatar, Button, Dropdown, DropdownItem, DropdownMenu, Dropdow
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api, { useLogoutMutation } from "../../api";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../../api/authSlice";
 import { PageItem } from "../../pages";
+import { RootState } from "../../api/store";
 
 const ProfileSection = ({ children: items = [] }: ProfileSectionProps) => {
     const dispatch = useDispatch();
     const [logout] = useLogoutMutation();
     const navigate = useNavigate();
-    const { data: user, isLoading: isAuthLoading } = api.useAuthenticateQuery();
+    const { data: authUser, isLoading: isAuthLoading } = api.useAuthenticateQuery();
+    const { user, isAuthenticating } = useSelector((state: RootState) => state.auth);
 
     const [isLoggingIn, setIsProcessing] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     useEffect(() => {
-        if (user) {
-            dispatch(setUser(user));
-        }
-    }, [dispatch, user]);
+        dispatch(setUser({ user: authUser, isAuthenticating: isAuthLoading }));
+    }, [dispatch, isAuthLoading, authUser]);
 
-    const onLogin = () => {
+    const onLogin = async () => {
         setIsProcessing(true);
         window.location.href = `${import.meta.env.VITE_SERVER_HOST}/auth/discord`;
     };
@@ -36,15 +36,16 @@ const ProfileSection = ({ children: items = [] }: ProfileSectionProps) => {
             setIsProcessing(true);
             await logout().unwrap();
             await navigate("/");
-        } catch (err) {
-            console.error("Logout failed", err);
-            addToast({ title: "Error", color: "danger", description: "Failed to log out" });
+        } catch {
+            if (user) {
+                addToast({ title: "Error", color: "danger", description: "Failed to log out" });
+            }
         } finally {
             setIsProcessing(false);
         }
     };
 
-    if (!user && !isAuthLoading) {
+    if (!user && !isAuthenticating) {
         const startContent = isLoggingIn ? <Spinner size="sm"/> : <FontAwesomeIcon icon={faDiscord} />;
         return <Button startContent={startContent} isDisabled={isLoggingIn} onPress={onLogin} variant="flat">
             Log in with Discord
@@ -56,8 +57,8 @@ const ProfileSection = ({ children: items = [] }: ProfileSectionProps) => {
             <Dropdown>
                 <DropdownTrigger>
                     <div className="relative">
-                        <Avatar isDisabled={isAuthLoading} src={user?.avatarUrl} onClick={() => setIsMenuOpen(!isMenuOpen)} className="cursor-pointer"/>
-                        {isAuthLoading && <Spinner className="absolute inset-0" size="sm"/>}
+                        <Avatar isDisabled={isAuthenticating} src={user?.avatarUrl} onClick={() => setIsMenuOpen(!isMenuOpen)} className="cursor-pointer"/>
+                        {isAuthenticating && <Spinner className="absolute inset-0" size="sm"/>}
                     </div>
                 </DropdownTrigger>
                 <DropdownMenu>

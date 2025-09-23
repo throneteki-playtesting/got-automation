@@ -15,7 +15,11 @@ export default defineConfig(({ mode }) => {
         ],
         server: {
             proxy: {
-                "/api/v1": {
+                "/api/v1/": {
+                    target: env.VITE_SERVER_HOST,
+                    changeOrigin: true
+                },
+                "/auth/": {
                     target: env.VITE_SERVER_HOST,
                     changeOrigin: true
                 }

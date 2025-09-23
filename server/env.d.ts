@@ -29,5 +29,7 @@ declare namespace NodeJS {
         DATABASE_URL: string;
 
         JWT_SECRET: string;
+        ACCESS_TOKEN_TTL: number;
+        REFRESH_TOKEN_TTL: number;
     }
 }
