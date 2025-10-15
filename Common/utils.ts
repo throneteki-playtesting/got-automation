@@ -1,6 +1,6 @@
 import * as Cards from "./models/cards";
 import { Permission, User } from "./models/user";
-import { ApiError, SingleOrArray } from "./types";
+import { ApiError, DeepPartial, SingleOrArray } from "./types";
 
 export type SemanticVersion = `${number}.${number}.${number}`;
 
@@ -178,8 +178,9 @@ export function isApiError(err: unknown): err is ApiError {
     }
     return false;
 }
-
-export function renderPlaytestingCard(card: Cards.PlaytestableCard) {
+export function renderPlaytestingCard(card: Cards.PlaytestableCard): Cards.RenderableCard
+export function renderPlaytestingCard(card: DeepPartial<Cards.PlaytestableCard>): DeepPartial<Cards.RenderableCard>
+export function renderPlaytestingCard(card: DeepPartial<Cards.PlaytestableCard>) {
     return {
         ...card,
         key: `${card.code}@${card.version}`,
@@ -188,10 +189,12 @@ export function renderPlaytestingCard(card: Cards.PlaytestableCard) {
             middle: (card.version ? `v${card.version}` : "0.0.0"),
             bottom: "Work In Progress"
         }
-    } as Cards.RenderableCard;
+    } as DeepPartial<Cards.RenderableCard>;
 }
 
-export function renderCardSuggestion(card: Cards.CardSuggestion) {
+export function renderCardSuggestion(card: Cards.CardSuggestion): Cards.RenderableCard
+export function renderCardSuggestion(card: DeepPartial<Cards.CardSuggestion>): DeepPartial<Cards.RenderableCard>
+export function renderCardSuggestion(card: DeepPartial<Cards.CardSuggestion>) {
     return {
         ...card,
         key: card.id,
@@ -200,5 +203,5 @@ export function renderCardSuggestion(card: Cards.CardSuggestion) {
             middle: "Custom",
             bottom: "Card Suggestion"
         }
-    } as Cards.RenderableCard;
+    } as DeepPartial<Cards.RenderableCard>;
 }

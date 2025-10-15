@@ -5,7 +5,7 @@ import cards from "./cards";
 import projects from "./projects";
 import packs from "./packs";
 import reviews from "./reviews";
-import custom from "./custom";
+import render from "./render";
 import suggestions from "./suggestions";
 import { parseFilter } from "@/middleware/filters";
 
@@ -16,7 +16,7 @@ router.use("/cards", parseFilter, cards);
 router.use("/projects", parseFilter, projects);
 router.use("/packs", parseFilter, packs);
 router.use("/reviews", parseFilter, reviews);
-router.use("/custom", parseFilter, custom);
+router.use("/render", parseFilter, render);
 router.use("/suggestions", parseFilter, suggestions);
 
 router.post("/login", (req, res) => {

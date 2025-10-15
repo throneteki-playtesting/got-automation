@@ -64,7 +64,7 @@ class PlaytestingCard extends BaseCard implements PlaytestableCard {
 
     override clone() {
         const base = super.clone().toJSON();
-        const data = {
+        const data: PlaytestableCard = {
             ...base,
             project: this.project,
             number: this.number,
@@ -82,7 +82,7 @@ class PlaytestingCard extends BaseCard implements PlaytestableCard {
                 short: this.release.short,
                 number: this.release.number
             } : undefined
-        } as PlaytestableCard;
+        };
 
         return new PlaytestingCard(data);
     }

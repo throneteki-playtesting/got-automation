@@ -1,7 +1,7 @@
 import Joi from "joi";
-import * as Cards from "../models/cards";
-import * as Projects from "../models/projects";
-import { playedRanges, statementAnswers } from "../models/reviews";
+import * as Cards from "./cards";
+import * as Projects from "./projects";
+import { playedRanges, statementAnswers } from "./reviews";
 import { Regex } from "../utils";
 
 const JoiXNumber = Joi.alternatives().try(
@@ -140,6 +140,7 @@ export const PlaytestingCard = {
 
 export const RenderedCard = {
     Full: Card.Full.keys({
+        code: Joi.forbidden(), // Code not required (from card schema)
         watermark: Joi.object({
             top: Joi.string(),
             middle: Joi.string(),
@@ -147,6 +148,7 @@ export const RenderedCard = {
         })
     }),
     Partial: Card.Partial.keys({
+        code: Joi.forbidden(), // Code not required (from card schema)
         watermark: Joi.object({
             top: Joi.string(),
             middle: Joi.string(),

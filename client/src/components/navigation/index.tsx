@@ -71,7 +71,7 @@ const NavigationBar = () => {
     const items = useMemo(() => navItems.filter((item) => isVisibleFor(item, user)).map(createItem), [createItem, user]);
 
     return (
-        <Navbar onMenuOpenChange={setIsMenuOpen}>
+        <Navbar onMenuOpenChange={setIsMenuOpen} >
             <NavbarContent className="sm:hidden">
                 <NavbarMenuToggle
                     aria-label={isMenuOpen ? "Close menu" : "Open menu"}
@@ -80,7 +80,7 @@ const NavigationBar = () => {
             <NavbarContent className="hidden sm:flex">
                 {items.map((navItem, index) => <NavbarItem key={index}>{navItem}</NavbarItem>)}
             </NavbarContent>
-            {"GOT Automation (WIP)"}
+            <span>{"The Red Keep"}</span>
             <ProfileSection>
                 {profileItems}
             </ProfileSection>
