@@ -1,12 +1,12 @@
 import { Accordion, AccordionItem, addToast, Button, ButtonGroup, Select, SelectItem, Skeleton, Textarea } from "@heroui/react";
 import classNames from "classnames";
 import { BaseElementProps } from "../../types";
-import CardStack from "../../components/cardPreview/cardStack";
 import { useMemo, useRef, useState } from "react";
 import CardEditor, { CardEditorRef } from "../../components/cardEditor";
 import { PlaytestableCard, RenderableCard, NoteDetails, NoteType, noteTypes } from "common/models/cards";
 import { DeepPartial } from "common/types";
 import { useGetCardQuery, useGetProjectQuery, usePushCardsMutation } from "../../api";
+import CardStack from "../../components/cardStack";
 
 const CardDetail = ({ className, style, project: projectNumber, number }: CardDetailProps) => {
     const { data: cards, ...cardsQuery } = useGetCardQuery({ project: projectNumber, number, latest: false });

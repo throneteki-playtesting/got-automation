@@ -1,10 +1,10 @@
 import { PlaytestableCard } from "common/models/cards";
 import { DeepPartial, SingleOrArray } from "common/types";
 import { BaseElementProps } from "../../types";
-import CardGrid from "../../components/cardPreview/cardGrid";
 import { useGetCardsQuery } from "../../api";
-import CardPreview from "../../components/cardPreview";
 import { renderPlaytestingCard } from "common/utils";
+import CardGrid from "../../components/cardGrid";
+import CardPreview from "@agot/card-preview";
 
 const LatestCards = ({ className, style, filter }: LatestCardsProps) => {
     const { data: cards, isLoading, error } = useGetCardsQuery({ filter, latest: true });

@@ -1,8 +1,8 @@
 import { ChallengeIcon } from "common/models/cards";
 import { Ability, Card, ChallengeIcons, Cost, DeckLimit, Designer, Faction, Loyalty, Name, Strength, TextBox, Traits, Type, Watermark } from "../components/cardComponents";
 import AutoSize from "../components/autoSize";
-import { px } from "../../../utilities";
-import { CardComponentProps } from "../../../types";
+import { CardComponentProps } from "../types";
+import { px } from "../utils";
 
 const Character = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (

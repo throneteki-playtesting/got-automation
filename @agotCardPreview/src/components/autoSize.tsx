@@ -1,5 +1,5 @@
 import React, { CSSProperties, useEffect, useRef } from "react";
-import { px } from "../../../utilities";
+import { px } from "../utils";
 
 const AutoSize = ({ children, className, style, height, rate = 0.01, minimum = 0.4 }: AutoSizeProps) => {
     const contentRef = useRef<HTMLDivElement>(null);

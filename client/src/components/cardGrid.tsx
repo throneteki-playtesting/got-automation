@@ -1,6 +1,6 @@
-import { BaseElementProps } from "../../types";
 import classNames from "classnames";
 import { ReactElement, useMemo } from "react";
+import { BaseElementProps } from "../../../@agotCardPreview/src/types";
 import { Skeleton } from "@heroui/react";
 
 const CardGrid = function<T>({ cards, children: renderMapFunc, className, style, isLoading, isError, emptyContent = (<span>No cards</span>), errorContent = (<span>An unexpected error has occurred</span>) }: CardPreviewProps<T>) {

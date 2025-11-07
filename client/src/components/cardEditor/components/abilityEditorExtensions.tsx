@@ -1,7 +1,7 @@
 import { Extension, Mark, mergeAttributes, Node } from "@tiptap/core";
 import HardBreak from "@tiptap/extension-hard-break";
+import { abilityIcons } from "common/utils";
 import { Plugin } from "prosemirror-state";
-import { abilityIcons } from "../../../utilities";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {

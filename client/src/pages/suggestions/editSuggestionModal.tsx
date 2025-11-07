@@ -1,4 +1,4 @@
-import { CardSuggestion } from "common/models/cards";
+import { Card, CardSuggestion } from "common/models/cards";
 import { BaseElementProps } from "../../types";
 import { addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import { useSubmitSuggestionMutation, useUpdateSuggestionMutation } from "../../api";
@@ -8,15 +8,21 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../api/store";
 import CardEditor, { CardEditorRef } from "../../components/cardEditor";
 import ComboBox from "../../components/combobox";
+import { renderCardSuggestion } from "common/utils";
+import CardPreview from "@agot/card-preview";
 
 const EditSuggestionModal = ({ card: initialCard, onOpenChange, onSave: onSuggestionSave }: EditSuggestionModalProps) => {
     const user = useSelector((state: RootState) => state.auth.user);
     const [submitSuggestion, { isLoading: isSubmitting }] = useSubmitSuggestionMutation();
     const [updateSuggestion, { isLoading: isUpdating }] = useUpdateSuggestionMutation();
     const editorRef = useRef<CardEditorRef>(null);
+    const [cardPreview, setCardPreview] = useState<DeepPartial<Card>>({});
     const [tags, setTags] = useState<string[]>([]);
 
-    useEffect(() => setTags(initialCard?.tags || []), [initialCard]);
+    useEffect(() => {
+        setCardPreview(initialCard || {});
+        setTags(initialCard?.tags || []);
+    }, [initialCard]);
 
     const isNew = useMemo(() => !initialCard?.id, [initialCard?.id]);
 
@@ -84,16 +90,21 @@ const EditSuggestionModal = ({ card: initialCard, onOpenChange, onSave: onSugges
         }
     }, [onSuggestionSave, tags, updateSuggestion, user]);
 
-    const title = useMemo(() => isNew ? "New suggestion" : `Edit ${initialCard?.name}`, [initialCard?.name, isNew]);
+    const title = useMemo(() => isNew ? "New suggestion" : "Edit suggestion", [isNew]);
 
-    return <Modal isOpen={!!initialCard} placement="top-center" onOpenChange={onOpenChange}>
+    return <Modal isOpen={!!initialCard} placement="top-center" onOpenChange={onOpenChange} size="3xl">
         <ModalContent>
             {(onClose) => (
                 <>
                     <ModalHeader>{title}</ModalHeader>
-                    <ModalBody className="spacing-x-2">
-                        <CardEditor ref={editorRef} card={{ code: "00000", ...initialCard }}/>
-                        <ComboBox label="Tags" values={tags} onChange={setTags} chip={{ color: "primary", size: "sm" }}/>
+                    <ModalBody>
+                        <div className="flex flex-col gap-2 md:flex-row">
+                            <div className="space-y-2">
+                                <CardEditor ref={editorRef} card={{ code: "00000", ...initialCard }} onUpdate={setCardPreview}/>
+                                <ComboBox label="Tags" values={tags} onChange={setTags} chip={{ color: "primary", size: "sm" }}/>
+                            </div>
+                            <CardPreview card={renderCardSuggestion(cardPreview)} className="self-center md:self-start"/>
+                        </div>
                     </ModalBody>
                     <ModalFooter>
                         <Button color="danger" variant="flat" onPress={onClose}>

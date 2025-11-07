@@ -205,3 +205,29 @@ export function renderCardSuggestion(card: DeepPartial<Cards.CardSuggestion>) {
         }
     } as DeepPartial<Cards.RenderableCard>;
 }
+
+export const abilityIcons: { [key: string]: string } = {
+    military: "\ue605",
+    intrigue: "\ue602",
+    power: "\ue607",
+    baratheon: "\ue600",
+    greyjoy: "\ue601",
+    lannister: "\ue603",
+    martell: "\ue604",
+    thenightswatch: "\ue606",
+    stark: "\ue608",
+    targaryen: "\ue609",
+    tyrell: "\ue60a"
+};
+
+export const thronesIcons: { [key: string]: string } = {
+    ...abilityIcons,
+    neutral: "\ue612",
+    unique: "\ue60b",
+    character: "\ue60f",
+    location: "\ue60e",
+    attachment: "\ue60d",
+    event: "\ue610",
+    plot: "\ue60c",
+    agenda: "\ue611"
+};

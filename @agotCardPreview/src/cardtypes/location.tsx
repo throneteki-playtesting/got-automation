@@ -1,7 +1,7 @@
 import { Ability, Card, Cost, DeckLimit, Designer, Faction, Loyalty, Name, TextBox, Traits, Type, Watermark } from "../components/cardComponents";
 import AutoSize from "../components/autoSize";
-import { px } from "../../../utilities";
-import { CardComponentProps } from "../../../types";
+import { CardComponentProps } from "../types";
+import { px } from "../utils";
 
 const Location = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (

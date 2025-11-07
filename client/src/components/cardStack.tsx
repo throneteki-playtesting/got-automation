@@ -1,9 +1,9 @@
 import { RenderableCard } from "common/models/cards";
-import { BaseElementProps } from "../../types";
-import CardPreview from ".";
+import CardPreview from "../../../@agotCardPreview/src";
 import classNames from "classnames";
 import { useMemo, useState } from "react";
 import { DeepPartial } from "common/types";
+import { BaseElementProps } from "../types";
 
 const CardStack = ({ children: cards, scale, collapsed = false, className, classNames: classGroups, style }: CardStackProps) => {
     const [highlighted, setHighlighted] = useState<number>();

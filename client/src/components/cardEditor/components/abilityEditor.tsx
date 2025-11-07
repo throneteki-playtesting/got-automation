@@ -3,11 +3,11 @@ import Document from "@tiptap/extension-document";
 import Text from "@tiptap/extension-text";
 import { BaseElementProps } from "../../../types";
 import { Dispatch, SetStateAction } from "react";
-import { abilityIcons } from "../../../utilities";
 import { Button } from "@heroui/react";
 import ThronesIcon, { Icon } from "../../thronesIcon";
 import { AbilityIcon, AutoTextConversions, NewLine, Trait, TriggeredAbility } from "./abilityEditorExtensions";
 import classNames from "classnames";
+import { abilityIcons } from "common/utils";
 
 function convertIncomingText(text?: string) {
     return text?.replace(/\n/g, "<br>");

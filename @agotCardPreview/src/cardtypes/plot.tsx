@@ -1,9 +1,9 @@
 import { Ability, Card, DeckLimit, Designer, Faction, Loyalty, Name, PlotStat, TextBox, Traits, Type, Watermark } from "../components/cardComponents";
 import AutoSize from "../components/autoSize";
-import { px } from "../../../utilities";
-import { CardComponentProps } from "../../../types";
+import { px } from "../utils";
+import { CardComponentProps } from "../types";
 
-const Plot = ({ card, scale, orientation, rounded, className, style, ...props }: PlotComponentProps) => {
+const Plot = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (
         <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} style={style} {...props}>
             <div className="flex flex-row items-center" style={{ height: px(40) }}>
@@ -38,6 +38,5 @@ const Plot = ({ card, scale, orientation, rounded, className, style, ...props }:
         </Card>
     );
 };
-type PlotComponentProps = CardComponentProps
 
 export default Plot;

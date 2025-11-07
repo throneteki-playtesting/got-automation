@@ -17,6 +17,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPencil, faX } from "@fortawesome/free-solid-svg-icons";
 import TagFilter from "../../components/filters/tagFilter";
 import classNames from "classnames";
+import CardGrid from "../../components/cardGrid";
+import CardPreview from "@agot/card-preview";
 
 const Suggestions = () => {
     const [editingCard, setEditingCard] = useState<DeepPartial<CardSuggestion>>();

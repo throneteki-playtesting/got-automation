@@ -1,6 +1,6 @@
 import { Ability, Card, DeckLimit, Designer, Name, TextBox, Traits, Type, Watermark } from "../components/cardComponents";
 import AutoSize from "../components/autoSize";
-import { CardComponentProps } from "../../../types";
+import { CardComponentProps } from "../types";
 
 const Agenda = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (

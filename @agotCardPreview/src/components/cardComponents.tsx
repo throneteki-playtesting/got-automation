@@ -1,11 +1,11 @@
 import classNames from "classnames";
-import { BaseElementProps } from "../../../types";
 import { Cost as CostType, Strength as StrengthType, PlotValue as PlotValueType, ChallengeIcon, challengeIcons, DefaultDeckLimit, Faction as FactionType, RenderableCard, PlotStat as PlotStatType, Type as TypeType, Watermark as WatermarkType } from "common/models/cards";
-import ThronesIcon, { Icon } from "../../thronesIcon";
 import AutoSize from "./autoSize";
-import { em, px } from "../../../utilities";
+import { em, px } from "../utils";
 import { DeepPartial } from "common/types";
 import { memo, useMemo } from "react";
+import { BaseElementProps } from "../types";
+import ThronesIcon, { Icon } from "../../../client/src/components/thronesIcon";
 
 const defaultOrientation = (type?: TypeType) => type === "plot" ? "horizontal" : "vertical";
 export const Card = memo(({ children, card, orientation = defaultOrientation(card.type), scale = 1, rounded = true, className, classNames: classGroups, style, ...props }: CardProps) => {
