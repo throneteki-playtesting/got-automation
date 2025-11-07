@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { CardSuggestion, Faction, Type } from "common/models/cards";
 import { useDeleteSuggestionMutation, useGetSuggestionsQuery } from "../../api";
-import CardGrid from "../../components/cardPreview/cardGrid";
 import FactionFilter from "../../components/filters/factionFilter";
 import TypeFilter from "../../components/filters/typeFilter";
 import { useFilters } from "../../api/hooks";
@@ -12,7 +11,6 @@ import { addToast, Button, Spinner } from "@heroui/react";
 import { DeepPartial } from "common/types";
 import PermissionGate from "../../components/permissionGate";
 import { hasPermission, renderCardSuggestion } from "common/utils";
-import CardPreview from "../../components/cardPreview";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPencil, faX } from "@fortawesome/free-solid-svg-icons";
 import TagFilter from "../../components/filters/tagFilter";
