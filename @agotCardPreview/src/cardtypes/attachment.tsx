@@ -5,27 +5,28 @@ import { px } from "../utils";
 
 const Attachment = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (
-        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} classNames={{ inner: "flex flex-col" }} style={style} {...props}>
-            <div className="flex grow">
-                <div className="flex flex-col" style={{ width: px(35) }}>
+        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} styles={{ inner: { display: "flex", flexDirection: "column" } }} style={style} {...props}>
+            <div style={{ display: "flex", flexGrow: 1 }}>
+                <div style={{ display: "flex", flexDirection: "column", width: px(35) }}>
                     <Cost>{card.cost}</Cost>
                     <Type>Attachment</Type>
-                    <DeckLimit type={card.type} className="grow">{card.deckLimit}</DeckLimit>
+                    <DeckLimit type={card.type} style={{ flexGrow: 1 }}>{card.deckLimit}</DeckLimit>
                 </div>
                 <Watermark style={{ marginRight: px(35) }}>{card.watermark}</Watermark>
             </div>
-            <div className="relative flex flex-col items-end">
-                <TextBox className="w-full" style={{ paddingBottom: px(10) }}>
+            <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                <TextBox style={{ width: "100%", paddingBottom: px(10) }}>
                     <Traits>{card.traits}</Traits>
-                    <AutoSize height={90} className="flex flex-col">
+                    <AutoSize height={90} style={{ display: "flex", flexDirection: "column" }}>
                         <Ability>{card.text}</Ability>
                         <Designer>{card.designer}</Designer>
                     </AutoSize>
                 </TextBox>
-                <Loyalty className="absolute bottom-0">{card.loyal}</Loyalty>
+                <Loyalty style={{ position: "absolute", bottom: px(0) }}>{card.loyal}</Loyalty>
             </div>
-            <div className="flex">
-                <Name unique={card.unique} className="grow" style={{
+            <div style={{ display: "flex" }}>
+                <Name unique={card.unique} style={{
+                    flexGrow: 1,
                     borderTopWidth: px(2),
                     borderBottomWidth: px(2),
                     borderLeftWidth: px(2)

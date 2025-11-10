@@ -5,14 +5,14 @@ import { px } from "../utils";
 
 const Event = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (
-        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} classNames={{ inner: "flex flex-col" }} style={style} {...props}>
-            <div className="grow flex">
-                <div className="flex flex-col" style={{ width: px(35) }}>
+        <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} styles={{ inner: { display: "flex", flexDirection: "column" } }} style={style} {...props}>
+            <div style={{ display: "flex", flexGrow: 1 }}>
+                <div style={{ display: "flex", flexDirection: "column", width: px(35) }}>
                     <Cost>{card.cost}</Cost>
                     <Type>Event</Type>
-                    <DeckLimit type={card.type} className="grow">{card.deckLimit}</DeckLimit>
+                    <DeckLimit type={card.type} style={{ flexGrow: 1 }}>{card.deckLimit}</DeckLimit>
                 </div>
-                <div className="flex flex-col grow">
+                <div style={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
                     <Name style={{
                         borderTopWidth: px(2),
                         borderBottomWidth: px(2),
@@ -20,16 +20,16 @@ const Event = ({ card, scale, orientation, rounded, className, style, ...props }
                     }}>
                         {card.name}
                     </Name>
-                    <Watermark className="grow">{card.watermark}</Watermark>
+                    <Watermark style={{ flexGrow: 1 }}>{card.watermark}</Watermark>
                 </div>
-                <div className="flex flex-col" style={{ width: px(35) }}>
+                <div style={{ display: "flex", flexDirection: "column", width: px(35) }}>
                     <Faction>{card.faction}</Faction>
                     <Loyalty>{card.loyal}</Loyalty>
                 </div>
             </div>
             <TextBox>
                 <Traits>{card.traits}</Traits>
-                <AutoSize height={130} className="flex flex-col">
+                <AutoSize height={130} style={{ display: "flex", flexDirection: "column" }}>
                     <Ability>{card.text}</Ability>
                     <Designer>{card.designer}</Designer>
                 </AutoSize>

@@ -109,6 +109,22 @@ export const typeNames = {
     "agenda": "Agenda"
 };
 
+export const thronesColors = {
+    "baratheon": "#e3d852",
+    "greyjoy": "#1d7a99",
+    "lannister": "#c00106",
+    "martell": "#e89521",
+    "thenightswatch": "#7a7a7a",
+    "stark": "#cfcfcf",
+    "targaryen": "#1c1c1c",
+    "tyrell": "#509f16",
+    "neutral": "#a99560",
+    "income": "#ffd240",
+    "initiative": "#bb9570",
+    "claim": "#afafaf",
+    "reserve": "#f0623f"
+};
+
 export function parseCardCode(isReleasable: boolean, project: number, number: number) {
     if (isReleasable) {
         return `${project}${number.toString().padStart(3, "0")}` as Cards.Code;

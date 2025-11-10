@@ -3,12 +3,13 @@ import { Cost as CostType, Strength as StrengthType, PlotValue as PlotValueType,
 import AutoSize from "./autoSize";
 import { em, px } from "../utils";
 import { DeepPartial } from "common/types";
-import { memo, useMemo } from "react";
+import { CSSProperties, memo, useMemo } from "react";
 import { BaseElementProps } from "../types";
 import ThronesIcon, { Icon } from "../../../client/src/components/thronesIcon";
+import { thronesColors } from "common/utils";
 
 const defaultOrientation = (type?: TypeType) => type === "plot" ? "horizontal" : "vertical";
-export const Card = memo(({ children, card, orientation = defaultOrientation(card.type), scale = 1, rounded = true, className, classNames: classGroups, style, ...props }: CardProps) => {
+export const Card = memo(({ children, card, orientation = defaultOrientation(card.type), scale = 1, rounded = true, className, classNames: classGroups, style, styles: styleGroups, ...props }: CardProps) => {
     const width = 240;
     const height = 333;
 
@@ -19,44 +20,40 @@ export const Card = memo(({ children, card, orientation = defaultOrientation(car
 
     const rotate = orientation !== defaultOrientation(card.type);
 
-    const innerClassName = useMemo(() => {
-        const factionBorder = {
-            baratheon: "border-baratheon",
-            greyjoy: "border-greyjoy",
-            lannister: "border-lannister",
-            martell: "border-martell",
-            thenightswatch: "border-thenightswatch",
-            stark: "border-stark",
-            targaryen: "border-targaryen",
-            tyrell: "border-tyrell",
-            neutral: "border-neutral"
+    const innerStyle = useMemo(() => {
+        const style: CSSProperties = {
+            borderColor: card.faction ? thronesColors[card.faction] : "white",
+            background: "white",
+            color: "black",
+            fontFamily: "Open Sans, sans-serif",
+            ...(scale !== 1 && { scale }),
+            ...((scale !== 1 || rotate) && { transformOrigin: "top left" }),
+            ...(rotate && { position: "relative", rotate: "270deg", top: "100%" }),
+            ...styleGroups?.inner
         };
-        return classNames("bg-white text-black font-opensans", card.faction ? factionBorder[card.faction] : "border-white",
-            {
-                "origin-top-left": scale !== 1 || rotate,
-                "relative rotate-270 top-full": rotate
-            },
-            classGroups?.inner);
-    }, [card.faction, classGroups?.inner, rotate, scale]);
+        return style;
+    }, [card.faction, rotate, scale, styleGroups?.inner]);
 
     return (
         <div
-            className={classNames("overflow-hidden", className, classGroups?.wrapper)}
+            className={classNames(className, classGroups?.wrapper)}
             style={{
+                overflow: "hidden",
                 width: px(wrapperWidth * scale),
                 height: px(wrapperHeight * scale),
                 ...(rounded && { borderRadius: px(12) }),
-                ...style
+                ...style,
+                ...styleGroups?.wrapper
             }}
             {...props}
         >
             <div
-                className={innerClassName}
+                className={classGroups?.inner}
                 style={{
                     width: px(innerWidth),
                     height: px(innerHeight),
                     borderWidth: px(12),
-                    ...(scale !== 1 && { scale })
+                    ...innerStyle
                 }}
             >
                 {children}
@@ -64,12 +61,12 @@ export const Card = memo(({ children, card, orientation = defaultOrientation(car
         </div>
     );
 });
-type CardProps = BaseElementProps & { classNames?: { wrapper?: string, inner?: string }, card: DeepPartial<RenderableCard>, orientation?: "vertical" | "horizontal", scale?: number, rounded?: boolean } & React.DOMAttributes<HTMLDivElement>;
+type CardProps = BaseElementProps & { classNames?: { wrapper?: string, inner?: string }, styles?: { wrapper?: CSSProperties, inner?: CSSProperties }, card: DeepPartial<RenderableCard>, orientation?: "vertical" | "horizontal", scale?: number, rounded?: boolean } & React.DOMAttributes<HTMLDivElement>;
 
 
 export const Type = memo(({ children: type, className, style }: TypeProps) => {
     return (
-        <div className={classNames("relative", className)} style={{ top: px(-5), left: px(2), fontSize: px(8), ...style }}>
+        <div className={className} style={{ position: "relative", top: px(-5), left: px(2), fontSize: px(8), ...style }}>
             {type}
         </div>
     );
@@ -81,7 +78,7 @@ export const Cost = memo(({ children, className, style }: CostProps) => {
     return (
         <AutoSize
             height={35}
-            className={classNames("relative rounded-full border-black border-solid bg-white text-center", className)}
+            className={className}
             style={{
                 top: px(-7.5),
                 left: px(-7.5),
@@ -89,6 +86,12 @@ export const Cost = memo(({ children, className, style }: CostProps) => {
                 lineHeight: px(30),
                 fontSize: px(24),
                 borderWidth: px(2),
+                position: "relative",
+                borderRadius: "100%",
+                borderColor: "black",
+                borderStyle: "solid",
+                background: "white",
+                textAlign: "center",
                 ...style
             }}
         >
@@ -101,13 +104,29 @@ type CostProps = Omit<BaseElementProps, "children"> & { children?: CostType };
 
 export const ChallengeIcons = memo(({ children: icons = [], className, style }: ChallengeIconsProps) => {
     return (
-        <div className={classNames("grow flex flex-col", className)} style={style}>
+        <div className={className} style={{
+            display: "flex",
+            flexDirection: "column",
+            flexGrow: 1,
+            ...style
+        }}>
             {challengeIcons.map((icon) =>
-                <span key={icon} className="grow flex flex-col justify-center items-center">
+                <span key={icon} style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    flexGrow: 1,
+                    justifyContent: "center",
+                    alignItems: "center"
+                }}>
                     <ThronesIcon
                         name={icon as ChallengeIcon}
-                        className="h-1/3 flex justify-center items-center"
-                        style={{ fontSize: px(20) }}
+                        style={{
+                            height: "calc(1/3 * 100%)",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            fontSize: px(20)
+                        }}
                         visible={icons.includes(icon)}
                     />
                 </span>
@@ -121,8 +140,16 @@ type ChallengeIconsProps = Omit<BaseElementProps, "children"> & { children?: Cha
 export const Loyalty = memo(({ children: loyal, className, style }: LoyaltyProps) => {
     return (
         <div
-            className={classNames("flex items-center justify-center", className)}
-            style={{ width: px(35), height: px(15), fontSize: px(10), ...style }}
+            className={className}
+            style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: px(35),
+                height: px(15),
+                fontSize: px(10),
+                ...style
+            }}
         >
             {loyal && "Loyal"}
         </div>
@@ -135,8 +162,19 @@ export const Strength = memo(({ children: strength, className, style }: Strength
     return (
         <AutoSize
             height={35}
-            className={classNames("border-black box-border flex items-center justify-center bg-gray-200", className)}
-            style={{ width: px(35), fontSize: px(22), borderWidth: px(2), ...style }}
+            className={className}
+            style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "cneter",
+                boxSizing: "border-box",
+                backgroundColor: "#e5e7eb",
+                borderColor: "black",
+                borderWidth: px(2),
+                width: px(35),
+                fontSize: px(22),
+                ...style
+            }}
         >
             {strength}
         </AutoSize>
@@ -147,7 +185,11 @@ type StrengthProps = Omit<BaseElementProps, "children"> & { children?: StrengthT
 
 export const Name = memo(({ unique, height, children: name, className, style }: NameProps) => {
     return (
-        <AutoSize height={height ?? 35} className={classNames("text-center flex items-center justify-center", className)} style={{
+        <AutoSize height={height ?? 35} className={className} style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            textAlign: "center",
             fontSize: px(14),
             paddingLeft: px(2),
             paddingRight: px(2),
@@ -156,7 +198,7 @@ export const Name = memo(({ unique, height, children: name, className, style }: 
         }}
         >
             {unique && <ThronesIcon name="unique"/>}
-            <span className="flex items-center justify-center">{name}</span>
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{name}</span>
         </AutoSize>
     );
 });
@@ -166,8 +208,19 @@ type NameProps = Omit<BaseElementProps, "children"> & { children?: string, uniqu
 export const Faction = memo(({ children: faction, className, style }: FactionBadgeProps) => {
     return (
         <div
-            className={classNames("border-black box-border flex items-center justify-center", className)}
-            style={{ width: px(35), height: px(35), fontSize: px(22), borderWidth: px(2), ...style }}
+            className={className}
+            style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxSizing: "border-box",
+                borderColor: "black",
+                width: px(35),
+                height: px(35),
+                fontSize: px(22),
+                borderWidth: px(2),
+                ...style
+            }}
         >
             {faction && <ThronesIcon name={faction} />}
         </div>
@@ -179,8 +232,15 @@ type FactionBadgeProps = Omit<BaseElementProps, "children"> & { children?: Facti
 export const Traits = memo(({ children: traits = [], className, style }: TraitsProps) => {
     return (
         <div
-            className={classNames("italic font-bold text-center", className)}
-            style={{ height: px(16), fontSize: px(12), ...style }}
+            className={className}
+            style={{
+                fontStyle: "italic",
+                fontWeight: "700",
+                textAlign: "center",
+                height: px(16),
+                fontSize: px(12),
+                ...style
+            }}
         >
             {traits.map((trait) => `${trait}.`).join(" ")}
         </div>
@@ -191,7 +251,15 @@ type TraitsProps = Omit<BaseElementProps, "children"> & { children?: Partial<str
 
 export const TextBox = memo(({ children, className, style }: TextBoxProps) => {
     return (
-        <div className={classNames("font-crimson flex flex-col", className)} style={{ fontSize: px(12), lineHeight: 1.1, padding: `${px(5)} ${px(10)}`, ...style }}>
+        <div className={className} style={{
+            display: "flex",
+            flexDirection: "column",
+            fontFamily: "Crimson Text, serif",
+            fontSize: px(12),
+            lineHeight: 1.1,
+            padding: `${px(5)} ${px(10)}`,
+            ...style
+        }}>
             {children}
         </div>
     );
@@ -229,17 +297,17 @@ export const Ability = memo(({ children: text, className, style }: AbilityProps)
                     case "p":
                         return <span key={key}>{children}</span>;
                     case "b":
-                        return <b key={key} className="font-bold">{children}</b>;
+                        return <b key={key} style={{ fontWeight: "700" }}>{children}</b>;
                     case "i":
-                        return <i key={key} className="italic font-bold">{children}</i>;
+                        return <i key={key} style={{ fontStyle: "italic", fontWeight: "700" }}>{children}</i>;
                     case "ul":
-                        return <ul key={key} className="list-disc" style={{ marginBlockStart: em(0.25), marginBlockEnd: em(0.25), paddingInlineStart: em(2) }}>{children}</ul>;
+                        return <ul key={key} style={{ listStyleType: "disc", marginBlockStart: em(0.25), marginBlockEnd: em(0.25), paddingInlineStart: em(2) }}>{children}</ul>;
                     case "li":
                         return <li key={key} style={{ paddingTop: em(0.1), paddingBottom: em(0.1) }}>{children}</li>;
                     case "icon":
                         return <ThronesIcon key={key} name={el.getAttribute("name") as Icon} />;
                     case "plotmodifiers":
-                        return <div key={key} className="grow flex justify-center items-center" style={{ gap: em(0.25) }}>{children}</div>;
+                        return <div key={key} style={{ display: "flex", flexGrow: 1, justifyContent: "center", alignItems: "center", gap: em(0.25) }}>{children}</div>;
                     case "plotmodifier":
                         return <PlotModifier key={key} type={el.getAttribute("name") as PlotStatType} modifier={el.getAttribute("modifier") as "+" | "-"} inline={true}>{parseInt(children[0] as string) as number}</PlotModifier>;
                     default:
@@ -250,7 +318,7 @@ export const Ability = memo(({ children: text, className, style }: AbilityProps)
         };
         return body ? Array.from(body.childNodes).map((node, i) => transformNode(node, i)) : [];
     };
-    return <div className={classNames("grow flex flex-col", className)} style={{ gap: em(0.25), ...style }}>
+    return <div className={className} style={{ display: "flex", flexDirection: "column", flexGrow: 1, gap: em(0.25), ...style }}>
         {text && convertToHtml(text)}
     </div>;
 });
@@ -259,7 +327,7 @@ type AbilityProps = Omit<BaseElementProps, "children"> & { children?: string };
 
 export const Designer = memo(({ children: designer, className, style }: DesignerProps) => {
     return (
-        (designer && <div className={classNames("grow font-bold", className)} style={{ fontSize: px(11), paddingTop: em(0.5), ...style }}>
+        (designer && <div className={className} style={{ flexGrow: 1, fontWeight: "700", fontSize: px(11), paddingTop: em(0.5), ...style }}>
             {designer}
         </div>)
     );
@@ -275,25 +343,29 @@ type PlotModifierProps = Omit<BaseElementProps, "children"> & { type: PlotStatTy
 
 
 export const PlotStat = memo(({ className, style, type, children: value }: PlotStatProps) => {
-    const getStatDetails = (): { background: string, clipPath: string } => {
+    const getClipPath = (): string => {
         switch (type) {
             case "income":
-                return { background: "bg-income", clipPath: "circle(50%)" };
+                return "circle(50%)";
             case "initiative":
-                return { background: "bg-initiative", clipPath: "polygon(50% 0, 100% 50%, 50% 100%, 0 50%)" };
+                return "polygon(50% 0, 100% 50%, 50% 100%, 0 50%)";
             case "claim":
-                return { background: "bg-claim", clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" };
+                return "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";
             case "reserve":
-                return { background: "bg-reserve", clipPath: "polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%)" };
+                return "polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%)";
         }
     };
-    const { background, clipPath } = getStatDetails();
+    const clipPath = getClipPath();
 
     return (
         <AutoSize
             height={30}
-            className={classNames("relative text-center font-opensans", background, className)}
+            className={className}
             style={{
+                backgroundColor: thronesColors[type],
+                position: "relative",
+                textAlign: "center",
+                fontFamily: "Open sans, sans-serif",
                 width: px(30),
                 lineHeight: 1.35,
                 padding: em(0.15),
@@ -313,7 +385,15 @@ export const DeckLimit = memo(({ type, alignment = "left", children: limit, clas
     }
 
     return (
-        <div className={classNames("text-center", { "rotate-180": alignment === "left" }, className)} style={{ fontSize: px(8), padding: px(5), writingMode: "vertical-rl", ...style }}>
+        <div className={className}
+            style={{
+                textAlign: "center",
+                ...(alignment === "left" && { rotate: "180deg" }),
+                fontSize: px(8),
+                padding: px(5),
+                writingMode: "vertical-rl",
+                ...style
+            }}>
             {limit && `Deck Limit: ${limit}`}
         </div>
     );
@@ -324,8 +404,19 @@ type DeckLimitProps = Omit<BaseElementProps, "children"> & { type?: TypeType, al
 export const Watermark = memo(({ children: watermark, className, style }: WatermarkProps) => {
     return (
         <div
-            className={classNames("grow flex flex-col text-gray-200 font-bold justify-center items-center text-center", className)}
-            style={{ fontSize: px(14), ...style }}
+            className={className}
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                flexGrow: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+                color: "#e5e7eb",
+                fontWeight: "700",
+                fontSize: px(14),
+                ...style
+            }}
         >
             <span>{watermark?.top}</span>
             <span style={{ fontSize: px(36), lineHeight: 1 }}>{watermark?.middle}</span>
