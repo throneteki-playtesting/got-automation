@@ -1,9 +1,9 @@
 import { addToast, Spinner } from "@heroui/react";
-import { AuthStatus } from "common/types";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../api/store";
+import { AuthStatus } from "server/types";
 
 const AuthRedirect = () => {
     const dispatch = useDispatch<AppDispatch>();

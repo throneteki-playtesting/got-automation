@@ -10,6 +10,8 @@ declare namespace NodeJS {
         SERVER_HOST: string;
         CLIENT_PORT: number;
         CLIENT_HOST: string;
+        REDIS_PORT: string;
+        REDIS_HOST: string;
 
         DISCORD_TOKEN: string;
         DISCORD_CLIENT_ID: string;

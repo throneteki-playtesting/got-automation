@@ -6,12 +6,11 @@ import { APIGuildMember, RESTPostOAuth2AccessTokenResult } from "discord.js";
 import { User } from "common/models/user";
 import jwt from "jsonwebtoken";
 import { buildUrl } from "common/utils";
-import { AuthStatus, RefreshAuthResponse } from "common/types";
 import { createHash, randomUUID } from "crypto";
 import { RefreshToken } from "common/models/auth";
 import { ApiErrorResponse } from "@/errors";
 import { StatusCodes } from "http-status-codes";
-import { AccessTokenPayload } from "@/types";
+import { AccessTokenPayload, AuthStatus, RefreshAuthResponse } from "@/types";
 
 const router = express.Router();
 

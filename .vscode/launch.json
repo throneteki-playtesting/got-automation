@@ -2,8 +2,18 @@
 	"version": "0.2.0",
 	"compounds": [
 		{
-			"name": "Launch Program",
+			"name": "Launch Program (Edge)",
 			"configurations": ["Launch (Server)", "Launch (Client)", "Launch (Browser)"],
+			"stopAll": true,
+			"presentation": {
+				"hidden": false,
+				"group": "",
+				"order": 1
+			}
+		},
+		{
+			"name": "Launch Program",
+			"configurations": ["Launch (Server)", "Launch (Client)"],
 			"stopAll": true,
 			"presentation": {
 				"hidden": false,

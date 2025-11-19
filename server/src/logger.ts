@@ -1,7 +1,7 @@
 import winston from "winston";
 
 export default class LoggerService {
-    private static serialize = (error: Error, isCause: boolean = false) => `${isCause ? "Caused by " : ""}${error.stack}\n${"cause" in error ? this.serialize(error.cause as Error, true) : ""}`;
+    private static serialize = (error: Error, isCause: boolean = false) => `${isCause ? "Caused by " : ""}${error.stack}\n${"cause" in error && !!error.cause ? this.serialize(error.cause as Error, true) : ""}`;
 
     private static formatError = winston.format((info) => {
         if (info instanceof Error) {

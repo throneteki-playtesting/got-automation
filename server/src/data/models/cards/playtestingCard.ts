@@ -55,7 +55,7 @@ class PlaytestingCard extends BaseCard implements PlaytestableCard {
     }
 
     override toPackData() {
-        const base = this.toPackData();
+        const base = super.toPackData();
         return {
             ...base,
             version: this.version

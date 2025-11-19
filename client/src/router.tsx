@@ -4,8 +4,13 @@ import Error from "./components/error";
 import Page from "./pages/page";
 import AuthRedirect from "./pages/authRedirect";
 import { isPageItem, NavItem, navItems } from "./pages";
+import Render from "./pages/render";
 
 const router = createBrowserRouter([
+    {
+        path: "/render",
+        element: <Render />
+    },
     {
         element: <App />,
         errorElement: <Error />,

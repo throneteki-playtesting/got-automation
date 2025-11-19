@@ -7,9 +7,11 @@ import UsersRepository from "./repositories/usersRepository";
 import RolesRepository from "./repositories/rolesRepository";
 import SuggestionsRepository from "./repositories/suggestionsRepository";
 import AuthRepository from "./repositories/authRepository";
+import { createClient, RedisClientType } from "redis";
 
 class DataService {
-    private client: MongoClient;
+    private database: MongoClient;
+    public redis: RedisClientType;
 
     private isConnected: boolean;
 
@@ -22,23 +24,39 @@ class DataService {
     private _auth: AuthRepository;
 
     constructor() {
-        this.client = new MongoClient(`${process.env.DATABASE_URL}?retryWrites=true&retryReads=true`, { ignoreUndefined: true, maxPoolSize: 10, connectTimeoutMS: 5000 });
-        this.connect();
+        this.database = new MongoClient(`${process.env.DATABASE_URL}?retryWrites=true&retryReads=true`, { ignoreUndefined: true, maxPoolSize: 10, connectTimeoutMS: 5000 });
+        this.connectDb();
+
+        this.redis = createClient({
+            url: process.env.REDIS_HOST
+        });
+        this.connectRedis();
     }
 
-    private async connect() {
+    private async connectDb() {
         try {
-            await this.client.db().command({ ping: 1 });
+            await this.database.db().command({ ping: 1 });
             // Confirms that MongoDB is running
-            logger.info(`MongoDB connected to ${this.client.db().databaseName}`);
+            logger.info(`MongoDB connected to ${this.database.db().databaseName}`);
 
-            this._projects = new ProjectsRepository(this.client);
-            this._cards = new CardsRepository(this.client);
-            this._reviews = new ReviewsRepository(this.client);
-            this._users = new UsersRepository(this.client);
-            this._roles = new RolesRepository(this.client);
-            this._suggestions = new SuggestionsRepository(this.client);
-            this._auth = new AuthRepository(this.client);
+            this._projects = new ProjectsRepository(this.database);
+            this._cards = new CardsRepository(this.database);
+            this._reviews = new ReviewsRepository(this.database);
+            this._users = new UsersRepository(this.database);
+            this._roles = new RolesRepository(this.database);
+            this._suggestions = new SuggestionsRepository(this.database);
+            this._auth = new AuthRepository(this.database);
+            return true;
+        } catch (err) {
+            logger.error(err);
+            return false;
+        }
+    }
+
+    private async connectRedis() {
+        try {
+            await this.redis.connect();
+            logger.info(`Redis connected at ${process.env.REDIS_HOST}`);
             return true;
         } catch (err) {
             logger.error(err);
@@ -50,7 +68,7 @@ class DataService {
         const repo = this[`_${repository}`] as T;
         if (!repo) {
             logger.log("warning", `Failed to connect to ${repository}, attempting to reconnect to database...`);
-            if (!this.connect()) {
+            if (!this.connectDb()) {
                 throw Error("Failed to connect to database");
             }
         }

@@ -1,11 +1,13 @@
 import { BaseQueryFn, createApi, FetchArgs, fetchBaseQuery, FetchBaseQueryError, FetchBaseQueryMeta } from "@reduxjs/toolkit/query/react";
-import { CardSuggestion, PlaytestableCard } from "common/models/cards";
 import { JsonProject } from "common/models/projects";
 import { Role, User } from "common/models/user";
-import { DeepPartial, RefreshAuthResponse, SingleOrArray } from "common/types";
+import { DeepPartial, SingleOrArray } from "common/types";
 import { asArray, buildUrl } from "common/utils";
 import { clearUser } from "./authSlice";
 import { StatusCodes } from "http-status-codes";
+import { CardSuggestion, PlaytestableCard, RenderableCard } from "common/models/cards";
+import { UUID } from "crypto";
+import { BatchRenderJob, RefreshAuthResponse, SingleRenderJob } from "server/types";
 
 const tag = {
     Me: "Me",
@@ -235,6 +237,20 @@ const api = createApi({
             },
             providesTags: [{ type: tag.Tag, id: "LIST" }]
         }),
+        // Render API
+        renderImage: builder.mutation<Blob, RenderableCard>({
+            query: (card) => {
+                const body = card;
+                const url = buildUrl("render", { format: "PNG" });
+                return { url, body, method: "POST", responseHandler: (response) => response.blob() };
+            }
+        }),
+        getRenderJob: builder.query<SingleRenderJob|BatchRenderJob, { id: UUID }>({
+            query: (options) => {
+                const url = buildUrl("render/job", { id: options.id });
+                return { url, method: "GET" };
+            }
+        }),
         // Projects API
         getProject: builder.query<JsonProject, { number: number }>({
             query: (options) => {
@@ -262,6 +278,8 @@ export const {
     useUpdateSuggestionMutation,
     useDeleteSuggestionMutation,
     useGetTagsQuery,
+    useRenderImageMutation,
+    useGetRenderJobQuery,
     useGetProjectQuery
 } = api;
 

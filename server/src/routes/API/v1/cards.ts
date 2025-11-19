@@ -13,7 +13,7 @@ import { ApiErrorResponse } from "@/errors";
 import { StatusCodes } from "http-status-codes";
 import { validateRequest } from "@/middleware/permissions";
 
-export type ResourceFormat = "JSON" | "HTML" | "TXT" | "PNG" | "PDF";
+export type ResourceFormat = "JSON" | "TXT" | "PNG" | "PDF";
 
 const router = express.Router();
 
@@ -31,7 +31,7 @@ const handleGetCards = [
             filter: Schemas.SingleOrArray(Schemas.PlaytestingCard.Partial),
             hard: Joi.boolean().default(false),
             latest: Joi.boolean().default(true),
-            format: Joi.string().insensitive().valid("JSON", "HTML", "PNG", "PDF").default("JSON"),
+            format: Joi.string().insensitive().valid("JSON", "PNG", "PDF").default("JSON"),
             copies: Joi.number().default(3),
             perPage: Joi.number().default(9)
         }
@@ -45,10 +45,6 @@ const handleGetCards = [
             case "JSON":
                 const json = cards.map((card) => card.toJSON());
                 res.json(json);
-                break;
-            case "HTML":
-                const html = await renderService.asHtml("batch", cards.map((card) => card.toRenderedCard()), { copies, perPage });
-                res.send(html);
                 break;
             case "PNG":
                 if (cards.length > 1) {

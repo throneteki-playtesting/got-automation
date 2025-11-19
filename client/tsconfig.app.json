@@ -25,9 +25,10 @@
 		"sourceMap": true,
 
 		"paths": {
-			"common/*": ["../common/*"]
+			"common/*": ["../common/*"],
+			"server/*": ["../server/src/*"]
 		}
 	},
-	"include": ["src", "../common"],
+	"include": ["src", "../common", "../server/src/types.ts"],
 	"exclude": ["node_modules", "dist"]
 }

@@ -1,6 +1,6 @@
 import * as Cards from "./models/cards";
 import { Permission, User } from "./models/user";
-import { ApiError, DeepPartial, SingleOrArray } from "./types";
+import { DeepPartial, SingleOrArray } from "./types";
 
 export type SemanticVersion = `${number}.${number}.${number}`;
 
@@ -21,7 +21,8 @@ export const Regex = {
             full: /^\w+@\d+@\d+\.\d+\.\d+$/
         }
     },
-    SemanticVersion: /^\d+\.\d+\.\d+$/
+    SemanticVersion: /^\d+\.\d+\.\d+$/,
+    UUID: /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/
 };
 
 export function titleCase(value: string) {
@@ -188,12 +189,6 @@ export function hasPermission(user?: User, ...permissions: Permission[]) {
     return false;
 }
 
-export function isApiError(err: unknown): err is ApiError {
-    if (err instanceof Error && "code" in err && "message" in err && "error" in err) {
-        return true;
-    }
-    return false;
-}
 export function renderPlaytestingCard(card: Cards.PlaytestableCard): Cards.RenderableCard
 export function renderPlaytestingCard(card: DeepPartial<Cards.PlaytestableCard>): DeepPartial<Cards.RenderableCard>
 export function renderPlaytestingCard(card: DeepPartial<Cards.PlaytestableCard>) {

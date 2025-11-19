@@ -1,12 +1,11 @@
 import { isCelebrateError } from "celebrate";
-import { ApiError } from "common/types";
 import { StatusCodes } from "http-status-codes";
 import { logger } from "./services";
 import { NextFunction, Request, Response } from "express";
-import { isApiError } from "common/utils";
+import { ApiError, isApiError } from "./types";
 
 export class ApiErrorResponse extends Error implements ApiError {
-    constructor(public code: StatusCodes, public error: string, public message: string) {
+    constructor(public code: StatusCodes, public error: string, public message: string, public cause?: unknown) {
         super();
     }
 }
