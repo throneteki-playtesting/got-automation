@@ -189,11 +189,54 @@ export function hasPermission(user?: User, ...permissions: Permission[]) {
     return false;
 }
 
+function getBaseValues<T extends Cards.Card>(card: DeepPartial<T>) {
+    const {
+        code,
+        cost,
+        deckLimit,
+        designer,
+        faction,
+        flavor,
+        icons,
+        illustrator,
+        loyal,
+        name,
+        plotStats,
+        strength,
+        traits,
+        text,
+        type,
+        unique,
+        quantity,
+        imageUrl
+    } = card;
+    return {
+        code,
+        cost,
+        deckLimit,
+        designer,
+        faction,
+        flavor,
+        icons,
+        illustrator,
+        loyal,
+        name,
+        plotStats,
+        strength,
+        traits,
+        text,
+        type,
+        unique,
+        quantity,
+        imageUrl
+    };
+}
+
 export function renderPlaytestingCard(card: Cards.PlaytestableCard): Cards.RenderableCard
 export function renderPlaytestingCard(card: DeepPartial<Cards.PlaytestableCard>): DeepPartial<Cards.RenderableCard>
 export function renderPlaytestingCard(card: DeepPartial<Cards.PlaytestableCard>) {
     return {
-        ...card,
+        ...getBaseValues(card),
         key: `${card.code}@${card.version}`,
         watermark: {
             top: card.code ?? "Unkown Code",
@@ -206,8 +249,9 @@ export function renderPlaytestingCard(card: DeepPartial<Cards.PlaytestableCard>)
 export function renderCardSuggestion(card: Cards.CardSuggestion): Cards.RenderableCard
 export function renderCardSuggestion(card: DeepPartial<Cards.CardSuggestion>): DeepPartial<Cards.RenderableCard>
 export function renderCardSuggestion(card: DeepPartial<Cards.CardSuggestion>) {
+
     return {
-        ...card,
+        ...getBaseValues(card),
         key: card.id,
         watermark: {
             top: undefined,

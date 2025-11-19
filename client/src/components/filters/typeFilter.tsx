@@ -12,7 +12,7 @@ const TypeFilter = ({ label = "Type", setTypes, types = [] }: TypeFilterProps) =
         selectedKeys={types}
         renderValue={(items) => <div className="flex gap-1">
             {items.map((item) => (
-                <ThronesIcon name={item.data?.key as Icon}/>
+                <ThronesIcon key={item.data?.key} name={item.data?.key as Icon}/>
             ))}
         </div>}
         onSelectionChange={(keys) => setTypes([...keys] as Type[])}

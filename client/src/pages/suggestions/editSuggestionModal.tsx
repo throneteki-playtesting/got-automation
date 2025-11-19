@@ -99,11 +99,11 @@ const EditSuggestionModal = ({ card: initialCard, onOpenChange, onSave: onSugges
                     <ModalHeader>{title}</ModalHeader>
                     <ModalBody>
                         <div className="flex flex-col gap-2 md:flex-row">
-                            <div className="space-y-2">
+                            <CardPreview card={renderCardSuggestion(cardPreview)} className="self-center md:self-start sticky"/>
+                            <div className="grow space-y-2">
                                 <CardEditor ref={editorRef} card={{ code: "00000", ...initialCard }} onUpdate={setCardPreview}/>
                                 <ComboBox label="Tags" values={tags} onChange={setTags} chip={{ color: "primary", size: "sm" }}/>
                             </div>
-                            <CardPreview card={renderCardSuggestion(cardPreview)} className="self-center md:self-start"/>
                         </div>
                     </ModalBody>
                     <ModalFooter>

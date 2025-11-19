@@ -6,11 +6,14 @@ import { asArray, validate, ValidationStep } from "common/utils";
 
 const PermissionGate = ({ children, requires }: PermissionGateProps) => {
     const user = useSelector((state: RootState) => state.auth.user);
+    if (!requires) {
+        return children;
+    }
     if (validate(user, ...asArray(requires))) {
         return children;
     }
     return null;
 };
 
-type PermissionGateProps = { children?: SingleOrArray<ReactElement>, requires: SingleOrArray<ValidationStep> }
+type PermissionGateProps = { children?: SingleOrArray<ReactElement>, requires?: SingleOrArray<ValidationStep> }
 export default PermissionGate;

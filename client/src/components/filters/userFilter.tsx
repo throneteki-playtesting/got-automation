@@ -23,7 +23,7 @@ const UserFilter = ({ label = "Users", setUsers, users = [] }: UserFilterProps) 
         selectedKeys={users.map((user) => user.discordId)}
         renderValue={(items) => <div className="flex gap-1">
             {items.map((item) => (
-                <Avatar size="sm" src={item.data?.avatarUrl}/>
+                <Avatar key={item.data?.discordId} size="sm" src={item.data?.avatarUrl}/>
             ))}
         </div>}
         onSelectionChange={handleSelectionChange}

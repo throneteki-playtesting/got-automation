@@ -64,17 +64,16 @@ class RenderingService {
             }
         }
     }
-    public async asPNG(card: RenderedCard, options?: { orientation?: "horizontal" | "vertical" }): Promise<PNGResponse>;
-    public async asPNG(cards: RenderedCard[], options?: { orientation?: "horizontal" | "vertical" }): Promise<PNGResponse[]>;
+    public async asPNG(card: RenderedCard, options?: SingleRenderJobOptions): Promise<PNGResponse>;
+    public async asPNG(cards: RenderedCard[], options?: SingleRenderJobOptions): Promise<PNGResponse[]>;
     public async asPNG(data: SingleOrArray<RenderedCard>, options?: SingleRenderJobOptions) {
         const cards = asArray(data);
         const browser = await this.launchPuppeteer();
         const page = (await browser.pages())[0] ?? await browser.newPage();
         const job = await this.createJob("single", cards, options);
         try {
-
-            // TODO: Add Integration API keys
-            await page.setExtraHTTPHeaders({ "Authorization": "Basic cGF0YW5lOTc6cXdlcnR5MTIz" });
+            // TODO: Create integration authorization
+            await page.setExtraHTTPHeaders({ "Authorization": `Basic ${Buffer.from(`${process.env.BASIC_USERNAME}:${process.env.BASIC_PASSWORD}`).toString("base64")}` });
             await page.goto(`${process.env.CLIENT_HOST}/render?id=${job.id}`, { waitUntil: "networkidle0" });
 
             // TODO: Handle error handling, but checking a "status" div on rendered page.
@@ -107,8 +106,8 @@ class RenderingService {
         const page = (await browser.pages())[0] ?? await browser.newPage();
 
         try {
-            // TODO: Add Integration API keys
-            await page.setExtraHTTPHeaders({ "Authorization": "Basic cGF0YW5lOTc6cXdlcnR5MTIz" });
+            // TODO: Create integration authorization
+            await page.setExtraHTTPHeaders({ "Authorization": `Basic ${Buffer.from(`${process.env.BASIC_USERNAME}:${process.env.BASIC_PASSWORD}`).toString("base64")}` });
             await page.goto(`${process.env.CLIENT_HOST}/render?id=${job.id}`, { waitUntil: "networkidle0" });
 
             // TODO: Handle error handling, but checking a "status" div on rendered page.
@@ -145,7 +144,7 @@ class RenderingService {
     private async launchPuppeteer(defaultViewport?: Viewport) {
         return await puppeteer.launch({
             ...(defaultViewport ? { defaultViewport } : {}),
-            headless: false,
+            headless: true,
             args: [
                 "--disable-features=IsolateOrigins",
                 "--disable-site-isolation-trials",

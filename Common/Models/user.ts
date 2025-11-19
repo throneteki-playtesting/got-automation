@@ -39,4 +39,6 @@ export enum Permission {
     READ_ROLES,
     /** Can edit all roles */
     EDIT_ROLES,
+    /** Can render cards to another format (eg. PDF, PNG)*/
+    RENDER_CARDS,
 }

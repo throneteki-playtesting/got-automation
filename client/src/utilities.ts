@@ -8,3 +8,13 @@ export function enumToArray<T extends { [key: string]: string | number }>(
             value: k as Extract<keyof T, string>
         }));
 }
+
+export function download(url: string, filename: string) {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}

@@ -238,11 +238,22 @@ const api = createApi({
             providesTags: [{ type: tag.Tag, id: "LIST" }]
         }),
         // Render API
-        renderImage: builder.mutation<Blob, RenderableCard>({
+        renderImage: builder.mutation<string, RenderableCard>({
             query: (card) => {
                 const body = card;
-                const url = buildUrl("render", { format: "PNG" });
-                return { url, body, method: "POST", responseHandler: (response) => response.blob() };
+                const url = buildUrl("render", { format: "PNG", rounded: true });
+                return {
+                    url,
+                    body,
+                    method: "POST",
+                    responseHandler: async (response) => {
+                        if (response.status === StatusCodes.OK) {
+                            const blob = await response.blob();
+                            return URL.createObjectURL(blob);
+                        }
+                        return response;
+                    }
+                };
             }
         }),
         getRenderJob: builder.query<SingleRenderJob|BatchRenderJob, { id: UUID }>({

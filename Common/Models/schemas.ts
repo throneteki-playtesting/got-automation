@@ -141,6 +141,7 @@ export const PlaytestingCard = {
 export const RenderedCard = {
     Full: Card.Full.keys({
         code: Joi.forbidden(), // Code not required (from card schema)
+        key: Joi.string().required(),
         watermark: Joi.object({
             top: Joi.string(),
             middle: Joi.string(),
@@ -149,6 +150,7 @@ export const RenderedCard = {
     }),
     Partial: Card.Partial.keys({
         code: Joi.forbidden(), // Code not required (from card schema)
+        key: Joi.string(),
         watermark: Joi.object({
             top: Joi.string(),
             middle: Joi.string(),
