@@ -3,33 +3,29 @@ import { celebrate, Joi, Segments } from "celebrate";
 import { Permission, User } from "common/models/user";
 import asyncHandler from "express-async-handler";
 import express, { Request } from "express";
-import { DeepPartial, SingleOrArray } from "common/types";
+import { DeepPartial } from "common/types";
 import { CardSuggestion } from "common/models/cards";
 import { dataService } from "@/services";
 import { hasPermission, validate } from "common/utils";
 import { validateRequest } from "@/middleware/permissions";
+import { IGetEndpoint } from "@/types";
 
 const router = express.Router();
-
-type FilterQuery = { filter?: SingleOrArray<DeepPartial<CardSuggestion>> }
-
-// function validateSuggestion(...overridePermissions: Permission[]) {
-//     return validateUser((user: User, req: Request<unknown, unknown, CardSuggestion, unknown>) => {
-//         return (hasPermission(user, Permission.MAKE_SUGGESTIONS) && user.discordId === req.body.suggestedBy)
-//         || (overridePermissions.length > 1 && hasPermission(user, ...overridePermissions));
-//     });
-// }
 
 const handleGetSuggestions = [
     validateRequest((user) => validate(user, Permission.READ_SUGGESTIONS)),
     celebrate({
         [Segments.QUERY]: {
-            filter: Schemas.SingleOrArray(Schemas.CardSuggestion.Partial)
+            filter: Schemas.SingleOrArray(Schemas.CardSuggestion.Partial),
+            orderBy: Joi.object({
+                name: Joi.string(),
+                type: Joi.string()
+            })
         }
-    }),
-    asyncHandler<unknown, unknown, unknown, FilterQuery>(async (req, res, next) => {
-        const { filter } = req.query;
-        const result = await dataService.suggestions.read(filter);
+    }, { allowUnknown: true }),
+    asyncHandler<unknown, unknown, unknown, IGetEndpoint<CardSuggestion>>(async (req, res, next) => {
+        const { filter, orderBy, page, perPage } = req.query;
+        const result = await dataService.suggestions.read(filter, orderBy, page, perPage);
 
         req.body = result;
         next();
@@ -49,7 +45,7 @@ router.get("/:id",
         [Segments.PARAMS]: {
             id: Joi.string().required()
         }
-    }), (req: Request<{ id: string }, unknown, unknown, FilterQuery>, res: unknown, next: (arg?: unknown) => void) => {
+    }), (req: Request<{ id: string }, unknown, unknown, IGetEndpoint<CardSuggestion>>, res: unknown, next: (arg?: unknown) => void) => {
         const { id } = req.params;
         let { filter } = req.query;
         try {
@@ -74,7 +70,7 @@ router.get("/:suggestedBy",
         [Segments.PARAMS]: {
             suggestedBy: Joi.string().required()
         }
-    }), (req: Request<{ suggestedBy: string }, unknown, unknown, FilterQuery>, res: unknown, next: (arg?: unknown) => void) => {
+    }), (req: Request<{ suggestedBy: string }, unknown, unknown, IGetEndpoint<CardSuggestion>>, res: unknown, next: (arg?: unknown) => void) => {
         const { suggestedBy } = req.params;
         let { filter } = req.query;
         try {

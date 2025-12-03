@@ -1,4 +1,4 @@
-import { DeepPartial, SingleOrArray } from "common/types";
+import { DeepPartial, SingleOrArray, Sortable } from "common/types";
 import RenderedCard from "./data/models/cards/renderedCard";
 import { StatusCodes } from "http-status-codes";
 import { UUID } from "crypto";
@@ -37,3 +37,5 @@ export interface SingleRenderJob extends RenderJob { type: "single", options?: S
 export type SingleRenderJobOptions = { orientation?: "horizontal" | "vertical", rounded?: boolean };
 export interface BatchRenderJob extends RenderJob { type: "batch", options?: BatchRenderJobOptions };
 export type BatchRenderJobOptions = { copies?: number, perPage?: number, rounded?: boolean };
+
+export interface IGetEndpoint<T> { filter?: SingleOrArray<DeepPartial<T>>, orderBy?: Sortable<T>, page?: number, perPage?: number }

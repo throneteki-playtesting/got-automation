@@ -48,17 +48,22 @@ function expandDotPaths<T extends object>(flat: DotPath<T>): T {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const parseFilter = (req: { query: { filter: any } }, res: unknown, next: (arg?: unknown) => void) => {
-    const { filter } = req.query;
-    if (!filter) {
-        return next();
-    }
+export const parseAPIRequest = (req: { query: any }, res: unknown, next: (arg?: unknown) => void) => {
     try {
-        const decoded = decodeURIComponent(filter);
-        let parsed = JSON.parse(decoded) as SingleOrArray<object>;
-        const convert = (o: object) => expandDotPaths(o);
-        parsed = Array.isArray(parsed) ? parsed.map(convert) : convert(parsed);
-        req.query.filter = parsed;
+        const parsable = ["filter", "orderBy"];
+        for (const property in req.query) {
+            if (parsable.includes(property)) {
+                const value = req.query[property];
+                if (value) {
+                    const decoded = decodeURIComponent(value);
+                    let parsed = JSON.parse(decoded) as SingleOrArray<object>;
+                    const convert = (o: object) => expandDotPaths(o);
+                    parsed = Array.isArray(parsed) ? parsed.map(convert) : convert(parsed);
+
+                    req.query[property] = parsed;
+                }
+            }
+        }
     } catch (err) {
         next(err);
     }

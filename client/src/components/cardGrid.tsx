@@ -8,12 +8,12 @@ const CardGrid = function<T>({ cards, children: renderMapFunc, className, style,
         if (cards?.length > 0) {
             return cards.map(renderMapFunc);
         }
-        return emptyContent;
+        return <span className="w-full flex flex-col justify-center items-center">{emptyContent}</span>;
     }, [cards, emptyContent, renderMapFunc]);
 
     return (
         <Skeleton isLoaded={!isLoading} className="rounded-lg h-fit w-full">
-            <div className={classNames("flex flex-wrap justify-center gap-1 min-h-64 bg-default-50 rounded-lg", className)} style={style}>
+            <div className={classNames("flex flex-wrap justify-start gap-1 min-h-64 bg-default-50 rounded-lg", className)} style={style}>
                 {isError ? errorContent : rendering}
             </div>
         </Skeleton>
@@ -25,8 +25,8 @@ type CardPreviewProps<T> = Omit<BaseElementProps, "children"> & {
     children: (card: T) => ReactElement
     isLoading?: boolean,
     isError?: boolean,
-    emptyContent?: ReactElement,
-    errorContent?: ReactElement
+    emptyContent?: ReactElement | string,
+    errorContent?: ReactElement | string
 }
 
 export default CardGrid;

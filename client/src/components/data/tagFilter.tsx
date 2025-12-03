@@ -20,7 +20,7 @@ const TagFilter = ({ label, tags, setTags }: TagFilterProps) => {
             selectionMode={"multiple"}
             items={data?.map((tag) => ({ tag })) ?? []}
             selectedKeys={tags}
-            renderValue={(items) => <div className="p-1 space-x-1">{items.map((item) => <Chip key={item.data?.tag} color="primary">{item.data?.tag}</Chip>)}</div>}
+            renderValue={(items) => <div className="py-1 flex flex-wrap gap-1">{items.map((item) => <Chip key={item.data?.tag} color="primary">{item.data?.tag}</Chip>)}</div>}
             onSelectionChange={handleSelectionChange}
         >
             {({ tag }) => <SelectItem key={tag}>{tag}</SelectItem>}

@@ -136,7 +136,7 @@ export function parseCardCode(isReleasable: boolean, project: number, number: nu
 /**
      * Creates the full url for the specified request, converting query parameters into JSON
      */
-export function buildUrl(baseUrl: string, queryParameters?: { [key: string]: unknown }) {
+export function buildUrl<T>(baseUrl: string, queryParameters?: T) {
     let url = baseUrl;
     if (queryParameters && Object.keys(queryParameters).length > 0) {
         const queryString = Object.entries(queryParameters)

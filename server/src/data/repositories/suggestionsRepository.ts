@@ -1,6 +1,6 @@
 import MongoDataSource from "./dataSources/mongoDataSource";
 import { MongoClient } from "mongodb";
-import { DeepPartial, SingleOrArray } from "common/types";
+import { DeepPartial, SingleOrArray, Sortable } from "common/types";
 import { CardSuggestion } from "common/models/cards";
 import { asArray } from "common/utils";
 
@@ -17,8 +17,8 @@ export default class SuggestionsRepository {
         return await this.database.create(creating);
     }
 
-    public async read(reading?: SingleOrArray<DeepPartial<CardSuggestion>>) {
-        return await this.database.read(reading);
+    public async read(reading?: SingleOrArray<DeepPartial<CardSuggestion>>, orderBy?: Sortable<CardSuggestion>, page?: number, perPage?: number) {
+        return await this.database.read(reading, { sort: orderBy, limit: perPage, skip: page * perPage });
     }
 
     public async update(updating: SingleOrArray<CardSuggestion>) {

@@ -7,7 +7,7 @@ import { clearUser } from "./authSlice";
 import { StatusCodes } from "http-status-codes";
 import { CardSuggestion, PlaytestableCard, RenderableCard } from "common/models/cards";
 import { UUID } from "crypto";
-import { BatchRenderJob, RefreshAuthResponse, SingleRenderJob } from "server/types";
+import { BatchRenderJob, IGetEndpoint, RefreshAuthResponse, SingleRenderJob } from "server/types";
 
 const tag = {
     Me: "Me",
@@ -171,9 +171,9 @@ const api = createApi({
             }
         }),
         // Suggestions API
-        getSuggestions: builder.query<CardSuggestion[], { filter?: SingleOrArray<DeepPartial<CardSuggestion>> } | void>({
+        getSuggestions: builder.query<CardSuggestion[], IGetEndpoint<CardSuggestion> | void>({
             query: (options) => {
-                const url = buildUrl("suggestions", { filter: options?.filter });
+                const url = buildUrl("suggestions", options);
                 return { url, method: "GET" };
             },
             providesTags: [{ type: tag.Suggestion, id: "LIST" }]

@@ -1,33 +1,45 @@
 import { ReactElement, useState } from "react";
 import { CardSuggestion, Faction, Type } from "common/models/cards";
 import { useDeleteSuggestionMutation, useGetSuggestionsQuery, useRenderImageMutation } from "../../api";
-import FactionFilter from "../../components/filters/factionFilter";
-import TypeFilter from "../../components/filters/typeFilter";
+import FactionFilter from "../../components/data/factionFilter";
+import TypeFilter from "../../components/data/typeFilter";
 import { useFilters } from "../../api/hooks";
-import UserFilter from "../../components/filters/userFilter";
+import UserFilter from "../../components/data/userFilter";
 import { Permission, User } from "common/models/user";
 import EditSuggestionModal from "./editSuggestionModal";
-import { addToast, Button, Spinner } from "@heroui/react";
-import { DeepPartial, SingleOrArray } from "common/types";
+import { Accordion, AccordionItem, addToast, Badge, Button, Spinner } from "@heroui/react";
+import { DeepPartial, SingleOrArray, Sortable } from "common/types";
 import PermissionGate from "../../components/permissionGate";
 import { hasPermission, renderCardSuggestion, ValidationStep } from "common/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileImage, faPencil, faX } from "@fortawesome/free-solid-svg-icons";
-import TagFilter from "../../components/filters/tagFilter";
+import { faFileExport, faFileImage, faFileImport, faPencil, faX } from "@fortawesome/free-solid-svg-icons";
+import TagFilter from "../../components/data/tagFilter";
 import classNames from "classnames";
 import { download } from "../../utilities";
 import CardGrid from "../../components/cardGrid";
 import CardPreview from "@agot/card-preview";
+import OrderBySelector from "../../components/data/orderBy";
+
+const SortOptions = {
+    "name": "Name",
+    "faction": "Faction",
+    "type": "Card Type",
+    "cost": "Cost"
+};
 
 const Suggestions = () => {
     const [editingCard, setEditingCard] = useState<DeepPartial<CardSuggestion>>();
 
+    // Filters
     const [factions, setFactions] = useState<Faction[]>([]);
     const [types, setTypes] = useState<Type[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [tags, setTags] = useState<string[]>([]);
     const filters = useFilters({ faction: factions, type: types, suggestedBy: users.map((user) => user.discordId), tags: tags.map((tag) => [tag]) });
-    const { data: suggestions, isLoading, isError } = useGetSuggestionsQuery({ filter: filters });
+
+    const [orderBy, setOrderBy] = useState<Sortable<CardSuggestion>>();
+
+    const { data: suggestions, isLoading, isError } = useGetSuggestionsQuery({ filter: filters, orderBy });
     const [deleteSuggestion, { isLoading: isDeleting, originalArgs: deleting }] = useDeleteSuggestionMutation();
     const [renderImage, { isLoading: isRenderingImage, originalArgs: renderingImage }] = useRenderImageMutation();
 
@@ -76,44 +88,75 @@ const Suggestions = () => {
             </PermissionGate>
         );
     };
+    const filterTitle = () => {
+        const totalFilters = factions.length + types.length + users.length + tags.length;
+        return (
+            <Badge content={totalFilters} color="danger" isInvisible={totalFilters === 0}>
+                Filters
+            </Badge>
+        );
+    };
     return (
         <div className="flex flex-col gap-2 lg:flex-row">
             <div className="flex flex-col gap-2 lg:w-98">
-                <div className="flex gap-2">
-                    <FactionFilter factions={factions} setFactions={setFactions}/>
-                    <TypeFilter types={types} setTypes={setTypes}/>
-                </div>
-                <UserFilter label="Suggested By" users={users} setUsers={setUsers}/>
-                <TagFilter label="Tags" tags={tags} setTags={setTags}/>
-                <PermissionGate requires={Permission.MAKE_SUGGESTIONS}>
-                    <Button size="sm" className="w-full" onPress={() => setEditingCard({})}>
-                    Create Suggestion
-                    </Button>
-                </PermissionGate>
-            </div>
-            <CardGrid className="lg:grow" cards={suggestions ?? []} isLoading={isLoading} isError={isError} emptyContent={<div className="flex items-center">No suggestions found</div>}>
-                {(card) => (
-                    <div key={card.id} className="relative">
-                        {isDeletingCard(card) && <div className="absolute right-0 w-full h-full z-2 flex justify-center items-center"><Spinner size="lg"/></div>}
-                        <div className="absolute right-0 w-full h-full z-1 opacity-25 p-1 flex justify-end hover:opacity-90 transition-opacity gap-0.5">
-                            <CardButton onPress={() => onEdit(card)} requires={(user) => canEdit(user, card)}>
-                                <FontAwesomeIcon icon={faPencil}/>
-                            </CardButton>
-                            <CardButton isLoading={isRenderingCard(card)} onPress={() => onExportPNG(card)} requires={Permission.RENDER_CARDS}>
-                                <FontAwesomeIcon icon={faFileImage}/>
-                            </CardButton>
-                            <CardButton isLoading={isDeletingCard(card)} onPress={() => onDelete(card)} requires={(user) => canDelete(user, card)}>
-                                <FontAwesomeIcon icon={faX}/>
-                            </CardButton>
+                <Accordion>
+                    <AccordionItem title={filterTitle()}>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex lg:flex-col gap-2">
+                                <FactionFilter factions={factions} setFactions={setFactions}/>
+                                <TypeFilter types={types} setTypes={setTypes}/>
+                            </div>
+                            <UserFilter label="Suggested By" users={users} setUsers={setUsers}/>
+                            <TagFilter label="Tags" tags={tags} setTags={setTags}/>
                         </div>
-                        <CardPreview
-                            card={renderCardSuggestion(card)}
-                            orientation="vertical"
-                            rounded={true}
-                            className={classNames("relative transition-all", { "blur-xs": isDeletingCard(card) })}
-                        />
-                    </div>)}
-            </CardGrid>
+                    </AccordionItem>
+                    <AccordionItem title={"Order By"}>
+                        <OrderBySelector options={SortOptions} orderBy={orderBy} setOrderBy={setOrderBy}/>
+                    </AccordionItem>
+                </Accordion>
+            </div>
+            <div className='flex flex-col gap-2'>
+                <div className="flex gap-1">
+                    <PermissionGate requires={Permission.IMPORT_SUGGESTIONS}>
+                        <Button size="sm" isIconOnly={true}>
+                            <FontAwesomeIcon icon={faFileImport} />
+                        </Button>
+                    </PermissionGate>
+                    <PermissionGate requires={Permission.MAKE_SUGGESTIONS}>
+                        <Button className="grow" size="sm" onPress={() => setEditingCard({})}>
+                        Create Suggestion
+                        </Button>
+                    </PermissionGate>
+                    <PermissionGate requires={Permission.EXPORT_SUGGESTIONS}>
+                        <Button size="sm" isIconOnly={true}>
+                            <FontAwesomeIcon icon={faFileExport} />
+                        </Button>
+                    </PermissionGate>
+                </div>
+                <CardGrid cards={suggestions ?? []} isLoading={isLoading} isError={isError} emptyContent={"No suggestions found"}>
+                    {(card) => (
+                        <div key={card.id} className="relative">
+                            {isDeletingCard(card) && <div className="absolute right-0 w-full h-full z-2 flex justify-center items-center"><Spinner size="lg"/></div>}
+                            <div className="absolute right-0 w-full h-full z-1 opacity-25 p-1 flex justify-end hover:opacity-90 transition-opacity gap-0.5">
+                                <CardButton onPress={() => onEdit(card)} requires={(user) => canEdit(user, card)}>
+                                    <FontAwesomeIcon icon={faPencil}/>
+                                </CardButton>
+                                <CardButton isLoading={isRenderingCard(card)} onPress={() => onExportPNG(card)} requires={Permission.RENDER_CARDS}>
+                                    <FontAwesomeIcon icon={faFileImage}/>
+                                </CardButton>
+                                <CardButton isLoading={isDeletingCard(card)} onPress={() => onDelete(card)} requires={(user) => canDelete(user, card)}>
+                                    <FontAwesomeIcon icon={faX}/>
+                                </CardButton>
+                            </div>
+                            <CardPreview
+                                card={renderCardSuggestion(card)}
+                                orientation="vertical"
+                                rounded={true}
+                                className={classNames("relative transition-all", { "blur-xs": isDeletingCard(card) })}
+                            />
+                        </div>)}
+                </CardGrid>
+            </div>
             <EditSuggestionModal card={editingCard} onOpenChange={() => setEditingCard(undefined)} onSave={() => setEditingCard(undefined)}/>
         </div>
     );

@@ -7,17 +7,17 @@ import packs from "./packs";
 import reviews from "./reviews";
 import render from "./render";
 import suggestions from "./suggestions";
-import { parseFilter } from "@/middleware/filters";
+import { parseAPIRequest } from "@/middleware/filters";
 
 const router = express.Router();
-router.use("/users", parseFilter, users);
-router.use("/roles", parseFilter, roles);
-router.use("/cards", parseFilter, cards);
-router.use("/projects", parseFilter, projects);
-router.use("/packs", parseFilter, packs);
-router.use("/reviews", parseFilter, reviews);
-router.use("/render", parseFilter, render);
-router.use("/suggestions", parseFilter, suggestions);
+router.use("/users", parseAPIRequest, users);
+router.use("/roles", parseAPIRequest, roles);
+router.use("/cards", parseAPIRequest, cards);
+router.use("/projects", parseAPIRequest, projects);
+router.use("/packs", parseAPIRequest, packs);
+router.use("/reviews", parseAPIRequest, reviews);
+router.use("/render", parseAPIRequest, render);
+router.use("/suggestions", parseAPIRequest, suggestions);
 
 router.post("/login", (req, res) => {
     res.redirect("/auth/discord");

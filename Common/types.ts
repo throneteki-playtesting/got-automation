@@ -6,3 +6,8 @@ export type DeepPartial<T> =
             : T;
 
 export type SingleOrArray<T> = T | T[];
+
+type SortDirection = 1 | -1 | "asc" | "desc" | "ascending" | "descending";
+export type Sortable<T> = {
+  [K in keyof T]?: SortDirection;
+};
