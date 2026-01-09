@@ -2,7 +2,7 @@ import { useSearchParams } from "react-router-dom";
 import { UUID } from "crypto";
 import { useGetRenderJobQuery } from "../api";
 import CardPreview from "@agot/card-preview";
-import { RenderableCard } from "common/models/cards";
+import { IRenderCard } from "common/models/cards";
 import { JSX } from "react";
 import { BatchRenderJob, SingleRenderJob } from "server/types";
 
@@ -36,7 +36,7 @@ const Render = () => {
 
         let pageNo = 1;
         let completed = 0;
-        const allData = job.data.flatMap(i => Array.from({ length: copies }).fill(i) as { id: UUID, card: RenderableCard }[]);
+        const allData = job.data.flatMap(i => Array.from({ length: copies }).fill(i) as { id: UUID, card: IRenderCard }[]);
         do {
             const pageData = allData.slice((pageNo - 1) * perPage, pageNo * perPage);
             const sheet = Array.from({ length: perPage }).map((_, index) => {

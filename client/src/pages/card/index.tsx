@@ -14,11 +14,7 @@ const Card = () => {
     const number = parseInt(numberParam);
 
     return (
-        <div>
-            <div className="bg-default-50 p-2 space-y-2">
-                <CardDetail className="p-2" project={project} number={number}/>
-            </div>
-        </div>
+        <CardDetail className="p-2" project={project} number={number}/>
     );
 };
 

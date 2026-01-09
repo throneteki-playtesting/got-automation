@@ -8,10 +8,10 @@ import { fileURLToPath } from "url";
 import { dataService, discordService, logger } from "@/services";
 import { factions } from "common/models/cards";
 import PlaytestingCard from "@/data/models/cards/playtestingCard";
-import CardCollection from "@/data/models/cards/cardCollection";
+import CardCollection from "common/collections/cardCollection";
 
 export default class CardThreads {
-    public static async sync(guild: Guild, canCreate: boolean, cards: CardCollection) {
+    public static async sync<T extends PlaytestingCard>(guild: Guild, canCreate: boolean, cards: CardCollection<T>) {
         const created: PlaytestingCard[] = [];
         const updated: PlaytestingCard[] = [];
         const failed: PlaytestingCard[] = [];

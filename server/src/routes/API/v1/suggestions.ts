@@ -4,11 +4,12 @@ import { Permission, User } from "common/models/user";
 import asyncHandler from "express-async-handler";
 import express, { Request } from "express";
 import { DeepPartial } from "common/types";
-import { CardSuggestion } from "common/models/cards";
+import { ICardSuggestion } from "common/models/cards";
 import { dataService } from "@/services";
 import { hasPermission, validate } from "common/utils";
 import { validateRequest } from "@/middleware/permissions";
 import { IGetEndpoint } from "@/types";
+import { StatusCodes } from "http-status-codes";
 
 const router = express.Router();
 
@@ -23,7 +24,7 @@ const handleGetSuggestions = [
             })
         }
     }, { allowUnknown: true }),
-    asyncHandler<unknown, unknown, unknown, IGetEndpoint<CardSuggestion>>(async (req, res, next) => {
+    asyncHandler<unknown, unknown, unknown, IGetEndpoint<ICardSuggestion>>(async (req, res, next) => {
         const { filter, orderBy, page, perPage } = req.query;
         const result = await dataService.suggestions.read(filter, orderBy, page, perPage);
 
@@ -45,7 +46,7 @@ router.get("/:id",
         [Segments.PARAMS]: {
             id: Joi.string().required()
         }
-    }), (req: Request<{ id: string }, unknown, unknown, IGetEndpoint<CardSuggestion>>, res: unknown, next: (arg?: unknown) => void) => {
+    }), (req: Request<{ id: string }, unknown, unknown, IGetEndpoint<ICardSuggestion>>, res: unknown, next: (arg?: unknown) => void) => {
         const { id } = req.params;
         let { filter } = req.query;
         try {
@@ -65,20 +66,20 @@ router.get("/:id",
     (req, res) => res.json(req.body[0] ?? {})
 );
 
-router.get("/:suggestedBy",
+router.get("/:userDiscordId",
     celebrate({
         [Segments.PARAMS]: {
-            suggestedBy: Joi.string().required()
+            userDiscordId: Joi.string().required()
         }
-    }), (req: Request<{ suggestedBy: string }, unknown, unknown, IGetEndpoint<CardSuggestion>>, res: unknown, next: (arg?: unknown) => void) => {
-        const { suggestedBy } = req.params;
+    }), (req: Request<{ userDiscordId: string }, unknown, unknown, IGetEndpoint<ICardSuggestion>>, res: unknown, next: (arg?: unknown) => void) => {
+        const { userDiscordId } = req.params;
         let { filter } = req.query;
         try {
             filter = filter || {};
             if (Array.isArray(filter)) {
-                filter.forEach((f) => f.suggestedBy = suggestedBy);
+                filter.forEach((f) => f.user.discordId = userDiscordId);
             } else {
-                filter.suggestedBy = suggestedBy;
+                filter.user.discordId = userDiscordId;
             }
             req.query.filter = filter;
             next();
@@ -92,49 +93,44 @@ router.get("/:suggestedBy",
 
 // Create suggestion
 router.post("/",
-    validateRequest((user: User, req: Request<unknown, unknown, Omit<CardSuggestion, "_id" | "updated" | "created">, unknown>) =>
-        validate(user, Permission.MAKE_SUGGESTIONS, (user) => user.discordId === req.body.suggestedBy)
-    ),
+    validateRequest((user: User) => validate(user, Permission.MAKE_SUGGESTIONS)),
     celebrate({
-        [Segments.BODY]: Schemas.CardSuggestion.Full.options({ abortEarly: false })
-    }), asyncHandler<unknown, unknown, Omit<CardSuggestion, "_id" | "updated" | "created">, unknown>(async (req, res) => {
-        const baseSuggestion = req.body;
-        const suggestion = {
-            ...baseSuggestion,
-            created: new Date().toUTCString(),
-            updated: new Date().toUTCString()
-        } as CardSuggestion;
+        [Segments.BODY]: Schemas.CardSuggestion.Draft.options({ abortEarly: false })
+    }), asyncHandler<unknown, unknown, Omit<ICardSuggestion, "_id" | "updated" | "created">, unknown>(async (req, res) => {
+        const body = req.body;
 
-        const [result] = await dataService.suggestions.create(suggestion);
+        const created = new Date();
+        let suggestion = {
+            ...body,
+            created,
+            updated: created
+        } as ICardSuggestion;
+        suggestion = await dataService.suggestions.create(suggestion);
 
-        res.send({
-            created: result
-        });
+        res.status(StatusCodes.OK).json(suggestion);
     })
 );
 
 // Update suggestion
 router.put("/:id",
-    validateRequest(async (user: User, req: Request<{ id: string }, unknown, CardSuggestion, unknown>) => {
+    validateRequest(async (user: User, req: Request<{ id: string }, unknown, ICardSuggestion, unknown>) => {
         const [suggestion] = await dataService.suggestions.read({ id: req.params.id });
-        return !!suggestion && hasPermission(user, Permission.EDIT_SUGGESTIONS) || validate(user, Permission.MAKE_SUGGESTIONS, (user) => user.discordId === suggestion.suggestedBy);
+        return !!suggestion && hasPermission(user, Permission.EDIT_SUGGESTIONS) || validate(user, Permission.MAKE_SUGGESTIONS, (user) => user.discordId === suggestion.user.discordId);
     }),
     celebrate({
         [Segments.PARAMS]: {
             id: Joi.string().required()
         },
         [Segments.BODY]: Schemas.CardSuggestion.Full.options({ abortEarly: false })
-    }), asyncHandler<{ id: string }, unknown, CardSuggestion, unknown>(async (req, res) => {
+    }), asyncHandler<{ id: string }, unknown, ICardSuggestion, unknown>(async (req, res) => {
         const { id } = req.params;
-        const suggestion = req.body;
+        const body = req.body;
         // Prevent id from being changed
-        suggestion.id = id;
+        body.id = id;
 
-        const result = await dataService.suggestions.update(suggestion);
+        const suggestion = await dataService.suggestions.update(body);
 
-        res.send({
-            updated: result
-        });
+        res.status(StatusCodes.OK).json(suggestion);
     })
 );
 
@@ -142,7 +138,7 @@ router.put("/:id",
 router.delete("/:id",
     validateRequest(async (user: User, req: Request<{ id: string }, unknown, unknown, unknown>) => {
         const [suggestion] = await dataService.suggestions.read({ id: req.params.id });
-        return !!suggestion && hasPermission(user, Permission.DELETE_SUGGESTIONS) || validate(user, Permission.MAKE_SUGGESTIONS, (user) => user.discordId === suggestion.suggestedBy);
+        return !!suggestion && hasPermission(user, Permission.DELETE_SUGGESTIONS) || validate(user, Permission.MAKE_SUGGESTIONS, (user) => user.discordId === suggestion.user.discordId);
     }),
     celebrate({
         [Segments.PARAMS]: {
@@ -151,9 +147,7 @@ router.delete("/:id",
     }),
     asyncHandler<{ id: string }, unknown, unknown, unknown>(async (req, res) => {
         const { id } = req.params;
-        const filter: DeepPartial<CardSuggestion> = {
-            id: id
-        };
+        const filter: DeepPartial<ICardSuggestion> = { id };
 
         const result = await dataService.suggestions.destroy(filter);
 

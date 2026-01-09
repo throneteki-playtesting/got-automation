@@ -1,7 +1,7 @@
-import { Code, Cost, Faction, Icons, Card, PlotStats, Strength, Type } from "common/models/cards";
+import { Code, Cost, Faction, ICard, Icons, PlotStats, Strength, Type } from "common/models/cards";
 
-class BaseCard implements Card {
-    public code: Code;
+class BaseCard implements ICard {
+    public code?: Code;
     public cost?: Cost;
     public deckLimit: number;
     public designer?: string;
@@ -18,9 +18,9 @@ class BaseCard implements Card {
     public type: Type;
     public unique?: boolean;
     public quantity: 1 | 2 | 3;
-    private _imageUrl: string;
+    private _imageUrl?: string;
 
-    constructor(data: Card) {
+    constructor(data: ICard) {
         this.code = data.code;
         this.cost = data.cost;
         this.deckLimit = data.deckLimit;
@@ -69,7 +69,7 @@ class BaseCard implements Card {
             illustrator: this.illustrator || "?",
             ...(this.designer && { designer: this.designer }),
             imageUrl: this.imageUrl
-        } as Card;
+        } as ICard;
         return obj;
     }
 
@@ -111,7 +111,7 @@ class BaseCard implements Card {
             type: this.type,
             unique: this.unique,
             quantity: this.quantity
-        } as Card;
+        } as ICard;
 
         return new BaseCard(data);
     }

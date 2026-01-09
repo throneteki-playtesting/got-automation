@@ -3,7 +3,7 @@ import * as Projects from "./projects";
 
 export const factions = ["baratheon", "greyjoy", "lannister", "martell", "thenightswatch", "stark", "targaryen", "tyrell", "neutral"] as const;
 export const types = ["character", "location", "attachment", "event", "plot", "agenda"] as const;
-export const noteTypes = ["replaced", "reworked", "updated", "implemented"] as const;
+export const noteTypes = ["updated", "reworked", "replaced", "implemented"] as const;
 export const githubStatuses = ["open", "closed", "complete"] as const;
 export const challengeIcons = ["military", "intrigue", "power"] as const;
 export const plotStats = ["income", "initiative", "claim", "reserve"] as const;
@@ -23,8 +23,8 @@ export type Quantity = 1 | 2 | 3;
 /**
  * Base released card, fitting structure of JSON Card Data Repository
  */
-export interface Card {
-    code: Code,
+export interface ICard {
+    code?: Code,
     cost?: Cost,
     deckLimit: number,
     designer?: string,
@@ -59,7 +59,8 @@ export interface PlotStats {
     reserve: PlotValue
 }
 
-export interface PlaytestableCard extends Card {
+export type ImplementationStatus = "not implemented" | "recently implemented" | "implemented";
+export interface IPlaytestCard extends ICard {
     project: number,
     number: number,
     // latest: boolean,
@@ -70,7 +71,7 @@ export interface PlaytestableCard extends Card {
     release?: ReleaseDetails
 }
 
-export interface RenderableCard extends Omit<Card, "code"> {
+export interface IRenderCard extends Omit<ICard, "code"> {
     code?: Code,
     key: string,
     watermark: Watermark
@@ -106,15 +107,18 @@ export enum DefaultDeckLimit {
     agenda = 1
 }
 
-export interface CardSuggestion extends Omit<Card, "code"> {
+export interface ICardSuggestion {
     /** Unique Id of this saved suggestion (undefined for new) */
     id?: string,
-    /** Discord Id of user who suggested */
-    suggestedBy: string,
+    /** User who suggested */
+    user: {
+        discordId: string,
+        displayname: string
+    },
     /** Date suggestion was first created */
-    created: string,
+    created: Date,
     /** Date suggested was last updated */
-    updated: string,
+    updated: Date,
     /** Discord forum thread Id, if it has been created */
     threadId?: string,
     /** Discord Id array of users who like this suggestion */
@@ -122,5 +126,7 @@ export interface CardSuggestion extends Omit<Card, "code"> {
     /** Discord Id of user who approved this suggestion */
     approvedBy?: string,
     /** Additional tags related to this suggestion */
-    tags: string[]
+    tags: string[],
+    /** Card design */
+    card: ICard
 }

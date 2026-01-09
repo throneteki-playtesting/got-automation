@@ -1,6 +1,6 @@
 import { Key, useCallback, useState } from "react";
 import { useGetRolesQuery } from "../../../api";
-import { Permission, Role } from "common/models/user";
+import { Role } from "common/models/user";
 import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
@@ -17,7 +17,7 @@ const Roles = () => {
     ] as { key: string, label: string, className?: string }[];
 
     const renderCell = useCallback((role: Role, columnKey: Key) => {
-        const permissions = role.permissions.map((permission) => <Chip key={permission} className="capitalize" color="primary">{Permission[permission]}</Chip>);
+        const permissions = role.permissions.map((permission) => <Chip key={permission} className="capitalize" color="primary">{permission}</Chip>);
         switch (columnKey) {
             case "name":
                 return <div className="flex flex-col">

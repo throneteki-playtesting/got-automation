@@ -136,12 +136,12 @@ export default class MongoDataSource<T> {
             }
         })), { ordered: false, ...options });
 
-        logger.verbose(`[Mongo] ${upsert ? "Upserted" : "Updated"} ${results.modifiedCount + results.upsertedCount} documents into ${this.name} collection`);
-        const updatedIds = { ... results.insertedIds, ...results.upsertedIds };
+        const failed = new Set(results.getWriteErrors().map((we) => we.index));
+        const success = docs.filter((_, index) => !failed.has(index));
 
-        // Return docs which were actually inserted or upserted
-        // TODO: Need to find out how to also include "Updated" objects, as they are not included in insertedIds or upsertedIds
-        return Object.keys(updatedIds).map((index) => docs[index] as T);
+        logger.verbose(`[Mongo] ${upsert ? "Upserted" : "Updated"} ${success.length} documents into ${this.name} collection`);
+
+        return success;
     }
 
     protected async deleteMany(query: MongoFilter<T>, options?: DeleteOptions) {

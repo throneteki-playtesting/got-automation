@@ -27,10 +27,13 @@
     "@tiptap/extension-text": "^3.0.9",
     "@tiptap/react": "^3.0.9",
     "classnames": "^2.5.1",
+    "discord-emoji": "^2.5.3",
     "dotenv": "^17.2.1",
     "dotenv-expand": "^12.0.2",
+    "flat": "^6.0.1",
     "framer-motion": "^12.23.11",
     "http-status-codes": "^2.3.0",
+    "lodash": "^4.17.21",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-redux": "^9.2.0",
@@ -38,11 +41,13 @@
     "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.21",
     "@types/node": "^24.1.0",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",
     "autoprefixer": "^10.4.21",
+    "joi": "^17.13.3",
     "typescript": "~5.8.3",
     "vite": "^7.0.0",
     "vite-tsconfig-paths": "^5.1.4"

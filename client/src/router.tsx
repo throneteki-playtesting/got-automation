@@ -2,7 +2,6 @@ import { createBrowserRouter, RouteObject } from "react-router-dom";
 import App from "./app/app";
 import Error from "./components/error";
 import Page from "./pages/page";
-import AuthRedirect from "./pages/authRedirect";
 import { isPageItem, NavItem, navItems } from "./pages";
 import Render from "./pages/render";
 
@@ -14,13 +13,7 @@ const router = createBrowserRouter([
     {
         element: <App />,
         errorElement: <Error />,
-        children: [
-            ...pageItemRoutes(),
-            {
-                path: "/authRedirect",
-                element: <AuthRedirect />
-            }
-        ]
+        children: pageItemRoutes()
     }
 ]);
 
@@ -30,7 +23,7 @@ function pageItemRoutes() {
         if (isPageItem(item)) {
             routes.push({
                 path: item.path,
-                element: <Page required={item.permission}>{item.element}</Page>
+                element: item.element ? <Page required={item.permission}>{item.element}</Page> : null
             });
         } else {
             item.subPages.forEach(addRoute);

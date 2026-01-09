@@ -4,21 +4,22 @@ import puppeteer, { Viewport } from "puppeteer";
 import Project from "../data/models/project";
 import PlaytestingCard from "@/data/models/cards/playtestingCard";
 import RenderedCard from "@/data/models/cards/renderedCard";
-import CardCollection from "@/data/models/cards/cardCollection";
+import CardCollection from "common/collections/cardCollection";
 import { dataService, logger } from "@/services";
-import { asArray } from "common/utils";
+import { asArray, renderPlaytestingCard } from "common/utils";
 import { SingleOrArray } from "common/types";
 import { randomUUID } from "crypto";
 import { BatchRenderJob, BatchRenderJobOptions, RenderType, SingleRenderJob, SingleRenderJobOptions } from "@/types";
+import { IPlaytestCard, IRenderCard } from "common/models/cards";
 
 type PNGResponse = { filename: string, buffer: Buffer<ArrayBufferLike> };
 
 class RenderingService {
-    public async syncImages(cards: CardCollection, override = false) {
-        const filePathFunc = (card: PlaytestingCard) => `./public/img/${card.project}/${card.number}@${card.version}.png`;
+    public async syncImages<T extends IPlaytestCard>(cards: CardCollection<T>, override = false) {
+        const filePathFunc = (card: IPlaytestCard) => `./public/img/${card.project}/${card.number}@${card.version}.png`;
         const syncing = override ? [...cards.all] : cards.all.filter((card) => !fs.existsSync(filePathFunc(card)));
 
-        const data = await this.asPNG(syncing.map((card) => card.toRenderedCard()));
+        const data = await this.asPNG(syncing.map((card) => renderPlaytestingCard(card)));
         const buffers = data.map(({ buffer }) => buffer);
 
         const promises: Promise<unknown>[] = [];
@@ -39,7 +40,7 @@ class RenderingService {
 
         await Promise.allSettled(promises);
     }
-    public async syncPDFs(project: Project, cards: CardCollection, override = false) {
+    public async syncPDFs<T extends PlaytestingCard>(project: Project, cards: CardCollection<T>, override = false) {
         const all = cards.latest;
         const updated = cards.latest.filter((card) => card.isChanged);
         const filePathFunc = (collection: "all"|"updated") => `./public/pdf/${project.number}/${project.version + 1}_${collection}.pdf`;
@@ -64,9 +65,9 @@ class RenderingService {
             }
         }
     }
-    public async asPNG(card: RenderedCard, options?: SingleRenderJobOptions): Promise<PNGResponse>;
-    public async asPNG(cards: RenderedCard[], options?: SingleRenderJobOptions): Promise<PNGResponse[]>;
-    public async asPNG(data: SingleOrArray<RenderedCard>, options?: SingleRenderJobOptions) {
+    public async asPNG(card: IRenderCard, options?: SingleRenderJobOptions): Promise<PNGResponse>;
+    public async asPNG(cards: IRenderCard[], options?: SingleRenderJobOptions): Promise<PNGResponse[]>;
+    public async asPNG(data: SingleOrArray<IRenderCard>, options?: SingleRenderJobOptions) {
         const cards = asArray(data);
         const browser = await this.launchPuppeteer();
         const page = (await browser.pages())[0] ?? await browser.newPage();
@@ -121,9 +122,9 @@ class RenderingService {
         }
     }
 
-    private async createJob(type: "single", cards: RenderedCard[], options?: SingleRenderJobOptions): Promise<SingleRenderJob>;
-    private async createJob(type: "batch", cards: RenderedCard[], options?: BatchRenderJobOptions): Promise<BatchRenderJob>;
-    private async createJob(type: RenderType, cards: RenderedCard[], options?: SingleRenderJobOptions|BatchRenderJobOptions) {
+    private async createJob(type: "single", cards: IRenderCard[], options?: SingleRenderJobOptions): Promise<SingleRenderJob>;
+    private async createJob(type: "batch", cards: IRenderCard[], options?: BatchRenderJobOptions): Promise<BatchRenderJob>;
+    private async createJob(type: RenderType, cards: IRenderCard[], options?: SingleRenderJobOptions|BatchRenderJobOptions) {
         const id = randomUUID();
         const data = cards.map((card) => ({ id: randomUUID(), card }));
         const job = {

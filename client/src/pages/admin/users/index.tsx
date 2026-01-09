@@ -5,6 +5,8 @@ import { Permission, User } from "common/models/user";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
 import EditUserModal from "./editUserModal";
+import { hasPermission } from "common/utils";
+import PermissionGate from "../../../components/permissionGate";
 
 const Users = () => {
     const { data: users, isLoading, isError } = useGetUsersQuery();
@@ -20,7 +22,7 @@ const Users = () => {
     ] as { key: string, label: string, className?: string }[];
 
     const renderCell = useCallback((user: User, columnKey: Key) => {
-        const permissions = user.permissions.map((permission) => <Chip key={permission} className="capitalize" color="primary">{Permission[permission]}</Chip>);
+        const permissions = user.permissions.map((permission) => <Chip key={permission} className="capitalize" color="primary">{permission}</Chip>);
         const roles = user.roles.map((role) => <Chip key={role.name} className="capitalize" color="secondary">{role.name}</Chip>);
         switch (columnKey) {
             case "username":
@@ -48,6 +50,10 @@ const Users = () => {
             case "lastLogin":
                 return <span>{user.lastLogin.toLocaleString()}</span>;
             case "actions":
+                const allowedActions = [];
+                if (hasPermission(user, Permission.EDIT_USERS)) {
+                    allowedActions.push(<DropdownItem key="edit" onPress={() => setEditingUser(user)}>Edit</DropdownItem>);
+                }
                 return (
                     <div className="flex justify-center items-center">
                         <Dropdown isDisabled={!!editingUser}>
@@ -57,7 +63,7 @@ const Users = () => {
                                 </Button>
                             </DropdownTrigger>
                             <DropdownMenu>
-                                <DropdownItem key="edit" onPress={() => setEditingUser(user)}>Edit</DropdownItem>
+                                {allowedActions}
                             </DropdownMenu>
                         </Dropdown>
                     </div>

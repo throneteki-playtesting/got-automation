@@ -12,7 +12,7 @@ const EditUserModal = ({ user, onOpenChange, onSave: onUserSave }: EditUserModal
     const onSave = useCallback(async () => {
         if (user) {
             const model = { ...user } as User;
-            model.permissions = [...permissions].map((p) => parseInt(p) as Permission);
+            model.permissions = [...permissions].map((p) => p as Permission);
 
             // TODO: Consider (somehow) updating edited user who have sessions open?
             const response = await updateUser(model);

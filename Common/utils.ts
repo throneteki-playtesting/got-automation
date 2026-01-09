@@ -189,7 +189,7 @@ export function hasPermission(user?: User, ...permissions: Permission[]) {
     return false;
 }
 
-function getBaseValues<T extends Cards.Card>(card: DeepPartial<T>) {
+export function getBaseCardValues<T extends Cards.ICard>(card: DeepPartial<T>) {
     const {
         code,
         cost,
@@ -232,33 +232,33 @@ function getBaseValues<T extends Cards.Card>(card: DeepPartial<T>) {
     };
 }
 
-export function renderPlaytestingCard(card: Cards.PlaytestableCard): Cards.RenderableCard
-export function renderPlaytestingCard(card: DeepPartial<Cards.PlaytestableCard>): DeepPartial<Cards.RenderableCard>
-export function renderPlaytestingCard(card: DeepPartial<Cards.PlaytestableCard>) {
+export function renderPlaytestingCard(card: Cards.IPlaytestCard): Cards.IRenderCard
+export function renderPlaytestingCard(card: DeepPartial<Cards.IPlaytestCard>): DeepPartial<Cards.IRenderCard>
+export function renderPlaytestingCard(card: DeepPartial<Cards.IPlaytestCard>) {
+    const versionText = isPreview(card) || !card.version ? "Preview" : `v${card.version}`;
     return {
-        ...getBaseValues(card),
+        ...getBaseCardValues(card),
         key: `${card.code}@${card.version}`,
         watermark: {
-            top: card.code ?? "Unkown Code",
-            middle: (card.version ? `v${card.version}` : "0.0.0"),
+            top: card.code ?? "Unknown Code",
+            middle: versionText,
             bottom: "Work In Progress"
         }
-    } as DeepPartial<Cards.RenderableCard>;
+    } as DeepPartial<Cards.IRenderCard>;
 }
 
-export function renderCardSuggestion(card: Cards.CardSuggestion): Cards.RenderableCard
-export function renderCardSuggestion(card: DeepPartial<Cards.CardSuggestion>): DeepPartial<Cards.RenderableCard>
-export function renderCardSuggestion(card: DeepPartial<Cards.CardSuggestion>) {
-
+export function renderCardSuggestion(suggestion: Cards.ICardSuggestion): Cards.IRenderCard
+export function renderCardSuggestion(suggestion: DeepPartial<Cards.ICardSuggestion>): DeepPartial<Cards.IRenderCard>
+export function renderCardSuggestion(suggestion: DeepPartial<Cards.ICardSuggestion>) {
     return {
-        ...getBaseValues(card),
-        key: card.id,
+        ...(suggestion.card ? getBaseCardValues(suggestion.card) : {}),
+        key: suggestion.id,
         watermark: {
-            top: undefined,
+            top: suggestion.user?.displayname,
             middle: "Custom",
             bottom: "Card Suggestion"
         }
-    } as DeepPartial<Cards.RenderableCard>;
+    } as DeepPartial<Cards.IRenderCard>;
 }
 
 export const abilityIcons: { [key: string]: string } = {
@@ -286,3 +286,7 @@ export const thronesIcons: { [key: string]: string } = {
     plot: "\ue60c",
     agenda: "\ue611"
 };
+
+export function isPreview(card: DeepPartial<Cards.IPlaytestCard>) {
+    return !card.version || card.version === "0.0.0";
+}

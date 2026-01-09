@@ -2,7 +2,7 @@ export const types = ["cycle", "expansion"] as const;
 export type Type = typeof types[number];
 export type Code = `${number}`;
 
-export interface JsonProject {
+export interface IProject {
     number: number,
     name: string,
     code: string,
@@ -14,5 +14,7 @@ export interface JsonProject {
     version: number,
     milestone: number,
     formUrl: string,
-    emoji?: string
+    emoji?: string,
+    created: number,
+    updated: number
 }

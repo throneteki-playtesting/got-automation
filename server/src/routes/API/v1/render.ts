@@ -3,7 +3,7 @@ import { celebrate, Joi, Segments } from "celebrate";
 import asyncHandler from "express-async-handler";
 import { dataService, renderService } from "@/services";
 import * as Schemas from "common/models/schemas";
-import { RenderableCard } from "common/models/cards";
+import { IRenderCard } from "common/models/cards";
 import RenderedCard from "@/data/models/cards/renderedCard";
 import { asArray, hasPermission, Regex } from "common/utils";
 import { SingleOrArray } from "common/types";
@@ -20,7 +20,7 @@ export type ResourceFormat = "JSON" | "TXT" | "PNG" | "PDF";
 const router = express.Router();
 
 type RenderQuery = { format?: ResourceFormat } & SingleRenderJobOptions & BatchRenderJobOptions;
-type CardBody = SingleOrArray<RenderableCard>;
+type CardBody = SingleOrArray<IRenderCard>;
 
 router.post("/",
     validateRequest((user) => hasPermission(user, Permission.RENDER_CARDS)),

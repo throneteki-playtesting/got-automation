@@ -1,4 +1,4 @@
-import { JsonProject, Type } from "common/models/projects";
+import { IProject, Type } from "common/models/projects";
 import { openMultiWindow, safelyGetUI } from "./spreadsheets/userInput";
 
 export enum GooglePropertiesType {
@@ -75,11 +75,11 @@ export function getProjectDetails() {
         milestone: parseInt(getProperty(GooglePropertiesType.Script, "milestone")),
         formUrl: getProperty(GooglePropertiesType.Script, "formUrl"),
         emoji: emoji || undefined
-    } as JsonProject;
+    } as IProject;
     return project;
 }
 
-export function setProjectDetails(project: JsonProject) {
+export function setProjectDetails(project: IProject) {
     setProperty(GooglePropertiesType.Script, "number", `${project.number}`);
     setProperty(GooglePropertiesType.Script, "name", project.name);
     setProperty(GooglePropertiesType.Script, "code", `${project.code}`);

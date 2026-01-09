@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { Cost as CostType, Strength as StrengthType, PlotValue as PlotValueType, ChallengeIcon, challengeIcons, DefaultDeckLimit, Faction as FactionType, RenderableCard, PlotStat as PlotStatType, Type as TypeType, Watermark as WatermarkType } from "common/models/cards";
+import { Cost as CostType, Strength as StrengthType, PlotValue as PlotValueType, ChallengeIcon, challengeIcons, DefaultDeckLimit, Faction as FactionType, PlotStat as PlotStatType, Type as TypeType, Watermark as WatermarkType, IRenderCard } from "common/models/cards";
 import AutoSize from "./autoSize";
 import { em, px } from "../utils";
 import { DeepPartial } from "common/types";
@@ -61,7 +61,7 @@ export const Card = memo(({ children, card, orientation = defaultOrientation(car
         </div>
     );
 });
-type CardProps = BaseElementProps & { classNames?: { wrapper?: string, inner?: string }, styles?: { wrapper?: CSSProperties, inner?: CSSProperties }, card: DeepPartial<RenderableCard>, orientation?: "vertical" | "horizontal", scale?: number, rounded?: boolean } & React.DOMAttributes<HTMLDivElement>;
+type CardProps = BaseElementProps & { classNames?: { wrapper?: string, inner?: string }, styles?: { wrapper?: CSSProperties, inner?: CSSProperties }, card: DeepPartial<IRenderCard>, orientation?: "vertical" | "horizontal", scale?: number, rounded?: boolean } & React.DOMAttributes<HTMLDivElement>;
 
 
 export const Type = memo(({ children: type, className, style }: TypeProps) => {

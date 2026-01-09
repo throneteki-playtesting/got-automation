@@ -62,9 +62,9 @@ const ProfileSection = ({ children: items = [] }: ProfileSectionProps) => {
                     </div>
                 </DropdownTrigger>
                 <DropdownMenu>
-                    {items.map((item) => (
+                    {items.filter((item) => item.label).map((item) => (
                         <DropdownItem
-                            key={item.label}
+                            key={item.label!}
                             as={Link}
                             href={item.path}
                         >

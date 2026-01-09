@@ -4,14 +4,15 @@ import asyncHandler from "express-async-handler";
 import PlaytestingCard from "@/data/models/cards/playtestingCard";
 import { inc } from "semver";
 import { dataService, logger, renderService } from "@/services";
-import { hasPermission, SemanticVersion } from "common/utils";
-import { PlaytestableCard, NoteType } from "common/models/cards";
+import { hasPermission, parseCardCode, SemanticVersion } from "common/utils";
+import { IPlaytestCard, NoteType } from "common/models/cards";
 import * as Schemas from "common/models/schemas";
 import { DeepPartial, SingleOrArray } from "common/types";
 import { Permission } from "common/models/user";
 import { ApiErrorResponse } from "@/errors";
 import { StatusCodes } from "http-status-codes";
 import { validateRequest } from "@/middleware/permissions";
+import { NoteVersion } from "@/utils";
 
 export type ResourceFormat = "JSON" | "TXT" | "PNG" | "PDF";
 
@@ -19,10 +20,10 @@ const router = express.Router();
 
 type ProjectParam = { project: number };
 type CardParam = { number: number };
-type FilterQuery = { filter?: SingleOrArray<DeepPartial<PlaytestableCard>>, hard?: boolean, latest?: boolean }
+type FilterQuery = { filter?: SingleOrArray<DeepPartial<IPlaytestCard>>, hard?: boolean, latest?: boolean }
 type RenderQuery = { copies?: number, perPage?: number };
 type FormatQuery = { format?: ResourceFormat }
-type CardBody = SingleOrArray<PlaytestableCard>;
+type CardBody = SingleOrArray<IPlaytestCard>;
 
 const handleGetCards = [
     validateRequest((user) => hasPermission(user, Permission.READ_CARDS)),
@@ -44,7 +45,7 @@ const handleGetCards = [
         switch (format) {
             case "JSON":
                 const json = cards.map((card) => card.toJSON());
-                res.json(json);
+                res.status(StatusCodes.OK).json(json);
                 break;
             case "PNG":
                 if (cards.length > 1) {
@@ -52,12 +53,12 @@ const handleGetCards = [
                 }
                 const png = await renderService.asPNG(cards[0].toRenderedCard());
                 res.type("png");
-                res.send(png);
+                res.status(StatusCodes.OK).send(png);
                 break;
             case "PDF":
                 const pdf = await renderService.asPDF(cards.map((card) => card.toRenderedCard()), { copies, perPage });
                 res.contentType("application/pdf");
-                res.send(pdf);
+                res.status(StatusCodes.OK).send(pdf);
                 break;
         }
     })
@@ -268,6 +269,66 @@ router.get("/:project/:number", celebrate({
     }
 }, ...handleGetCards);
 
+router.put("/:project/:number/draft",
+    validateRequest((user) => hasPermission(user, Permission.CREATE_CARDS)),
+    celebrate({
+        [Segments.PARAMS]: {
+            project: Joi.number().required(),
+            number: Joi.number().required()
+        },
+        [Segments.BODY]: Schemas.PlaytestingCard.Draft
+    }),
+    asyncHandler<ProjectParam & CardParam, IPlaytestCard, IPlaytestCard, unknown>(async (req, res) => {
+        const { project, number } = req.params;
+        const body = req.body;
+        const code = parseCardCode(false, project, number);
+        const existing = (await dataService.cards.read({ project, number }))[number];
+
+        if (!existing) {
+            throw Error(`Failed to create draft for project #${project}, card #${number}: Project/Number does not exist`);
+        }
+        // Preview cards are simply updated, without version incrementing
+        // To initialise all preview cards to 1.0.0, use /:project/initialise
+        const latest = existing.latest;
+        const version = latest?.isPreview ? latest.version : inc(body.playtesting, NoteVersion[body.note.type]) as SemanticVersion;
+
+        // Existing draft with different version needs to be removed first as upsert will not match (as version is a primary key)
+        const draft = existing.draft;
+        if (draft && draft.version !== version) {
+            const { project, number, version } = draft;
+            await dataService.cards.destroy({ project, number, version });
+        }
+
+        let card = { ...body, code, version } as IPlaytestCard;
+        card = await dataService.cards.update(card, true);
+
+        res.status(StatusCodes.OK).json(card);
+    })
+);
+
+router.delete("/:project/:number/draft",
+    validateRequest((user) => hasPermission(user, Permission.DELETE_CARDS)),
+    celebrate({
+        [Segments.PARAMS]: {
+            project: Joi.number().required(),
+            number: Joi.number().required()
+        }
+    }),
+    asyncHandler<ProjectParam & CardParam, unknown, unknown, unknown>(async (req, res) => {
+        const { project, number } = req.params;
+
+        const existing = (await dataService.cards.read({ project, number }))[number];
+
+        let result = 0;
+        if (existing) {
+            const { project, number, version } = existing.draft;
+            result = await dataService.cards.destroy({ project, number, version });
+        }
+        res.send({
+            deleted: result
+        });
+    })
+);
 
 /**
  * @openapi
@@ -307,9 +368,9 @@ router.post("/",
             }
         };
         logger.verbose(`Recieved ${cards.length} card update(s) from sheets`);
-        const latest: PlaytestableCard[] = [];
-        const upsert: PlaytestableCard[] = [];
-        const destroy: DeepPartial<PlaytestableCard>[] = [];
+        const latest: IPlaytestCard[] = [];
+        const upsert: IPlaytestCard[] = [];
+        const destroy: DeepPartial<IPlaytestCard>[] = [];
 
         for (const card of cards) {
         // If card is not in playtesting, push updates
@@ -346,7 +407,7 @@ router.post("/",
         }
         await dataService.cards.spreadsheet.update(latest, { sheets: ["latest"] });
 
-        res.send({
+        res.status(StatusCodes.OK).send({
             updated: upsert.length + latest.length,
             deleted: destroy.length
         });

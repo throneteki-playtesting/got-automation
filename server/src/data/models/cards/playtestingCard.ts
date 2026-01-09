@@ -1,13 +1,10 @@
 import * as Ver from "semver";
-import { GithubDetails, PlaytestableCard, NoteDetails, ReleaseDetails } from "common/models/cards";
+import { GithubDetails, ImplementationStatus, IPlaytestCard, NoteDetails, ReleaseDetails } from "common/models/cards";
 import { parseCardCode, renderPlaytestingCard, SemanticVersion } from "common/utils";
 import BaseCard from "./baseCard";
 import RenderedCard from "./renderedCard";
 
-type ImplementationStatus = "not implemented" | "recently implemented" | "implemented";
-
-
-class PlaytestingCard extends BaseCard implements PlaytestableCard {
+class PlaytestingCard extends BaseCard implements IPlaytestCard {
     // Playtesting specific properties
     public project: number;
     public number: number;
@@ -17,7 +14,7 @@ class PlaytestingCard extends BaseCard implements PlaytestableCard {
     public github?: GithubDetails;
     public release?: ReleaseDetails;
 
-    constructor(data: PlaytestableCard) {
+    constructor(data: IPlaytestCard) {
         super(data);
         this.version = data.version;
         this.project = data.project;
@@ -50,7 +47,7 @@ class PlaytestingCard extends BaseCard implements PlaytestableCard {
             playtesting: this.playtesting,
             ...(this.github !== undefined && { github: this.github }),
             ...(this.release !== undefined && { release: this.release })
-        } as PlaytestableCard;
+        } as IPlaytestCard;
         return obj;
     }
 
@@ -59,12 +56,12 @@ class PlaytestingCard extends BaseCard implements PlaytestableCard {
         return {
             ...base,
             version: this.version
-        } as PlaytestableCard;
+        } as IPlaytestCard;
     }
 
     override clone() {
         const base = super.clone().toJSON();
-        const data: PlaytestableCard = {
+        const data: IPlaytestCard = {
             ...base,
             project: this.project,
             number: this.number,

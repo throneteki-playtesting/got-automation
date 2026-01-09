@@ -1,27 +1,27 @@
 import MongoDataSource from "./dataSources/mongoDataSource";
 import { MongoClient } from "mongodb";
 import { dataService, logger } from "@/services";
-import { JsonPlaytestingReview } from "common/models/reviews";
+import { IPlaytestReview } from "common/models/reviews";
 import { asArray, groupBy } from "common/utils";
 import * as ReviewsController from "gas/controllers/reviewsController";
 import GASDataSource from "./dataSources/GASDataSource";
-import ReviewCollection from "../models/reviewCollection";
+import ReviewCollection from "../../../../common/collections/reviewCollection";
 import { DeepPartial, SingleOrArray } from "common/types";
 
 export default class ReviewsRepository {
-    public database: MongoDataSource<JsonPlaytestingReview>;
+    public database: MongoDataSource<IPlaytestReview>;
     public spreadsheet: ReviewDataSource;
     constructor(mongoClient: MongoClient) {
-        this.database = new MongoDataSource<JsonPlaytestingReview>(mongoClient, "reviews", { project: 1, number: 1, version: 1, reviewer: 1 });
+        this.database = new MongoDataSource<IPlaytestReview>(mongoClient, "reviews", { project: 1, number: 1, version: 1, reviewer: 1 });
         this.spreadsheet = new ReviewDataSource();
     }
-    public async create(creating: SingleOrArray<JsonPlaytestingReview>) {
+    public async create(creating: SingleOrArray<IPlaytestReview>) {
         await this.database.create(creating);
         await this.spreadsheet.create(creating);
     }
 
-    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingReview>>, hard = false) {
-        let reviews: JsonPlaytestingReview[];
+    public async read(reading?: SingleOrArray<DeepPartial<IPlaytestReview>>, hard = false) {
+        let reviews: IPlaytestReview[];
         // Force hard refresh from spreadsheet (slow)
         if (hard) {
             const fetched = await this.spreadsheet.read(reading);
@@ -34,23 +34,23 @@ export default class ReviewsRepository {
         return new ReviewCollection(reviews);
     }
 
-    public async update(updating: SingleOrArray<JsonPlaytestingReview>, upsert = true) {
+    public async update(updating: SingleOrArray<IPlaytestReview>, upsert = true) {
         await this.database.update(updating, { upsert });
         await this.spreadsheet.update(updating, { upsert });
     }
 
-    public async destroy(destroying: SingleOrArray<DeepPartial<JsonPlaytestingReview>>) {
+    public async destroy(destroying: SingleOrArray<DeepPartial<IPlaytestReview>>) {
         await this.database.destroy(destroying);
         await this.spreadsheet.destroy(destroying);
     }
 }
 
-class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
-    public async create(creating: SingleOrArray<JsonPlaytestingReview>) {
+class ReviewDataSource extends GASDataSource<IPlaytestReview> {
+    public async create(creating: SingleOrArray<IPlaytestReview>) {
         const reviews = asArray(creating);
         const groups = groupBy(reviews, (review) => review.project);
 
-        const created: JsonPlaytestingReview[] = [];
+        const created: IPlaytestReview[] = [];
         for (const [pNumber, pReviews] of groups.entries()) {
             const [project] = await dataService.projects.read({ number: pNumber });
             // TODO: Error if project is missing
@@ -63,7 +63,7 @@ class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
         return created;
     }
 
-    public async read(reading?: SingleOrArray<DeepPartial<JsonPlaytestingReview>>) {
+    public async read(reading?: SingleOrArray<DeepPartial<IPlaytestReview>>) {
         const reviews = asArray(reading);
         const groups = groupBy(reviews, (review) => review.project);
         // If no project is specified, read that from all active projects
@@ -74,7 +74,7 @@ class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
             groups.delete(undefined);
         }
 
-        const read: JsonPlaytestingReview[] = [];
+        const read: IPlaytestReview[] = [];
         for (const [pNumber, pReviews] of groups.entries()) {
             const [project] = await dataService.projects.read({ number: pNumber });
             // TODO: Error if project is missing
@@ -89,10 +89,10 @@ class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
         return read;
     }
 
-    public async update(updating: SingleOrArray<JsonPlaytestingReview>, { upsert = true }: { upsert?: boolean } = {}) {
+    public async update(updating: SingleOrArray<IPlaytestReview>, { upsert = true }: { upsert?: boolean } = {}) {
         const reviews = asArray(updating);
         const groups = groupBy(reviews, (review) => review.project);
-        const updated: JsonPlaytestingReview[] = [];
+        const updated: IPlaytestReview[] = [];
         for (const [pNumber, pReviews] of groups.entries()) {
             const [project] = await dataService.projects.read({ number: pNumber });
             // TODO: Error if project is missing
@@ -106,7 +106,7 @@ class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
         return updated;
     }
 
-    public async destroy(destroying: SingleOrArray<DeepPartial<JsonPlaytestingReview>>) {
+    public async destroy(destroying: SingleOrArray<DeepPartial<IPlaytestReview>>) {
         const reviews = asArray(destroying);
         const groups = groupBy(reviews, (review) => review.project);
         // If no project is specified, read that from all active projects
@@ -116,7 +116,7 @@ class ReviewDataSource extends GASDataSource<JsonPlaytestingReview> {
             allActiveProjects.forEach((project) => groups.set(project.number, noProjectCards));
             groups.delete(undefined);
         }
-        const destroyed: JsonPlaytestingReview[] = [];
+        const destroyed: IPlaytestReview[] = [];
         for (const [pNumber, pReviews] of groups.entries()) {
             const [project] = await dataService.projects.read({ number: pNumber });
 

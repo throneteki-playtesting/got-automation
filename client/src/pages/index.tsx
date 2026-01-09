@@ -7,17 +7,43 @@ import Cards from "./cards";
 import Suggestions from "./suggestions";
 import Users from "./admin/users";
 import Roles from "./admin/roles";
+import AuthRedirect from "./authRedirect";
+import Project from "./project";
+import Card from "./card";
 
 export type NavItem = PageItem | MenuItem;
-export type PageItem = BaseNav & { path: string, element: ReactElement };
+export type PageItem = BaseNav & { path: string, element?: ReactElement };
 export type MenuItem = BaseNav & { subPages: NavItem[] }
-type BaseNav = { label: string, permission?: SingleOrArray<Permission> }
+type BaseNav = { label?: string, permission?: SingleOrArray<Permission> }
 
 export const navItems: NavItem[] = [
     {
         path: "/",
         label: "Home",
         element: <Home />
+    },
+    {
+        path: "/authRedirect",
+        element: <AuthRedirect />
+    },
+    {
+        path: "/project/:number",
+        element: <Project />
+    },
+    {
+        path: "/project/:project/:number",
+        element: <Card />
+    },
+    {
+        label: "Projects",
+        subPages: [
+            {
+                path: "/project/create",
+                label: "+ New Project",
+                permission: Permission.CREATE_PROJECTS,
+                element: <Project isCreating={true}/>
+            }
+        ]
     },
     {
         path: "/cards",
@@ -53,7 +79,8 @@ export const navItems: NavItem[] = [
             }
         ]
     }
-];
+] as const;
+
 export const profileItems: PageItem[] = [
     {
         // TODO: Add profile page
@@ -61,7 +88,7 @@ export const profileItems: PageItem[] = [
         label: "Profile",
         element: <div />
     }
-];
+] as const;
 
 export const isVisibleFor = (page: NavItem, user?: User): boolean => {
     const pagePermissions = asArray(page.permission ?? []);
@@ -80,7 +107,7 @@ export const isVisibleFor = (page: NavItem, user?: User): boolean => {
 };
 
 export function isPageItem(navItem: NavItem): navItem is PageItem {
-    return "element" in navItem;
+    return "path" in navItem;
 }
 export function isMenuItem(navItem: NavItem): navItem is MenuItem {
     return "subPages" in navItem;

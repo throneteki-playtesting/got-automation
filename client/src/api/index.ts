@@ -1,13 +1,15 @@
 import { BaseQueryFn, createApi, FetchArgs, fetchBaseQuery, FetchBaseQueryError, FetchBaseQueryMeta } from "@reduxjs/toolkit/query/react";
-import { JsonProject } from "common/models/projects";
+import { IProject } from "common/models/projects";
 import { Role, User } from "common/models/user";
 import { DeepPartial, SingleOrArray } from "common/types";
-import { asArray, buildUrl } from "common/utils";
+import { buildUrl, SemanticVersion } from "common/utils";
 import { clearUser } from "./authSlice";
 import { StatusCodes } from "http-status-codes";
-import { CardSuggestion, PlaytestableCard, RenderableCard } from "common/models/cards";
 import { UUID } from "crypto";
 import { BatchRenderJob, IGetEndpoint, RefreshAuthResponse, SingleRenderJob } from "server/types";
+import { ICardSuggestion, IPlaytestCard, IRenderCard } from "common/models/cards";
+import { IReviewCollection } from "common/collections/reviewCollection";
+import { IPlaytestReview } from "common/models/reviews";
 
 const tag = {
     Me: "Me",
@@ -139,14 +141,14 @@ const api = createApi({
             }
         }),
         // Cards API
-        getCards: builder.query<PlaytestableCard[], { filter?: SingleOrArray<DeepPartial<PlaytestableCard>>, latest?: boolean } | void>({
+        getCards: builder.query<IPlaytestCard[], { filter?: SingleOrArray<DeepPartial<IPlaytestCard>>, latest?: boolean } | void>({
             query: (options) => {
                 const url = buildUrl("cards", { filter: options?.filter, latest: options?.latest });
                 return { url, method: "GET" };
             },
             providesTags: [{ type: tag.Card, id: "LIST" }]
         }),
-        getCard: builder.query<PlaytestableCard[], { project: number, number: number, latest?: boolean }>({
+        getCard: builder.query<IPlaytestCard[], { project: number, number: number, latest?: boolean }>({
             query: (options) => {
                 const url = buildUrl(`cards/${options.project}/${options.number}`, { latest: options.latest });
                 return { url, method: "GET" };
@@ -157,39 +159,51 @@ const api = createApi({
                 ] : [];
             }
         }),
-        pushCards: builder.mutation<PlaytestableCard[], SingleOrArray<PlaytestableCard>>({
-            query: (cards) => {
-                const url = buildUrl("cards");
-                const body = asArray(cards);
-                return { url, method: "POST", body };
+        putDraft: builder.mutation<IPlaytestCard, IPlaytestCard>({
+            query: (card) => {
+                const url = buildUrl(`cards/${card.project}/${card.number}/draft`);
+                const body = card;
+                return { url, method: "PUT", body };
             },
             invalidatesTags: (_result, _error, arg) => {
                 return [
-                    ...asArray(arg).map((a) => ({ type: tag.Card, id: a.code })),
+                    { type: tag.Card, id: arg.code },
+                    { type: tag.Card, id: "LIST" }
+                ];
+            }
+        }),
+        deleteDraft: builder.mutation<number, IPlaytestCard>({
+            query: (card) => {
+                const url = buildUrl(`cards/${card.project}/${card.number}/draft`);
+                return { url, method: "DELETE" };
+            },
+            invalidatesTags: (_result, _error, arg) => {
+                return [
+                    { type: tag.Card, id: arg.code },
                     { type: tag.Card, id: "LIST" }
                 ];
             }
         }),
         // Suggestions API
-        getSuggestions: builder.query<CardSuggestion[], IGetEndpoint<CardSuggestion> | void>({
+        getSuggestions: builder.query<ICardSuggestion[], IGetEndpoint<ICardSuggestion> | void>({
             query: (options) => {
                 const url = buildUrl("suggestions", options);
                 return { url, method: "GET" };
             },
             providesTags: [{ type: tag.Suggestion, id: "LIST" }]
         }),
-        getSuggestionsBy: builder.query<CardSuggestion[], { discordId: string, filter?: SingleOrArray<DeepPartial<CardSuggestion>> }>({
+        getSuggestionsBy: builder.query<ICardSuggestion[], { discordId: string, filter?: SingleOrArray<DeepPartial<ICardSuggestion>> }>({
             query: (options) => {
                 const url = buildUrl(`suggestions/${options.discordId}`, { filter: options?.filter });
                 return { url, method: "GET" };
             },
             providesTags: (result) => {
                 return result && result.length > 0 ? [
-                    { type: tag.Suggestion, id: result[0].suggestedBy }
+                    { type: tag.Suggestion, id: result[0].user.discordId }
                 ] : [];
             }
         }),
-        submitSuggestion: builder.mutation<CardSuggestion, CardSuggestion>({
+        submitSuggestion: builder.mutation<ICardSuggestion, ICardSuggestion>({
             query: (card) => {
                 const url = buildUrl("suggestions");
                 const body = card;
@@ -197,13 +211,13 @@ const api = createApi({
             },
             invalidatesTags: (_result, _error, arg) => {
                 return [
-                    { type: tag.Suggestion, id: arg.suggestedBy },
+                    { type: tag.Suggestion, id: arg.user.discordId },
                     { type: tag.Suggestion, id: "LIST" },
                     { type: tag.Tag, id: "LIST" }
                 ];
             }
         }),
-        updateSuggestion: builder.mutation<CardSuggestion, CardSuggestion>({
+        updateSuggestion: builder.mutation<ICardSuggestion, ICardSuggestion>({
             query: (card) => {
                 const { id, ...body } = card;
                 const url = buildUrl(`suggestions/${id}`);
@@ -211,20 +225,20 @@ const api = createApi({
             },
             invalidatesTags: (_result, _error, arg) => {
                 return [
-                    { type: tag.Suggestion, id: arg.suggestedBy },
+                    { type: tag.Suggestion, id: arg.user.discordId },
                     { type: tag.Suggestion, id: "LIST" },
                     { type: tag.Tag, id: "LIST" }
                 ];
             }
         }),
-        deleteSuggestion: builder.mutation<number, CardSuggestion>({
+        deleteSuggestion: builder.mutation<number, ICardSuggestion>({
             query: (card) => {
                 const url = buildUrl(`suggestions/${card.id}`);
                 return { url, method: "DELETE" };
             },
             invalidatesTags: (_result, _error, arg) => {
                 return [
-                    { type: tag.Suggestion, id: arg.suggestedBy },
+                    { type: tag.Suggestion, id: arg.user.discordId },
                     { type: tag.Suggestion, id: "LIST" },
                     { type: tag.Tag, id: "LIST" }
                 ];
@@ -238,7 +252,7 @@ const api = createApi({
             providesTags: [{ type: tag.Tag, id: "LIST" }]
         }),
         // Render API
-        renderImage: builder.mutation<string, RenderableCard>({
+        renderImage: builder.mutation<string, IRenderCard>({
             query: (card) => {
                 const body = card;
                 const url = buildUrl("render", { format: "PNG", rounded: true });
@@ -263,9 +277,28 @@ const api = createApi({
             }
         }),
         // Projects API
-        getProject: builder.query<JsonProject, { number: number }>({
+        getProjects: builder.query<IProject[], { filter?: SingleOrArray<DeepPartial<IProject>> } | void>({
+            query: (options) => {
+                const url = buildUrl("projects", { filter: options?.filter });
+                return { url, method: "GET" };
+            }
+        }),
+        getProject: builder.query<IProject, { number: number }>({
             query: (options) => {
                 const url = buildUrl(`projects/${options.number}`);
+                return { url, method: "GET" };
+            }
+        }),
+        // Reviews API
+        getCardReviews: builder.query<IReviewCollection<IPlaytestReview>, { project: number, number: number }>({
+            query: (options) => {
+                const url = buildUrl(`reviews/${options.project}/${options.number}`);
+                return { url, method: "GET" };
+            }
+        }),
+        getCardVersionReviews: builder.query<IPlaytestReview[], { project: number, number: number, version: SemanticVersion }>({
+            query: (options) => {
+                const url = buildUrl(`reviews/${options.project}/${options.number}/${options.version}`);
                 return { url, method: "GET" };
             }
         })
@@ -282,7 +315,9 @@ export const {
     useUpdateRoleMutation,
     useGetCardsQuery,
     useGetCardQuery,
-    usePushCardsMutation,
+    usePutDraftMutation,
+    useDeleteDraftMutation,
+    // usePushCardsMutation,
     useGetSuggestionsQuery,
     useGetSuggestionsByQuery,
     useSubmitSuggestionMutation,
@@ -291,7 +326,10 @@ export const {
     useGetTagsQuery,
     useRenderImageMutation,
     useGetRenderJobQuery,
-    useGetProjectQuery
+    useGetProjectsQuery,
+    useGetProjectQuery,
+    useGetCardReviewsQuery,
+    useGetCardVersionReviewsQuery
 } = api;
 
 export default api;

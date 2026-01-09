@@ -1,5 +1,4 @@
 const database = "gotautomation";
-const collection = "cards";
 
 use(database);
 
@@ -15,7 +14,7 @@ const factionMap = {
     "Neutral": "neutral"
 };
 
-const cards = db.getCollection(collection);
+const cards = db.getCollection("cards");
 
 cards.find({}).forEach(card => {
     // 1. Faction mapping
@@ -58,4 +57,68 @@ cards.find({}).forEach(card => {
     });
 });
 
-cards.createIndex({ project: 1, version: 1, number: 1 });
+cards.createIndex({ project: 1, version: 1, number: 1 }, { unique: true });
+
+
+const projects = db.getCollection("projects");
+
+projects.find({}).forEach(project => {
+    // 1. Add number as code
+    project.number = project.code;
+
+    // 2. Set code to short
+    project.code = project.short;
+    delete project.short;
+
+    // 3. Lowercase type
+    project.type = project.type.toLowerCase();
+
+    // 4. Set version to releases
+    project.version = project.releases;
+    delete project.releases;
+
+    // 5. Set created/updated epoch
+    project.created = project.updated = new Date().getTime();
+
+    // 6. Replace _id with new ObjectId
+    const newId = new ObjectId();
+
+    // 7. Apply update
+    projects.deleteOne({ _id: project._id });
+    projects.insertOne({
+        ...project,
+        _id: newId
+    });
+});
+
+projects.createIndex({ number: 1 }, { unique: true });
+
+
+const reviews = db.getCollection("reviews");
+
+reviews.find({}).forEach(review => {
+    // 1. Replace projectId with project
+    review.project = review.projectId;
+    delete review.projectId;
+
+    // 2. Replace epoch with created/updated
+    review.created = review.epoch;
+    review.updated = review.epoch;
+    delete review.epoch;
+
+    // 3. Remove unnecessary properties;
+    delete review.faction;
+    delete review.name;
+
+    // 4. Replace _id with new ObjectId
+    const newId = new ObjectId();
+
+    // 5. Apply update
+    reviews.deleteOne({ _id: review._id });
+    reviews.insertOne({
+        ...review,
+        _id: newId
+    });
+});
+
+reviews.createIndex({ reviewer: 1, project: 1, number: 1, version: 1 }, { unique: true });

@@ -4,7 +4,7 @@ import { getProperty, GooglePropertiesType } from "../../settings";
 import { DataSerializer } from "./dataSerializer";
 import { DeepPartial } from "common/types";
 
-class ReviewSerializer extends DataSerializer<Review.JsonPlaytestingReview> {
+class ReviewSerializer extends DataSerializer<Review.IPlaytestReview> {
     richTextColumns: number[] = [ReviewColumn.Decks, ReviewColumn.Additional];
     public deserialize(values: string[]) {
         const project = parseInt(getProperty(GooglePropertiesType.Script, "number"));
@@ -23,17 +23,18 @@ class ReviewSerializer extends DataSerializer<Review.JsonPlaytestingReview> {
                 releasable: values[ReviewColumn.Releasable] as Review.StatementAnswer
             },
             additional: values[ReviewColumn.Additional] || undefined,
-            epoch: new Date(values[ReviewColumn.Date]).getTime()
-        } as Review.JsonPlaytestingReview;
+            created: new Date(values[ReviewColumn.Date]).getTime(),
+            updated: new Date(values[ReviewColumn.Date]).getTime()
+        } as Review.IPlaytestReview;
 
         return model;
     }
 
-    public serialize(model: Review.JsonPlaytestingReview) {
+    public serialize(model: Review.IPlaytestReview) {
         const values: string[] = Array.from({ length: maxEnum(ReviewColumn) });
         values[ReviewColumn.Number] = model.number.toString();
         values[ReviewColumn.Version] = model.version;
-        values[ReviewColumn.Date] = new Date(model.epoch).toLocaleString();
+        values[ReviewColumn.Date] = new Date(model.created).toLocaleString();
         values[ReviewColumn.Reviewer] = model.reviewer;
         values[ReviewColumn.Decks] = model.decks.map((deck, index) => `<a href="${deck}">Deck ${index + 1}</a>`).join("\n");
         values[ReviewColumn.Played] = model.played.toString();
@@ -47,7 +48,7 @@ class ReviewSerializer extends DataSerializer<Review.JsonPlaytestingReview> {
         return values;
     }
 
-    public matches(values: string[], index: number, filter: DeepPartial<Review.JsonPlaytestingReview>) {
+    public matches(values: string[], index: number, filter: DeepPartial<Review.IPlaytestReview>) {
         const compare = (a: number | string | boolean | undefined, b: number | string | boolean) => {
             if (!a) {
                 return false;
@@ -61,7 +62,7 @@ class ReviewSerializer extends DataSerializer<Review.JsonPlaytestingReview> {
             && compare(filter.reviewer, values[ReviewColumn.Reviewer])
         );
     }
-    public filter(values: string[], index: number, filter?: DeepPartial<Review.JsonPlaytestingReview>) {
+    public filter(values: string[], index: number, filter?: DeepPartial<Review.IPlaytestReview>) {
         if (!filter || Object.keys(filter).length === 0) {
             return true;
         }
@@ -87,7 +88,8 @@ class ReviewSerializer extends DataSerializer<Review.JsonPlaytestingReview> {
             && compare(filter.statements?.releasable, values[ReviewColumn.Releasable])
             && compare(filter.additional, values[ReviewColumn.Additional])
             // More expensive checks at the end
-            && (!filter.epoch || new Date(filter.epoch).toLocaleString() === values[ReviewColumn.Date])
+            && (!filter.created || new Date(filter.created).toLocaleString() === values[ReviewColumn.Date])
+            && (!filter.updated || new Date(filter.updated).toLocaleString() === values[ReviewColumn.Date])
             && (!filter.decks || values[ReviewColumn.Decks].split("\n").length === filter.decks.length) // TODO: Compare url's instead somehow
         );
     }

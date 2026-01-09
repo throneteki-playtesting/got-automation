@@ -203,7 +203,7 @@ export default class ReviewThreads {
             }
 
             // Put timestamp on last embed
-            embeds[embeds.length - 1].setTimestamp(new Date(review.epoch));
+            embeds[embeds.length - 1].setTimestamp(new Date(review.created));
 
             return {
                 content,

@@ -7,7 +7,7 @@ import ReviewThreads from "../reviewThreads";
 import { updateFormData } from "@/processing/reviews";
 import * as FormController from "gas/controllers/formController";
 import GasClient from "@/google/gasClient";
-import { JsonPlaytestingReview } from "common/models/reviews";
+import { IPlaytestReview } from "common/models/reviews";
 import { DeepPartial } from "common/types";
 
 const sync = {
@@ -316,7 +316,7 @@ const command = {
                 ...(reviewer && { reviewer: reviewer.nickname || reviewer.displayName }),
                 ...(number && { number }),
                 ...(version && { version })
-            } as DeepPartial<JsonPlaytestingReview>;
+            } as DeepPartial<IPlaytestReview>;
 
             const [project] = await dataService.projects.read({ number: projectId });
             // Get reviews from the form, not from the spreadsheet (as it contains all responses)
@@ -328,7 +328,7 @@ const command = {
             // Sort reviews by date (latest first), then distinct the list (keeping first reviews, thus the "latest")
             // This ensures that only the latest version of that review (by number, version & reviewer) is being saved
             const distinct = response.reviews
-                .sort((r1, r2) => r2.epoch - r1.epoch)
+                .sort((r1, r2) => r2.created - r1.created)
                 .filter((r, i, a) =>
                     a.findIndex((rv) =>
                         rv.number === r.number

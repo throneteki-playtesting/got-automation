@@ -1,7 +1,7 @@
-import { JsonPlaytestingReview, PlayedRange, Statements } from "common/models/reviews";
+import { IPlaytestReview, PlayedRange, Statements } from "common/models/reviews";
 import { SemanticVersion } from "common/utils";
 
-class Review implements JsonPlaytestingReview {
+class Review implements IPlaytestReview {
     public reviewer: string;
     public project: number;
     public number: number;
@@ -10,9 +10,10 @@ class Review implements JsonPlaytestingReview {
     public played: PlayedRange;
     public statements: Statements;
     public additional?: string;
-    public epoch: number;
+    public created: number;
+    public updated: number;
 
-    constructor(data: JsonPlaytestingReview) {
+    constructor(data: IPlaytestReview) {
         this.reviewer = data.reviewer;
         this.project = data.project;
         this.number = data.number;
@@ -21,7 +22,8 @@ class Review implements JsonPlaytestingReview {
         this.played = data.played;
         this.statements = data.statements;
         this.additional = data.additional;
-        this.epoch = data.epoch;
+        this.created = data.created;
+        this.updated = data.updated;
     }
 
     toString() {

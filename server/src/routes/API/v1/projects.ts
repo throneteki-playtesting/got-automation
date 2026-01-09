@@ -3,14 +3,14 @@ import { celebrate, Joi, Segments } from "celebrate";
 import asyncHandler from "express-async-handler";
 import { dataService } from "@/services";
 import * as Schemas from "common/models/schemas";
-import { JsonProject } from "common/models/projects";
+import { IProject } from "common/models/projects";
 import { DeepPartial, SingleOrArray } from "common/types";
 
 const router = express.Router();
 
 type ProjectParam = { number: number };
-type FilterQuery = { filter?: SingleOrArray<DeepPartial<JsonProject>> }
-type ProjectBody = SingleOrArray<JsonProject>;
+type FilterQuery = { filter?: SingleOrArray<DeepPartial<IProject>> }
+type ProjectBody = SingleOrArray<IProject>;
 
 const handleGetProjects = [
     celebrate({
@@ -50,6 +50,8 @@ router.get("/:number",
             next(err);
         }
     }, ...handleGetProjects, (req, res) => res.json(req.body[0] ?? {}));
+
+// TODO: Add /:number/initialise
 
 // TODO: Openapi spec
 // TODO: More endpoint options (get, post = create, put = complete update, patch = partial update)

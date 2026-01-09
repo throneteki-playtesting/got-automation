@@ -1,131 +1,80 @@
-import { Card, CardSuggestion } from "common/models/cards";
+import { ICardSuggestion } from "common/models/cards";
 import { BaseElementProps } from "../../types";
-import { addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { addToast, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import { useSubmitSuggestionMutation, useUpdateSuggestionMutation } from "../../api";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DeepPartial } from "common/types";
-import { useSelector } from "react-redux";
-import { RootState } from "../../api/store";
-import CardEditor, { CardEditorRef } from "../../components/cardEditor";
-import ComboBox from "../../components/combobox";
+import CardEditor from "../../components/cardEditor";
 import { renderCardSuggestion } from "common/utils";
 import CardPreview from "@agot/card-preview";
+import { Wizard, WizardBack, WizardNext, WizardPage, WizardPages } from "../../components/wizard";
+import { CardSuggestion } from "common/models/schemas";
+import ComboBox from "../../components/combobox";
+import { RootState } from "../../api/store";
+import { useSelector } from "react-redux";
 
-const EditSuggestionModal = ({ card: initialCard, onOpenChange, onSave: onSuggestionSave }: EditSuggestionModalProps) => {
+const EditSuggestionModal = ({ isOpen, suggestion: initial, onClose: onModalClose = () => true, onSave = () => true }: EditSuggestionModalProps) => {
     const user = useSelector((state: RootState) => state.auth.user);
     const [submitSuggestion, { isLoading: isSubmitting }] = useSubmitSuggestionMutation();
     const [updateSuggestion, { isLoading: isUpdating }] = useUpdateSuggestionMutation();
-    const editorRef = useRef<CardEditorRef>(null);
-    const [cardPreview, setCardPreview] = useState<DeepPartial<Card>>({});
-    const [tags, setTags] = useState<string[]>([]);
+    const [suggestion, setSuggestion] = useState<DeepPartial<ICardSuggestion>>({});
+
+    const isNew = useMemo(() => !suggestion?.id, [suggestion?.id]);
 
     useEffect(() => {
-        setCardPreview(initialCard || {});
-        setTags(initialCard?.tags || []);
-    }, [initialCard]);
+        setSuggestion({ ...initial, ...(isNew && user && { user: { discordId: user.discordId, displayname: user.displayname } }) });
+    }, [initial, isNew, user]);
 
-    const isNew = useMemo(() => !initialCard?.id, [initialCard?.id]);
+    const onSubmit = useCallback(async (validSuggestion: ICardSuggestion) => {
+        setSuggestion(validSuggestion);
 
-    const onSubmit = useCallback(async () => {
-        if (!user || !editorRef.current) {
-            return;
-        }
+        try {
+            const newSuggestion = isNew ? await submitSuggestion(validSuggestion).unwrap() : await updateSuggestion(validSuggestion).unwrap();
+            setSuggestion(newSuggestion);
+            onSave(newSuggestion);
 
-        const card = editorRef.current.getCard();
-        if (editorRef.current.validate(card)) {
-            // CardSuggestion does not have code
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { code, ...props } = card;
-            const suggestion: CardSuggestion = {
-                ...props,
-                suggestedBy: user.discordId,
-                created: new Date().toUTCString(),
-                updated: new Date().toUTCString(),
-                likedBy: [],
-                tags
-            };
-            try {
-
-                await submitSuggestion(suggestion).unwrap();
-                if (onSuggestionSave) {
-                    onSuggestionSave();
-                }
-                addToast({ title: "Successfully submitted", color: "success", description: `'${suggestion.name}' has been added to suggestions` });
-            } catch (err) {
+            addToast({ title: "Successfully saved", color: "success", description: `'${newSuggestion.card.name}' has been saved` });
+        } catch (err) {
             // TODO: Better error handling from redux (eg. use ApiError.message for description)
-                addToast({ title: "Failed to submit", color: "danger", description: "An unknown error has occurred" });
-            }
+            addToast({ title: "Failed to save", color: "danger", description: "An unknown error has occurred" });
         }
-    }, [onSuggestionSave, submitSuggestion, tags, user]);
+    }, [isNew, onSave, submitSuggestion, updateSuggestion]);
 
-    const onUpdate = useCallback(async () => {
-        if (!user || !editorRef.current) {
-            return;
-        }
-
-        const card = editorRef.current.getCard();
-        if (editorRef.current.validate(card)) {
-            // CardSuggestion does not have code
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { code, ...props } = card;
-            const suggestion: CardSuggestion = {
-                ...props,
-                suggestedBy: user.discordId,
-                created: new Date().toUTCString(),
-                updated: new Date().toUTCString(),
-                likedBy: [],
-                tags
-            };
-            try {
-
-                await updateSuggestion(suggestion).unwrap();
-                if (onSuggestionSave) {
-                    onSuggestionSave();
-                }
-                addToast({ title: "Successfully updated", color: "success", description: `'${suggestion.name}' has been updated` });
-            } catch (err) {
-            // TODO: Better error handling from redux (eg. use ApiError.message for description)
-                addToast({ title: "Failed to submit", color: "danger", description: "An unknown error has occurred" });
-            }
-        }
-    }, [onSuggestionSave, tags, updateSuggestion, user]);
-
-    const title = useMemo(() => isNew ? "New suggestion" : "Edit suggestion", [isNew]);
-
-    return <Modal isOpen={!!initialCard} placement="top-center" onOpenChange={onOpenChange} size="3xl">
+    return <Modal isOpen={isOpen} placement="top-center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="3xl">
         <ModalContent>
             {(onClose) => (
-                <>
-                    <ModalHeader>{title}</ModalHeader>
+                <Wizard
+                    schema={CardSuggestion.Draft}
+                    onSubmit={onSubmit}
+                    data={suggestion}
+                    onError={() => addToast({ title: "Error", color: "danger", description: "Failed to submit. Check console for errors" })}
+                >
+                    <ModalHeader>Card Suggestion Editor</ModalHeader>
                     <ModalBody>
-                        <div className="flex flex-col gap-2 md:flex-row">
-                            <CardPreview card={renderCardSuggestion(cardPreview)} className="self-center md:self-start shrink-0"/>
-                            <div className="grow space-y-2">
-                                <CardEditor ref={editorRef} card={{ code: "00000", ...initialCard }} onUpdate={setCardPreview}/>
-                                <ComboBox label="Tags" values={tags} onChange={setTags} chip={{ color: "primary", size: "sm" }}/>
-                            </div>
+                        <div className="flex flex-col md:flex-row gap-2">
+                            <CardPreview card={renderCardSuggestion(suggestion)} className="self-center md:self-start shrink-0"/>
+                            <WizardPages>
+                                <WizardPage data={{ card: suggestion.card }}>
+                                    <CardEditor className="w-full" card={suggestion.card} onUpdate={(card) => setSuggestion((prev) => ({ ...prev, card }))} inputOptions={{ designer: "hidden" }}/>
+                                </WizardPage>
+                                <WizardPage data={{ tags: suggestion.tags }}>
+                                    <ComboBox label="Tags" values={suggestion.tags ?? []} onChange={(tags) => setSuggestion((prev) => ({ ...prev, tags }))} chip={{ color: "primary", size: "sm" }}/>
+                                </WizardPage>
+                            </WizardPages>
                         </div>
                     </ModalBody>
                     <ModalFooter>
-                        <Button color="danger" variant="flat" onPress={onClose}>
-                            Cancel
-                        </Button>
-                        {isNew ?
-                            <Button color="primary" isLoading={isSubmitting} onPress={onSubmit}>
-                                Submit
-                            </Button> :
-                            <Button color="primary" isLoading={isUpdating} onPress={onUpdate}>
-                                Save
-                            </Button>
-                        }
-
+                        <ModalFooter>
+                            <WizardBack onCancel={onClose}/>
+                            <WizardNext isLoading={isSubmitting || isUpdating} color={"primary"}/>
+                        </ModalFooter>
                     </ModalFooter>
-                </>
+                </Wizard>
             )}
         </ModalContent>
     </Modal>;
 };
 
-type EditSuggestionModalProps = Omit<BaseElementProps, "children"> & { card?: DeepPartial<CardSuggestion>, onOpenChange: ((isOpen?: boolean) => void), onSave?: () => void }
+type EditSuggestionModalProps = Omit<BaseElementProps, "children"> & { isOpen: boolean, suggestion?: DeepPartial<ICardSuggestion>, onClose?: () => void, onSave?: (suggestion: ICardSuggestion) => void }
 
 export default EditSuggestionModal;

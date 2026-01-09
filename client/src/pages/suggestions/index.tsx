@@ -1,5 +1,5 @@
 import { ReactElement, useState } from "react";
-import { CardSuggestion, Faction, Type } from "common/models/cards";
+import { Faction, ICard, ICardSuggestion, Type } from "common/models/cards";
 import { useDeleteSuggestionMutation, useGetSuggestionsQuery, useRenderImageMutation } from "../../api";
 import FactionFilter from "../../components/data/factionFilter";
 import TypeFilter from "../../components/data/typeFilter";
@@ -28,51 +28,51 @@ const SortOptions = {
 };
 
 const Suggestions = () => {
-    const [editingCard, setEditingCard] = useState<DeepPartial<CardSuggestion>>();
+    const [editing, setEditing] = useState<DeepPartial<ICardSuggestion>>();
 
     // Filters
     const [factions, setFactions] = useState<Faction[]>([]);
     const [types, setTypes] = useState<Type[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [tags, setTags] = useState<string[]>([]);
-    const filters = useFilters({ faction: factions, type: types, suggestedBy: users.map((user) => user.discordId), tags: tags.map((tag) => [tag]) });
+    const filters = useFilters({ faction: factions, type: types, user: users.map((user) => ({ discordId: user.discordId })), tags: tags.map((tag) => [tag]) });
 
-    const [orderBy, setOrderBy] = useState<Sortable<CardSuggestion>>();
+    const [orderBy, setOrderBy] = useState<Sortable<ICard>>();
 
-    const { data: suggestions, isLoading, isError } = useGetSuggestionsQuery({ filter: filters, orderBy });
+    const { data: suggestions, isLoading, isError } = useGetSuggestionsQuery({ filter: filters, orderBy: { card: orderBy } });
     const [deleteSuggestion, { isLoading: isDeleting, originalArgs: deleting }] = useDeleteSuggestionMutation();
     const [renderImage, { isLoading: isRenderingImage, originalArgs: renderingImage }] = useRenderImageMutation();
 
-    const isDeletingCard = (card: CardSuggestion) => isDeleting && deleting?.id === card.id;
-    const isRenderingCard = (card: CardSuggestion) => isRenderingImage && renderingImage?.key === card.id;
+    const isDeletingSuggestion = (suggestion: ICardSuggestion) => isDeleting && deleting?.id === suggestion.id;
+    const isRenderingSuggestion = (suggestion: ICardSuggestion) => isRenderingImage && renderingImage?.key === suggestion.id;
 
-    const canEdit = (user: User, card: CardSuggestion) => {
-        return (hasPermission(user, Permission.MAKE_SUGGESTIONS) && user.discordId === card.suggestedBy)
+    const canEdit = (user: User, suggestion: ICardSuggestion) => {
+        return (hasPermission(user, Permission.MAKE_SUGGESTIONS) && user.discordId === suggestion.user.discordId)
             || hasPermission(user, Permission.EDIT_SUGGESTIONS);
     };
-    const canDelete = (user: User, card: CardSuggestion) => {
-        return (hasPermission(user, Permission.MAKE_SUGGESTIONS) && user.discordId === card.suggestedBy)
+    const canDelete = (user: User, suggestion: ICardSuggestion) => {
+        return (hasPermission(user, Permission.MAKE_SUGGESTIONS) && user.discordId === suggestion.user.discordId)
             || hasPermission(user, Permission.DELETE_SUGGESTIONS);
     };
 
-    const onEdit = (card: CardSuggestion) => {
-        setEditingCard(card);
+    const onEdit = (suggestion: ICardSuggestion) => {
+        setEditing(suggestion);
     };
-    const onExportPNG = async (card: CardSuggestion) => {
+    const onExportPNG = async (suggestion: ICardSuggestion) => {
         try {
-            const cardRender = renderCardSuggestion(card);
+            const cardRender = renderCardSuggestion(suggestion);
             const result = await renderImage(cardRender).unwrap();
-            const filename = `${card.id || crypto.randomUUID()}.png`;
+            const filename = `${suggestion.id || crypto.randomUUID()}.png`;
             download(result, filename);
         } catch (err) {
             // TODO: Better error handling from redux (eg. use ApiError.message for description)
             addToast({ title: "Failed to download", color: "danger", description: "An unknown error has occurred" });
         }
     };
-    const onDelete = async (card: CardSuggestion) => {
+    const onDelete = async (suggestion: ICardSuggestion) => {
         try {
-            await deleteSuggestion(card).unwrap();
-            addToast({ title: "Successfully deleted", color: "success", description: `Successfully deleted ${card.name}` });
+            await deleteSuggestion(suggestion).unwrap();
+            addToast({ title: "Successfully deleted", color: "success", description: "Successfully deleted suggestion" });
         } catch (err) {
             // TODO: Better error handling from redux (eg. use ApiError.message for description)
             addToast({ title: "Failed to delete", color: "danger", description: "An unknown error has occurred" });
@@ -115,7 +115,7 @@ const Suggestions = () => {
                     </AccordionItem>
                 </Accordion>
             </div>
-            <div className='flex flex-col gap-2'>
+            <div className='flex flex-col gap-2 flex-grow'>
                 <div className="flex gap-1">
                     <PermissionGate requires={Permission.IMPORT_SUGGESTIONS}>
                         <Button size="sm" isIconOnly={true}>
@@ -123,7 +123,7 @@ const Suggestions = () => {
                         </Button>
                     </PermissionGate>
                     <PermissionGate requires={Permission.MAKE_SUGGESTIONS}>
-                        <Button className="grow" size="sm" onPress={() => setEditingCard({})}>
+                        <Button className="grow" size="sm" onPress={() => setEditing({})}>
                         Create Suggestion
                         </Button>
                     </PermissionGate>
@@ -134,30 +134,30 @@ const Suggestions = () => {
                     </PermissionGate>
                 </div>
                 <CardGrid cards={suggestions ?? []} isLoading={isLoading} isError={isError} emptyContent={"No suggestions found"}>
-                    {(card) => (
-                        <div key={card.id} className="relative">
-                            {isDeletingCard(card) && <div className="absolute right-0 w-full h-full z-2 flex justify-center items-center"><Spinner size="lg"/></div>}
+                    {(suggestion) => (
+                        <div key={suggestion.id} className="relative">
+                            {isDeletingSuggestion(suggestion) && <div className="absolute right-0 w-full h-full z-2 flex justify-center items-center"><Spinner size="lg"/></div>}
                             <div className="absolute right-0 w-full h-full z-1 opacity-25 p-1 flex justify-end hover:opacity-90 transition-opacity gap-0.5">
-                                <CardButton onPress={() => onEdit(card)} requires={(user) => canEdit(user, card)}>
+                                <CardButton onPress={() => onEdit(suggestion)} requires={(user) => canEdit(user, suggestion)}>
                                     <FontAwesomeIcon icon={faPencil}/>
                                 </CardButton>
-                                <CardButton isLoading={isRenderingCard(card)} onPress={() => onExportPNG(card)} requires={Permission.RENDER_CARDS}>
+                                <CardButton isLoading={isRenderingSuggestion(suggestion)} onPress={() => onExportPNG(suggestion)} requires={Permission.RENDER_CARDS}>
                                     <FontAwesomeIcon icon={faFileImage}/>
                                 </CardButton>
-                                <CardButton isLoading={isDeletingCard(card)} onPress={() => onDelete(card)} requires={(user) => canDelete(user, card)}>
+                                <CardButton isLoading={isDeletingSuggestion(suggestion)} onPress={() => onDelete(suggestion)} requires={(user) => canDelete(user, suggestion)}>
                                     <FontAwesomeIcon icon={faX}/>
                                 </CardButton>
                             </div>
                             <CardPreview
-                                card={renderCardSuggestion(card)}
+                                card={renderCardSuggestion(suggestion)}
                                 orientation="vertical"
                                 rounded={true}
-                                className={classNames("relative transition-all", { "blur-xs": isDeletingCard(card) })}
+                                className={classNames("relative transition-all", { "blur-xs": isDeletingSuggestion(suggestion) })}
                             />
                         </div>)}
                 </CardGrid>
             </div>
-            <EditSuggestionModal card={editingCard} onOpenChange={() => setEditingCard(undefined)} onSave={() => setEditingCard(undefined)}/>
+            <EditSuggestionModal isOpen={!!editing} suggestion={editing} onClose={() => setEditing(undefined)} onSave={() => setEditing(undefined)}/>
         </div>
     );
 };

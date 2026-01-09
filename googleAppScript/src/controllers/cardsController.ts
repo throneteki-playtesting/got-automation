@@ -1,13 +1,13 @@
 import { DataSheet } from "../spreadsheets/spreadsheet";
 import { CardSerializer, CardSheet } from "../spreadsheets/serializers/cardSerializer";
 import * as RestClient from "../restClient";
-import { PlaytestableCard } from "common/models/cards";
+import { IPlaytestCard } from "common/models/cards";
 import { DeepPartial } from "common/types";
 
 export function doGet(path: string[], e: GoogleAppsScript.Events.DoGet) {
     const { latest, filter } = e.parameter;
     // Assume filter is in a valid partial format (eg. no error checking here!!!)
-    const partial = JSON.parse(filter || "{}") as DeepPartial<PlaytestableCard>;
+    const partial = JSON.parse(filter || "{}") as DeepPartial<IPlaytestCard>;
     const readFunc = (values: string[], index: number) => CardSerializer.instance.filter(values, index, partial);
 
     // Defaults to "archive" if latest is not given
@@ -18,7 +18,7 @@ export function doGet(path: string[], e: GoogleAppsScript.Events.DoGet) {
 }
 export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
     const { sheets, upsert, filter } = e.parameter;
-    const cards: PlaytestableCard[] = e.postData ? JSON.parse(e.postData.contents) : undefined;
+    const cards: IPlaytestCard[] = e.postData ? JSON.parse(e.postData.contents) : undefined;
 
     const action = path.shift();
     switch (action) {
@@ -32,7 +32,7 @@ export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
             const isUpsert = upsert === "true";
             // Update specified sheet(s), or all sheets if none are specified
             const cardSheets = sheets?.split(",").map((sheet) => sheet as CardSheet) || ["archive"];
-            const updated: PlaytestableCard[] = [];
+            const updated: IPlaytestCard[] = [];
             for (const sheet of cardSheets) {
                 const sheetUpdates = DataSheet.sheets[sheet].update(cards, false, isUpsert);
                 // Concat any cards that were updated & not already on updated list (by number/version)
@@ -45,7 +45,7 @@ export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
         case "destroy": {
             // Destroys cards from archive
             // Assume filter is in a valid partial format (eg. no error checking here!!!)
-            const partial = JSON.parse(filter || "{}") as DeepPartial<PlaytestableCard>;
+            const partial = JSON.parse(filter || "{}") as DeepPartial<IPlaytestCard>;
             const deleteFunc = (values: string[], index: number) => CardSerializer.instance.filter(values, index, partial);
 
             const destroyed = DataSheet.sheets.archive.delete(deleteFunc);
@@ -57,7 +57,7 @@ export function doPost(path: string[], e: GoogleAppsScript.Events.DoPost) {
     }
 }
 
-export interface CreateResponse { created: PlaytestableCard[] }
-export interface ReadResponse { cards: PlaytestableCard[] }
-export interface UpdateResponse { updated: PlaytestableCard[] }
-export interface DestroyResponse { destroyed: PlaytestableCard[] }
+export interface CreateResponse { created: IPlaytestCard[] }
+export interface ReadResponse { cards: IPlaytestCard[] }
+export interface UpdateResponse { updated: IPlaytestCard[] }
+export interface DestroyResponse { destroyed: IPlaytestCard[] }

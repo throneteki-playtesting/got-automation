@@ -4,13 +4,14 @@ import asyncHandler from "express-async-handler";
 import { dataService, discordService } from "@/services";
 import ReviewThreads from "@/discord/reviewThreads";
 import * as Schemas from "common/models/schemas";
-import { JsonPlaytestingReview } from "common/models/reviews";
-import { asArray } from "common/utils";
+import { IPlaytestReview } from "common/models/reviews";
+import { asArray, Regex, SemanticVersion } from "common/utils";
 import { SingleOrArray } from "common/types";
+import { StatusCodes } from "http-status-codes";
 
 const router = express.Router();
 
-type ReviewBody = SingleOrArray<JsonPlaytestingReview>;
+type ReviewBody = SingleOrArray<IPlaytestReview>;
 
 // TODO: More endpoint options (post = create, put = complete update, patch = partial update)
 router.post("/", celebrate({
@@ -38,6 +39,33 @@ router.post("/", celebrate({
         updated: allUpdated,
         failed: allFailed
     });
+}));
+
+router.get("/:project/:number", celebrate({
+    [Segments.PARAMS]: {
+        project: Joi.number().required(),
+        number: Joi.number().required()
+    }
+}), asyncHandler<{ project: number, number: number }, unknown, unknown, unknown>(async (req, res) => {
+    const { project, number } = req.params;
+
+    const reviews = await dataService.reviews.read({ project, number });
+
+    res.status(StatusCodes.OK).json(reviews);
+}));
+
+router.get("/:project/:number/:version", celebrate({
+    [Segments.PARAMS]: {
+        project: Joi.number().required(),
+        number: Joi.number().required(),
+        version: Joi.string().regex(Regex.SemanticVersion).required()
+    }
+}), asyncHandler<{ project: number, number: number, version: SemanticVersion }, unknown, unknown, unknown>(async (req, res) => {
+    const { project, number, version } = req.params;
+
+    const reviews = await dataService.reviews.read({ project, number, version });
+
+    res.status(StatusCodes.OK).json(reviews.all);
 }));
 
 export default router;

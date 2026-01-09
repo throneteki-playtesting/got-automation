@@ -3,7 +3,7 @@ import { Log } from "../cloudLogger";
 import { SemanticVersion } from "common/utils";
 import * as Forms from "../forms/form";
 import * as RestClient from "../restClient";
-import { JsonPlaytestingReview, PlayedRange } from "common/models/reviews";
+import { IPlaytestReview, PlayedRange } from "common/models/reviews";
 
 export function get() {
     return FormApp.openById(getProperty(GooglePropertiesType.Script, "formId"));
@@ -12,7 +12,7 @@ export function get() {
 export function toReviews(...formResponses: GoogleAppsScript.Forms.FormResponse[]) {
     const project = parseInt(getProperty(GooglePropertiesType.Script, "number"));
 
-    const reviews: JsonPlaytestingReview[] = [];
+    const reviews: IPlaytestReview[] = [];
     for (const response of formResponses) {
         const items = response.getItemResponses();
 
@@ -41,8 +41,9 @@ export function toReviews(...formResponses: GoogleAppsScript.Forms.FormResponse[
                 releasable: statements[Statements.Releasable]
             },
             additional: items[Question.Additional].getResponse() as string || undefined,
-            epoch: date.getTime()
-        } as JsonPlaytestingReview;
+            created: date.getTime(),
+            updated: date.getTime()
+        } as IPlaytestReview;
 
         reviews.push(review);
     }

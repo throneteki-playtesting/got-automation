@@ -3,6 +3,7 @@ import * as Cards from "./cards";
 import * as Projects from "./projects";
 import { playedRanges, statementAnswers } from "./reviews";
 import { Regex } from "../utils";
+import { Permission as UserPermissions } from "./user";
 
 const JoiXNumber = Joi.alternatives().try(
     Joi.number(),
@@ -13,7 +14,7 @@ const JoiXDashNumber = Joi.alternatives().try(
     Joi.string().valid("X", "-")
 );
 
-const Permission = Joi.number();
+const Permission = Joi.string().valid(...Object.values(UserPermissions));
 
 export type SchemaType = Joi.ObjectSchema<unknown>;
 
@@ -21,7 +22,7 @@ export const SingleOrArray = (object: Joi.ObjectSchema) => Joi.alternatives().tr
 
 export const Card = {
     Full: Joi.object({
-        code: Joi.string().regex(Regex.Card.code).required(),
+        code: Joi.string().regex(Regex.Card.code),
         faction: Joi.string().required().valid(...Cards.factions),
         name: Joi.string().required(),
         type: Joi.string().required().valid(...Cards.types),
@@ -36,6 +37,7 @@ export const Card = {
         designer: Joi.string(),
         deckLimit: Joi.number(),
         quantity: Joi.number(),
+        imageUrl: Joi.string(),
         cost: Joi.when("type", {
             is: Joi.valid("character", "location", "attachment", "event"),
             then: JoiXDashNumber.required()
@@ -135,6 +137,27 @@ export const PlaytestingCard = {
             short: Joi.string(),
             number: Joi.number()
         })
+    }),
+    Draft: Card.Full.keys({
+        project: Joi.number().required(),
+        version: Joi.string().regex(Regex.SemanticVersion),
+        number: Joi.number().required(),
+        note: Joi.object({
+            type: Joi.string().required().valid(...Cards.noteTypes),
+            text: Joi.string().when("type", {
+                is: Joi.not("implemented"),
+                then: Joi.required()
+            })
+        }).when("version", { not: Joi.string().valid("0.0.0"), then: Joi.required() }),
+        playtesting: Joi.string().regex(Regex.SemanticVersion),
+        github: Joi.object({
+            status: Joi.string().required().valid(...Cards.githubStatuses),
+            issueUrl: Joi.string().required()
+        }),
+        release: Joi.object({
+            short: Joi.string().required(),
+            number: Joi.number().required()
+        })
     })
 };
 
@@ -160,27 +183,47 @@ export const RenderedCard = {
 };
 
 export const CardSuggestion = {
-    Full: Card.Full.keys({
+    Full: Joi.object({
         _id: Joi.string(),
-        code: Joi.forbidden(), // Code not required (from card schema)
-        suggestedBy: Joi.string().required(),
+        user: Joi.object({
+            discordId: Joi.string().required(),
+            displayname: Joi.string().required()
+        }).required(),
         created: Joi.date().required(),
         updated: Joi.date().required(),
         threadId: Joi.string(),
         likedBy: Joi.array().items(Joi.string()).default([]),
         approvedBy: Joi.string(),
-        tags: Joi.array().items(Joi.string()).default([])
+        tags: Joi.array().items(Joi.string()).default([]),
+        card: Card.Full.required()
     }),
-    Partial: Card.Partial.keys({
+    Partial: Joi.object({
         _id: Joi.string(),
-        code: Joi.forbidden(), // Code not required (from card schema)
-        suggestedBy: Joi.string(),
+        user: Joi.object({
+            discordId: Joi.string(),
+            displayname: Joi.string()
+        }),
         created: Joi.date(),
         updated: Joi.date(),
         threadId: Joi.string(),
         likedBy: Joi.array().items(Joi.string()),
         approvedBy: Joi.string(),
-        tags: Joi.array().items(Joi.string())
+        tags: Joi.array().items(Joi.string()),
+        card: Card.Partial
+    }),
+    Draft: Joi.object({
+        _id: Joi.string(),
+        user: Joi.object({
+            discordId: Joi.string(),
+            displayname: Joi.string()
+        }).required(),
+        created: Joi.date(),
+        updated: Joi.date(),
+        threadId: Joi.string(),
+        likedBy: Joi.array().items(Joi.string()).default([]),
+        approvedBy: Joi.string(),
+        tags: Joi.array().items(Joi.string()).default([]),
+        card: Card.Full.required()
     })
 };
 

@@ -1,4 +1,4 @@
-import { Autocomplete, AutocompleteItem, Button, ButtonGroup, Input, Select, SelectItem } from "@heroui/react";
+import { Button, ButtonGroup, Input, Select, SelectItem } from "@heroui/react";
 import ThronesIcon from "../../thronesIcon";
 import { factionNames, typeNames } from "common/utils";
 import { Cost as CostType, Strength as StrengthType, factions, Faction as FactionType, types, Type as TypeType, Icons as IconsType, PlotStats as PlotStatsType, PlotValue as PlotValueType } from "common/models/cards";
@@ -8,11 +8,11 @@ import { BaseElementProps } from "../../../types";
 import ComboBox from "../../combobox";
 import { DeepPartial } from "common/types";
 
-type CustomSetterProps<T> = Omit<BaseElementProps, "children"> & { value?: T, setValue: Dispatch<SetStateAction<T | undefined>>, isDisabled?: boolean, errorMessage?: string };
+type CustomSetterProps<T> = Omit<BaseElementProps, "children"> & { value?: T, setValue: Dispatch<SetStateAction<T | undefined>>, isDisabled?: boolean };
 
-export const FactionSelect = ({ className, style, value: faction, setValue: setFaction, isDisabled, errorMessage }: CustomSetterProps<FactionType>) => {
+export const FactionSelect = ({ className, style, value: faction, setValue: setFaction, isDisabled }: CustomSetterProps<FactionType>) => {
     return (
-        <Select className={className} style={style} label="Faction" startContent={faction && <ThronesIcon name={faction}/>} selectedKeys={faction ? [faction] : []} onChange={(e) => setFaction(e.target.value as FactionType)} isDisabled={isDisabled} errorMessage={errorMessage} isInvalid={!!errorMessage}>
+        <Select name="faction" className={className} style={style} label="Faction" startContent={faction && <ThronesIcon name={faction}/>} selectedKeys={faction ? [faction] : []} onChange={(e) => setFaction(e.target.value as FactionType)} isDisabled={isDisabled}>
             {factions.map((faction) =>
                 <SelectItem key={faction} startContent={<ThronesIcon name={faction}/>}>
                     {factionNames[faction]}
@@ -21,9 +21,9 @@ export const FactionSelect = ({ className, style, value: faction, setValue: setF
     );
 };
 
-export const TypeSelect = ({ className, style, value: type, setValue: setType, isDisabled, errorMessage }: CustomSetterProps<TypeType>) => {
+export const TypeSelect = ({ className, style, value: type, setValue: setType, isDisabled }: CustomSetterProps<TypeType>) => {
     return (
-        <Select className={className} style={style} label="Type" startContent={type && <ThronesIcon name={type}/>} selectedKeys = {type ? [type] : []} onChange={(e) => setType(e.target.value as TypeType)} isDisabled={isDisabled} errorMessage={errorMessage} isInvalid={!!errorMessage}>
+        <Select name="type" className={className} style={style} label="Type" startContent={type && <ThronesIcon name={type}/>} selectedKeys = {type ? [type] : []} onChange={(e) => setType(e.target.value as TypeType)} isDisabled={isDisabled}>
             {types.map((type) =>
                 <SelectItem key={type} startContent={<ThronesIcon name={type}/>}>
                     {typeNames[type]}
@@ -33,7 +33,7 @@ export const TypeSelect = ({ className, style, value: type, setValue: setType, i
     );
 };
 
-export const UniqueButton = ({ className, style, value: unique, setValue: setUnique, isDisabled }: Omit<CustomSetterProps<boolean>, "errorMessage">) => {
+export const UniqueButton = ({ className, style, value: unique, setValue: setUnique, isDisabled }: CustomSetterProps<boolean>) => {
     return (
         <Button className={classNames("w-14 h-14", { "text-default-50": !unique }, className)} style={style} isIconOnly={true} size="lg" radius="none" onPress={() => setUnique(!unique)} isDisabled={isDisabled}>
             <ThronesIcon name="unique"/>
@@ -41,7 +41,7 @@ export const UniqueButton = ({ className, style, value: unique, setValue: setUni
     );
 };
 
-export const LoyalButton = ({ className, style, value: loyal, setValue: setLoyal, isDisabled }: Omit<CustomSetterProps<boolean>, "errorMessage">) => {
+export const LoyalButton = ({ className, style, value: loyal, setValue: setLoyal, isDisabled }: CustomSetterProps<boolean>) => {
     return (
         <Button className={classNames("w-14 h-14", { "text-default-50": !loyal }, className)} style={style} size="lg" onPress={() => setLoyal(!loyal)} isDisabled={isDisabled}>
             Loyal
@@ -49,7 +49,7 @@ export const LoyalButton = ({ className, style, value: loyal, setValue: setLoyal
     );
 };
 
-export const CostInput = ({ className, style, value: cost, setValue, isDisabled, errorMessage }: CustomSetterProps<CostType>) => {
+export const CostInput = ({ className, style, value: cost, setValue, isDisabled }: CustomSetterProps<CostType>) => {
     const setCost = (value: string) => {
         let cost: CostType | undefined = undefined;
         if (value?.toUpperCase().startsWith("X")) {
@@ -65,17 +65,17 @@ export const CostInput = ({ className, style, value: cost, setValue, isDisabled,
         setValue(cost);
     };
     return (
-        <Autocomplete className={className} style={style} label="Cost" isClearable={false} allowsEmptyCollection={false} inputValue={cost?.toString() ?? ""} onValueChange={setCost} onSelectionChange={(value) => setCost(value as string)} isDisabled={isDisabled} errorMessage={errorMessage} isInvalid={!!errorMessage}>
-            {["X", "-"].map((value) => <AutocompleteItem key={value}>{value}</AutocompleteItem>)}
-        </Autocomplete>
+        <Input name="cost" className={className} style={style} label="Cost" value={cost?.toString() ?? ""} onValueChange={setCost} isDisabled={isDisabled}>
+            {cost?.toString()}
+        </Input>
     );
 };
 
-export const ChallengeIconButtons = ({ className, style, value: challengeIcons = {}, setValue: setChallengeIcons, isDisabled }: Omit<CustomSetterProps<DeepPartial<IconsType>>, "errorMessage">) => {
+export const ChallengeIconButtons = ({ className, style, value: challengeIcons = {}, setValue: setChallengeIcons, isDisabled }: CustomSetterProps<DeepPartial<IconsType>>) => {
     const toggleIcon = (icon: keyof IconsType) => {
-        const current = challengeIcons[icon] ?? false;
-        challengeIcons[icon] = !current;
-        setChallengeIcons(challengeIcons);
+        const newChallengeIcons = { ...challengeIcons };
+        newChallengeIcons[icon] = !(challengeIcons[icon] ?? false);
+        setChallengeIcons(newChallengeIcons);
     };
     return (
         <ButtonGroup className={className} style={style} size="lg" isDisabled={isDisabled}>
@@ -92,7 +92,7 @@ export const ChallengeIconButtons = ({ className, style, value: challengeIcons =
     );
 };
 
-export const StrengthInput = ({ className, style, value: strength, setValue, isDisabled, errorMessage }: CustomSetterProps<StrengthType>) => {
+export const StrengthInput = ({ className, style, value: strength, setValue, isDisabled }: CustomSetterProps<StrengthType>) => {
     const setStrength = (value: string) => {
         let strength: StrengthType | undefined = undefined;
         if (value?.toUpperCase().startsWith("X")) {
@@ -107,27 +107,32 @@ export const StrengthInput = ({ className, style, value: strength, setValue, isD
     };
 
     return (
-        <Autocomplete className={className} style={style} label="Strength" isClearable={false} allowsEmptyCollection={false} inputValue={strength?.toString() ?? ""} onValueChange={setStrength} onSelectionChange={(value) => setStrength(value as string)} isDisabled={isDisabled} errorMessage={errorMessage} isInvalid={!!errorMessage}>
-            {<AutocompleteItem key="X">{"X"}</AutocompleteItem>}
-        </Autocomplete>
+        <Input name="strength" className={className} style={style} label="Strength" value={strength?.toString() ?? ""} onValueChange={setStrength} isDisabled={isDisabled}>
+            {strength?.toString()}
+        </Input>
     );
 };
 
-export const TraitsInput = ({ className, style, value: traits, setValue: setTraits, isDisabled, errorMessage }: CustomSetterProps<string[]>) => {
+export const TraitsInput = ({ className, style, value: traits, setValue: setTraits, isDisabled }: CustomSetterProps<string[]>) => {
+    const setValue = (items: string[]) => {
+        // Removes any trailing dots
+        const cleanedItems = items.map((item) => item.replace(/\.+$/, ""));
+        setTraits(cleanedItems);
+    };
     return (
-        <ComboBox className={className} style={style} label="Traits" values={traits} placeholder="Type and press enter" onChange={setTraits} isDisabled={isDisabled} errorMessage={errorMessage} chip={{ color: "primary" }}/>
+        <ComboBox name="traits" className={className} style={style} label="Traits" values={traits} placeholder="Type and press enter" onChange={setValue} isDisabled={isDisabled} chip={{ color: "default", variant: "flat", className: "rounded-sm p-0 pr-0.5" }}/>
     );
 };
 
-export const FlavorInput = ({ className, style, value: flavor, setValue: setFlavor, isDisabled, errorMessage }: CustomSetterProps<string>) => {
+export const FlavorInput = ({ className, style, value: flavor, setValue: setFlavor, isDisabled }: CustomSetterProps<string>) => {
     return (
-        <Input className={className} style={style} label="Flavor" value={flavor ?? ""} onValueChange={setFlavor} isDisabled={isDisabled} errorMessage={errorMessage} isInvalid={!!errorMessage}>
+        <Input name="flavor" className={className} style={style} label="Flavor" value={flavor ?? ""} onValueChange={setFlavor} isDisabled={isDisabled}>
             {flavor}
         </Input>
     );
 };
 
-export const PlotStatInputs = ({ className, style, value: plotStats, setValue: setPlotStats, isDisabled, errorMessages }: Omit<CustomSetterProps<DeepPartial<PlotStatsType>>, "errorMessage"> & { errorMessages?: { [K in keyof PlotStatsType]?: string } }) => {
+export const PlotStatInputs = ({ className, style, value: plotStats, setValue: setPlotStats, isDisabled }: Omit<CustomSetterProps<DeepPartial<PlotStatsType>>, "errorMessage"> & { errorMessages?: { [K in keyof PlotStatsType]?: string } }) => {
     const setValue = (type: keyof PlotStatsType, value: string) => {
         let statValue: PlotValueType | undefined = undefined;
         if (value?.toUpperCase().startsWith("X")) {
@@ -142,18 +147,18 @@ export const PlotStatInputs = ({ className, style, value: plotStats, setValue: s
     };
     return (
         <div className={classNames("grid grid-cols-2 gap-2", className)} style={style}>
-            <Autocomplete label="Income" isClearable={false} allowsEmptyCollection={false} inputValue={plotStats?.income?.toString() ?? ""} onValueChange={(value) => setValue("income", value)} isDisabled={isDisabled} errorMessage={errorMessages?.income} isInvalid={!!errorMessages?.income}>
-                {<AutocompleteItem key="X">{"X"}</AutocompleteItem>}
-            </Autocomplete>
-            <Autocomplete label="Initiative" isClearable={false} allowsEmptyCollection={false} inputValue={plotStats?.initiative?.toString() ?? ""} onValueChange={(value) => setValue("initiative", value)} isDisabled={isDisabled} errorMessage={errorMessages?.initiative} isInvalid={!!errorMessages?.initiative}>
-                {<AutocompleteItem key="X">{"X"}</AutocompleteItem>}
-            </Autocomplete>
-            <Autocomplete label="Claim" isClearable={false} allowsEmptyCollection={false} inputValue={plotStats?.claim?.toString() ?? ""} onValueChange={(value) => setValue("claim", value)} isDisabled={isDisabled} errorMessage={errorMessages?.claim} isInvalid={!!errorMessages?.claim}>
-                {<AutocompleteItem key="X">{"X"}</AutocompleteItem>}
-            </Autocomplete>
-            <Autocomplete label="Reserve" isClearable={false} allowsEmptyCollection={false} inputValue={plotStats?.reserve?.toString() ?? ""} onValueChange={(value) => setValue("reserve", value)} isDisabled={isDisabled} errorMessage={errorMessages?.reserve} isInvalid={!!errorMessages?.reserve}>
-                {<AutocompleteItem key="X">{"X"}</AutocompleteItem>}
-            </Autocomplete>
+            <Input name="plotStats.income" className={className} style={style} label="Income" value={plotStats?.income?.toString() ?? ""} onValueChange={(value) => setValue("income", value)} isDisabled={isDisabled}>
+                {plotStats?.income}
+            </Input>
+            <Input name="plotStats.initiative" className={className} style={style} label="Initiative" value={plotStats?.initiative?.toString() ?? ""} onValueChange={(value) => setValue("initiative", value)} isDisabled={isDisabled}>
+                {plotStats?.initiative}
+            </Input>
+            <Input name="plotStats.claim" className={className} style={style} label="Claim" value={plotStats?.claim?.toString() ?? ""} onValueChange={(value) => setValue("claim", value)} isDisabled={isDisabled}>
+                {plotStats?.claim}
+            </Input>
+            <Input name="plotStats.reserve" className={className} style={style} label="Reserve" value={plotStats?.reserve?.toString() ?? ""} onValueChange={(value) => setValue("reserve", value)} isDisabled={isDisabled}>
+                {plotStats?.reserve}
+            </Input>
         </div>
     );
 };

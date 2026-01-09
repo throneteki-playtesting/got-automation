@@ -1,17 +1,17 @@
-import { Card, PlaytestableCard } from "./cards";
+import { ICard, IPlaytestCard } from "./cards";
 
 export type ReleaseDate = `${number}-${number}-${number}`;
 
-export interface JsonPack {
+export interface IPack {
     // cgdbId?: string,
     code: string,
     name: string,
     releaseDate: ReleaseDate,
     workInProgress?: boolean,
-    cards: Card[]
+    cards: ICard[]
 }
 
-export interface JsonPlaytestingPack extends JsonPack {
+export interface IPlaytestPack extends IPack {
     workInProgress: true,
-    cards: PlaytestableCard[]
+    cards: IPlaytestCard[]
 }

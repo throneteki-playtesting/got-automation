@@ -10,24 +10,41 @@ const OrderBySelector = function<T>({ label, orderBy, setOrderBy, options }: Ord
         }
         return options.map((option) => ({ key: option, value: option as string }));
     }, [options]);
+
     const handleSelectionChange = useCallback((keys: SharedSelection) => {
-        const parseSortable = (keys: (keyof T)[]) => {
+
+        const parseSortable = (keys: string[]): Sortable<T> | undefined => {
             if (keys.length === 0) {
                 return undefined;
             }
-            return keys.reduce((acc, key) => ({
-                ...acc,
-                [key]: "asc" // TODO: Implement sort direction in UI
-            }), {} as { [K in keyof T]?: "asc" });
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return keys.reduce((acc: any, path: string) => {
+                const parts = path.split(".");
+                let current = acc;
+
+                for (let i = 0; i < parts.length - 1; i++) {
+                    const part = parts[i];
+                    if (!current[part]) {
+                        current[part] = {};
+                    }
+                    current = current[part];
+                }
+
+                const finalKey = parts[parts.length - 1];
+                current[finalKey] = "asc"; // TODO: Implement sort direction in UI
+                return acc;
+            }, {} as Sortable<T>);
         };
-        setOrderBy(
-            parseSortable(
-                keys === "all"
-                    ? items.map(({ key }) => key)!
-                    : Array.from(keys).map(key => key.toString() as keyof T)
-            )
-        );
+
+        const selectionKeys: string[] =
+        keys === "all"
+            ? items.map(({ key }) => key.toString())
+            : Array.from(keys).map(key => key.toString());
+
+        setOrderBy(parseSortable(selectionKeys));
     }, [items, setOrderBy]);
+
     return (
         <Select
             label={label}

@@ -1,6 +1,6 @@
-import { JsonProject, Type } from "common/models/projects";
+import { IProject, Type } from "common/models/projects";
 
-class Project implements JsonProject {
+class Project implements IProject {
     // octgnId?: string;
     public number: number;
     public name: string;
@@ -14,8 +14,10 @@ class Project implements JsonProject {
     public milestone: number;
     public formUrl: string;
     public emoji?: string;
+    public created: number;
+    public updated: number;
 
-    constructor(data: JsonProject) {
+    constructor(data: IProject) {
         this.number = data.number;
         this.name = data.name;
         this.code = data.code;
@@ -28,6 +30,8 @@ class Project implements JsonProject {
         this.milestone = data.milestone;
         this.formUrl = data.formUrl;
         this.emoji = data.emoji;
+        this.created = data.created;
+        this.updated = data.updated;
     }
 
     clone() {
@@ -43,8 +47,10 @@ class Project implements JsonProject {
             version: this.version,
             milestone: this.milestone,
             formUrl: this.formUrl,
-            emoji: this.emoji
-        } as JsonProject;
+            emoji: this.emoji,
+            created: this.created,
+            updated: this.updated
+        } as IProject;
 
         return new Project(clonedJsonData);
     }
@@ -65,8 +71,10 @@ class Project implements JsonProject {
             version: this.version,
             milestone: this.milestone,
             formUrl: this.formUrl,
-            emoji: this.emoji
-        } as JsonProject;
+            emoji: this.emoji,
+            created: this.created,
+            updated: this.updated
+        } as IProject;
         return obj;
     }
 

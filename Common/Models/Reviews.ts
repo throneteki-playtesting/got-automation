@@ -12,7 +12,7 @@ export type Statements = {
     releasable: StatementAnswer
 };
 
-export interface JsonPlaytestingReview {
+export interface IPlaytestReview {
     reviewer: string,
     project: number,
     number: number,
@@ -21,7 +21,8 @@ export interface JsonPlaytestingReview {
     played: PlayedRange,
     statements: Statements,
     additional?: string,
-    epoch: number
+    created: number,
+    updated: number
 }
 
 export enum StatementQuestions {
