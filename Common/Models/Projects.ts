@@ -15,6 +15,6 @@ export interface IProject {
     milestone: number,
     formUrl: string,
     emoji?: string,
-    created: number,
-    updated: number
+    created: Date,
+    updated: Date
 }

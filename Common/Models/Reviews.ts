@@ -21,8 +21,8 @@ export interface IPlaytestReview {
     played: PlayedRange,
     statements: Statements,
     additional?: string,
-    created: number,
-    updated: number
+    created: Date,
+    updated: Date
 }
 
 export enum StatementQuestions {

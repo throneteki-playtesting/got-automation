@@ -23,8 +23,8 @@ class ReviewSerializer extends DataSerializer<Review.IPlaytestReview> {
                 releasable: values[ReviewColumn.Releasable] as Review.StatementAnswer
             },
             additional: values[ReviewColumn.Additional] || undefined,
-            created: new Date(values[ReviewColumn.Date]).getTime(),
-            updated: new Date(values[ReviewColumn.Date]).getTime()
+            created: new Date(values[ReviewColumn.Date]),
+            updated: new Date(values[ReviewColumn.Date])
         } as Review.IPlaytestReview;
 
         return model;
@@ -34,7 +34,7 @@ class ReviewSerializer extends DataSerializer<Review.IPlaytestReview> {
         const values: string[] = Array.from({ length: maxEnum(ReviewColumn) });
         values[ReviewColumn.Number] = model.number.toString();
         values[ReviewColumn.Version] = model.version;
-        values[ReviewColumn.Date] = new Date(model.created).toLocaleString();
+        values[ReviewColumn.Date] = model.created.toLocaleString();
         values[ReviewColumn.Reviewer] = model.reviewer;
         values[ReviewColumn.Decks] = model.decks.map((deck, index) => `<a href="${deck}">Deck ${index + 1}</a>`).join("\n");
         values[ReviewColumn.Played] = model.played.toString();
@@ -88,8 +88,8 @@ class ReviewSerializer extends DataSerializer<Review.IPlaytestReview> {
             && compare(filter.statements?.releasable, values[ReviewColumn.Releasable])
             && compare(filter.additional, values[ReviewColumn.Additional])
             // More expensive checks at the end
-            && (!filter.created || new Date(filter.created).toLocaleString() === values[ReviewColumn.Date])
-            && (!filter.updated || new Date(filter.updated).toLocaleString() === values[ReviewColumn.Date])
+            && (!filter.created || (filter.created as Date).toLocaleString() === values[ReviewColumn.Date])
+            && (!filter.updated || (filter.updated as Date).toLocaleString() === values[ReviewColumn.Date])
             && (!filter.decks || values[ReviewColumn.Decks].split("\n").length === filter.decks.length) // TODO: Compare url's instead somehow
         );
     }

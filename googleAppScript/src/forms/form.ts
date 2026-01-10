@@ -41,8 +41,8 @@ export function toReviews(...formResponses: GoogleAppsScript.Forms.FormResponse[
                 releasable: statements[Statements.Releasable]
             },
             additional: items[Question.Additional].getResponse() as string || undefined,
-            created: date.getTime(),
-            updated: date.getTime()
+            created: date,
+            updated: date
         } as IPlaytestReview;
 
         reviews.push(review);

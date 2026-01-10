@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 const database = "gotautomation";
 
 use(database);
@@ -78,7 +79,7 @@ projects.find({}).forEach(project => {
     delete project.releases;
 
     // 5. Set created/updated epoch
-    project.created = project.updated = new Date().getTime();
+    project.created = project.updated = new Date();
 
     // 6. Replace _id with new ObjectId
     const newId = new ObjectId();
@@ -102,8 +103,8 @@ reviews.find({}).forEach(review => {
     delete review.projectId;
 
     // 2. Replace epoch with created/updated
-    review.created = review.epoch;
-    review.updated = review.epoch;
+    review.created = new Date(review.epoch);
+    review.updated = new Date(review.epoch);
     delete review.epoch;
 
     // 3. Remove unnecessary properties;

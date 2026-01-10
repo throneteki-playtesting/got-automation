@@ -328,7 +328,7 @@ const command = {
             // Sort reviews by date (latest first), then distinct the list (keeping first reviews, thus the "latest")
             // This ensures that only the latest version of that review (by number, version & reviewer) is being saved
             const distinct = response.reviews
-                .sort((r1, r2) => r2.created - r1.created)
+                .sort((r1, r2) => r2.created.getTime() - r1.created.getTime())
                 .filter((r, i, a) =>
                     a.findIndex((rv) =>
                         rv.number === r.number

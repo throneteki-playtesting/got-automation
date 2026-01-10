@@ -14,8 +14,8 @@ class Project implements IProject {
     public milestone: number;
     public formUrl: string;
     public emoji?: string;
-    public created: number;
-    public updated: number;
+    public created: Date;
+    public updated: Date;
 
     constructor(data: IProject) {
         this.number = data.number;

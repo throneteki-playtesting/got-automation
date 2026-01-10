@@ -10,8 +10,8 @@ class Review implements IPlaytestReview {
     public played: PlayedRange;
     public statements: Statements;
     public additional?: string;
-    public created: number;
-    public updated: number;
+    public created: Date;
+    public updated: Date;
 
     constructor(data: IPlaytestReview) {
         this.reviewer = data.reviewer;
