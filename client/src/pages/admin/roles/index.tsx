@@ -1,10 +1,11 @@
 import { Key, useCallback, useState } from "react";
 import { useGetRolesQuery } from "../../../api";
 import { Role } from "common/models/user";
-import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
+import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
 import EditRoleModal from "./editRoleModal";
+import Loading from "../../../components/loading";
 
 const Roles = () => {
     const { data: roles, isLoading, isError } = useGetRolesQuery();
@@ -65,7 +66,7 @@ const Roles = () => {
                         </TableColumn>
                     )}
                 </TableHeader>
-                <TableBody emptyContent={"No roles"} items={roles ?? []} isLoading={isLoading} loadingContent={<Spinner label="Loading..."/>}>
+                <TableBody emptyContent={"No roles"} items={roles ?? []} isLoading={isLoading} loadingContent={<Loading/>}>
                     {(item) => (
                         <TableRow key={item.name}>
                             {(columnKey) => {

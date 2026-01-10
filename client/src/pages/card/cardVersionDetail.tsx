@@ -47,11 +47,11 @@ const CardVersionDetail = ({ className, style, card, project, onEdit, onDelete, 
             buttons.push(
                 <PermissionGate requires={Permission.EDIT_CARDS}><Button color="default" startContent={<FontAwesomeIcon icon={faPencil}/>} onPress={onEdit}>Edit</Button></PermissionGate>
             );
-        }
-        if (!isPreview) {
-            buttons.push(
-                <PermissionGate requires={Permission.DELETE_CARDS}><Button color="danger" startContent={<FontAwesomeIcon icon={faTrash}/>} onPress={onDelete}>Delete</Button></PermissionGate>
-            );
+            if (!isPreview) {
+                buttons.push(
+                    <PermissionGate requires={Permission.DELETE_CARDS}><Button color="danger" startContent={<FontAwesomeIcon icon={faTrash}/>} onPress={onDelete}>Delete</Button></PermissionGate>
+                );
+            }
         }
         return buttons;
     }, [isDraft, isPreview, onDelete, onEdit]);

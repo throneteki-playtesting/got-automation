@@ -12,7 +12,7 @@ const router = createBrowserRouter([
     },
     {
         element: <App />,
-        errorElement: <Error />,
+        errorElement: <Error content="An unknown error has occured. Please contact administrator." />,
         children: pageItemRoutes()
     }
 ]);

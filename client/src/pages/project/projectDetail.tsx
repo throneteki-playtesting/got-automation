@@ -5,19 +5,23 @@ import { BaseElementProps } from "../../types";
 import { renderPlaytestingCard } from "common/utils";
 import { Chip, Link } from "@heroui/react";
 import dismoji from "../../emojis";
+import Loading from "../../components/loading";
+import Error from "../../components/error";
+import classNames from "classnames";
+import { isEmpty } from "lodash";
 
 const ProjectDetail = ({ className, style, project: number }: ProjectDetailProps) => {
-    const { data: project, isLoading: isProjectLoading } = useGetProjectQuery({ number: number! }, { skip: !number });
+    const { data: project, isLoading: isProjectLoading } = useGetProjectQuery({ number: number });
     const { data: cards, isLoading: isCardsLoading } = useGetCardsQuery({ filter: { project: number } });
 
-    if (isProjectLoading) {
-        return <div>Loading project...</div>;
+    if (isProjectLoading || !project) {
+        return <Loading label="Loading project..." size="lg"/>;
     }
-    if (!project) {
-        return <div>Failed to load project!</div>;
+    if (isEmpty(project)) {
+        return <Error label={`Project #${number} does not exist`}/>;
     }
     const title = project.emoji ? `${project.name} ${dismoji[project.emoji.replaceAll(":", "")]}` : project.name;
-    return <div className="p-5">
+    return <div className={classNames("p-5", className)} style={style}>
         <div className="flex flex-col gap-1">
             <h1 className="text-5xl">{title}</h1>
             <div className="flex gap-1">
@@ -29,7 +33,7 @@ const ProjectDetail = ({ className, style, project: number }: ProjectDetailProps
         <div className="p-5">
             <div>Review Form: <Link href={project.formUrl}>Google Forms</Link></div>
         </div>
-        <CardGrid cards={cards ?? []} className={className} style={style} isLoading={isCardsLoading}>
+        <CardGrid cards={cards} isLoading={isCardsLoading}>
             {(card) => (
                 <Link key={card.code} href={`/project/${number}/${card.number}`}>
                     <CardPreview
@@ -46,4 +50,4 @@ const ProjectDetail = ({ className, style, project: number }: ProjectDetailProps
 
 export default ProjectDetail;
 
-type ProjectDetailProps = Omit<BaseElementProps, "children"> & { project?: number };
+type ProjectDetailProps = Omit<BaseElementProps, "children"> & { project: number };

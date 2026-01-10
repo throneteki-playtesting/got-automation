@@ -39,7 +39,7 @@ const Suggestions = () => {
 
     const [orderBy, setOrderBy] = useState<Sortable<ICard>>();
 
-    const { data: suggestions, isLoading, isError } = useGetSuggestionsQuery({ filter: filters, orderBy: { card: orderBy } });
+    const { data: suggestions, isLoading } = useGetSuggestionsQuery({ filter: filters, orderBy: { card: orderBy } });
     const [deleteSuggestion, { isLoading: isDeleting, originalArgs: deleting }] = useDeleteSuggestionMutation();
     const [renderImage, { isLoading: isRenderingImage, originalArgs: renderingImage }] = useRenderImageMutation();
 
@@ -133,7 +133,7 @@ const Suggestions = () => {
                         </Button>
                     </PermissionGate>
                 </div>
-                <CardGrid cards={suggestions ?? []} isLoading={isLoading} isError={isError} emptyContent={"No suggestions found"}>
+                <CardGrid cards={suggestions ?? []} isLoading={isLoading}>
                     {(suggestion) => (
                         <div key={suggestion.id} className="relative">
                             {isDeletingSuggestion(suggestion) && <div className="absolute right-0 w-full h-full z-2 flex justify-center items-center"><Spinner size="lg"/></div>}

@@ -1,4 +1,4 @@
-import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User as DisplayUser, Link } from "@heroui/react";
+import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User as DisplayUser, Link } from "@heroui/react";
 import { useGetUsersQuery } from "../../../api";
 import { Key, useCallback, useState } from "react";
 import { Permission, User } from "common/models/user";
@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
 import EditUserModal from "./editUserModal";
 import { hasPermission } from "common/utils";
-import PermissionGate from "../../../components/permissionGate";
+import Loading from "../../../components/loading";
 
 const Users = () => {
     const { data: users, isLoading, isError } = useGetUsersQuery();
@@ -90,7 +90,7 @@ const Users = () => {
                         </TableColumn>
                     )}
                 </TableHeader>
-                <TableBody emptyContent={"No users"} items={users ?? []} isLoading={isLoading} loadingContent={<Spinner label="Loading..."/>}>
+                <TableBody emptyContent={"No users"} items={users ?? []} isLoading={isLoading} loadingContent={<Loading/>}>
                     {(item) => (
                         <TableRow key={item.username}>
                             {(columnKey) => {

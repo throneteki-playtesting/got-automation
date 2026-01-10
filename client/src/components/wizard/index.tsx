@@ -67,7 +67,7 @@ export const Wizard = function<T>({ schema, data: initial, onSubmit = () => true
 
         // Always validate the page first (partial)
         if (validate(pageData, true)) {
-            const newData = merge(internalData, pageData);
+            const newData = merge({}, internalData, pageData);
             setInternalData(newData);
             if (isLastPage) {
                 // Validate full object

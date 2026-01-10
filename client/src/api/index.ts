@@ -281,12 +281,18 @@ const api = createApi({
             query: (options) => {
                 const url = buildUrl("projects", { filter: options?.filter });
                 return { url, method: "GET" };
-            }
+            },
+            providesTags: [{ type: tag.Project, id: "LIST" }]
         }),
         getProject: builder.query<IProject, { number: number }>({
             query: (options) => {
                 const url = buildUrl(`projects/${options.number}`);
                 return { url, method: "GET" };
+            },
+            providesTags: (result) => {
+                return result ? [
+                    { type: tag.Project, id: result.number }
+                ] : [];
             }
         }),
         // Reviews API

@@ -8,6 +8,7 @@ import { IPlaytestCard } from "common/models/cards";
 import EditCardModal from "./editCardModal";
 import { isPreview } from "common/utils";
 import DeleteCardModal from "./deleteCardModal";
+import { cloneDeep } from "lodash";
 
 const CardDetail = ({ className, style, project: projectNumber, number }: CardDetailProps) => {
     const [editing, setEditing] = useState<IPlaytestCard>();
@@ -28,6 +29,12 @@ const CardDetail = ({ className, style, project: projectNumber, number }: CardDe
         });
     }, [collection?.all, collection?.draft, collection?.latest, project]);
 
+    const onNewVersion = useCallback((latest: IPlaytestCard) => {
+        const draft = cloneDeep(latest);
+        delete draft.note;
+        setEditing(draft);
+    }, []);
+
     if (cardsQuery.error || projectQuery.error) {
         return <div className="w-full h-16 bg-default-50 text-center">
             Card or project fetching errored.
@@ -42,7 +49,7 @@ const CardDetail = ({ className, style, project: projectNumber, number }: CardDe
                     <BreadcrumbItem isCurrent>#{collection?.latest?.code}</BreadcrumbItem>
                 </Breadcrumbs>
                 <ButtonGroup>
-                    {!collection?.draft && collection?.latest && <Button onPress={() => setEditing(collection.latest)}>New Version</Button>}
+                    {!collection?.draft && collection?.latest && <Button onPress={() => onNewVersion(collection.latest)}>New Version</Button>}
                 </ButtonGroup>
                 <Spacer/>
                 <div className="flex flex-col-reverse gap-2">
