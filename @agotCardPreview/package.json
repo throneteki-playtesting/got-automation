@@ -1,26 +1,21 @@
 {
-  "name": "@throneteki-playtesting/card-preview",
-  "version": "1.0.0",
+  "name": "@agot/card-preview",
+  "version": "1.0.1",
+  "author": "Stephen Patane",
+  "license": "ISC",
+  "description": "A React component library for rendering \"A Game of Thrones LCG 2nd Edition\" cards.",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
+    "registry": "https://registry.npmjs.org/",
     "access": "public"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/throneteki-playtesting/got-automation.git",
-    "directory": "@agotCardPreview"
   },
   "main": "dist/index.cjs.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsup src/index.tsx --format esm,cjs --dts --out-dir dist --clean",
-    "prepare": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [],
-  "author": "Stephen Patane",
-  "license": "ISC",
-  "description": "A React component library for rendering \"A Game of Thrones LCG 2nd Edition\" cards.",
   "files": [
     "dist"
   ],

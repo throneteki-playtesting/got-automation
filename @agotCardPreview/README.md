@@ -1,16 +1,31 @@
-# @throneteki-playtesting/card-preview
+# @agot/card-preview
 
-A lightweight React component library for rendering **A Game of Thrones LCG 2nd Edition** cards. 
-
-This library is installed directly from GitHub.
+A React component library for rendering **A Game of Thrones LCG 2nd Edition** cards. It requires data in an `IRenderCard` format.
 
 ## 📦 Installation
 
-To add this package to your project, run the following command:
-
 ```bash
-# Install the latest from the master branch:
-npm install throneteki-playtesting/got-automation#master:@agotCardPreview
+npm install @agot/card-preview
+```
 
-# Install a specific version (Recommended for stability):
-npm install throneteki-playtesting/got-automation#v1.1.0:@agotCardPreview
+### Peer Dependencies
+Ensure your host project has the following installed:
+* **react** (^19.1.0)
+
+---
+
+## 🛠 Usage
+
+Import the `CardPreview` component and provide an `IRenderCard` to display the corresponding card image and data.
+
+```tsx
+import { CardPreview } from '@agot/card-preview';
+
+const App = () => {
+  return (
+    <CardPreview 
+      card={{ ... }}
+    />
+  );
+};
+```
