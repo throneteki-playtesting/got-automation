@@ -18,7 +18,8 @@ function initialise() {
 
     // Add middleware
     app.use(cors({
-        origin: process.env.CLIENT_HOST
+        origin: process.env.CLIENT_HOST,
+        credentials: true
     }));
     app.use(partials());
     app.use(compression());

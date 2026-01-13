@@ -24,17 +24,14 @@ class DataService {
     private _auth: AuthRepository;
 
     constructor() {
-        this.database = new MongoClient(`${process.env.DATABASE_URL}?retryWrites=true&retryReads=true`, { ignoreUndefined: true, maxPoolSize: 10, connectTimeoutMS: 5000 });
         this.connectDb();
-
-        this.redis = createClient({
-            url: process.env.REDIS_HOST
-        });
         this.connectRedis();
     }
 
     private async connectDb() {
+        const url = process.env.DATABASE_URL || "mongodb://mongodb:27017";
         try {
+            this.database = new MongoClient(`${url}?retryWrites=true&retryReads=true`, { ignoreUndefined: true, maxPoolSize: 10, connectTimeoutMS: 5000 });
             await this.database.db().command({ ping: 1 });
             // Confirms that MongoDB is running
             logger.info(`MongoDB connected to ${this.database.db().databaseName}`);
@@ -54,9 +51,11 @@ class DataService {
     }
 
     private async connectRedis() {
+        const url = process.env.REDIS_HOST || "redis://redis:6379";
         try {
+            this.redis = createClient({ url });
             await this.redis.connect();
-            logger.info(`Redis connected at ${process.env.REDIS_HOST}`);
+            logger.info(`Redis connected at ${url}`);
             return true;
         } catch (err) {
             logger.error(err);

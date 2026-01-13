@@ -1,7 +1,7 @@
 import { DeepPartial, SingleOrArray, Sortable } from "common/types";
-import RenderedCard from "./data/models/cards/renderedCard";
 import { StatusCodes } from "http-status-codes";
 import { UUID } from "crypto";
+import { IRenderCard } from "common/models/cards";
 
 export interface AccessTokenPayload {
     discordId: string,
@@ -32,7 +32,7 @@ export interface IRepository<T> {
 }
 
 export type RenderType = "single" | "batch";
-export interface RenderJob { id: UUID, type: RenderType, data: { id: UUID, card: RenderedCard }[] };
+export interface RenderJob { id: UUID, type: RenderType, data: { id: UUID, card: IRenderCard }[] };
 export interface SingleRenderJob extends RenderJob { type: "single", options?: SingleRenderJobOptions };
 export type SingleRenderJobOptions = { orientation?: "horizontal" | "vertical", rounded?: boolean };
 export interface BatchRenderJob extends RenderJob { type: "batch", options?: BatchRenderJobOptions };

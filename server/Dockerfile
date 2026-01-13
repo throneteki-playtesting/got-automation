@@ -1,6 +1,7 @@
-FROM node:21
+FROM node:22
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 RUN apt-get update && apt-get install curl gnupg -y \
   && curl --location --silent https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
@@ -11,14 +12,17 @@ RUN apt-get update && apt-get install curl gnupg -y \
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY common/package*.json ./common/
+COPY server/package*.json ./server/
 
-ENV NODE_ENV=production
-
+WORKDIR /app/server
 RUN npm install
 
-COPY . .
+WORKDIR /app
+COPY common/ ./common/
+COPY server/ ./server/
 
-EXPOSE 3000
+EXPOSE 8080
 
-CMD ["node", "--import", "tsx", "server/src/index.ts"]
+WORKDIR /app/server
+CMD ["npm", "run", "start"]

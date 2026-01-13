@@ -7,6 +7,7 @@ import type { AppEnv } from "./env.d.ts";
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), "") as unknown as AppEnv;
+    const serverHost = env.VITE_SERVER_HOST || "http://localhost:8080";
     return {
         plugins: [
             tailwindcss(),
@@ -14,13 +15,18 @@ export default defineConfig(({ mode }) => {
             tsconfigPaths()
         ],
         server: {
+            host: true,
+            port: 5173,
+            watch: {
+                usePolling: true
+            },
             proxy: {
                 "/api/v1/": {
-                    target: env.VITE_SERVER_HOST,
+                    target: serverHost,
                     changeOrigin: true
                 },
                 "/auth/": {
-                    target: env.VITE_SERVER_HOST,
+                    target: serverHost,
                     changeOrigin: true
                 }
             }

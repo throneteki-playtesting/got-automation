@@ -1,0 +1,53 @@
+services:
+  client:
+    build:
+      dockerfile: client/Dockerfile
+      context: ./
+      args:
+        - VITE_SERVER_HOST=${SERVER_HOST}
+        - VITE_NODE_ENV=${NODE_ENV}
+        - VITE_VERBOSE=${VERBOSE}
+    restart: always
+    container_name: got_client
+    ports:
+      - ${CLIENT_PORT}:${CLIENT_PORT}
+  server:
+    build:
+      dockerfile: server/Dockerfile
+      context: ./
+    restart: always
+    container_name: got_server
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - VERBOSE=${VERBOSE}
+      - BASIC_USERNAME=${BASIC_USERNAME}
+      - BASIC_PASSWORD=${BASIC_PASSWORD}
+      - SERVER_PORT=${SERVER_PORT}
+      - SERVER_HOST=${SERVER_HOST}
+      - CLIENT_PORT=${CLIENT_PORT}
+      - CLIENT_HOST=${CLIENT_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=${REDIS_HOST}
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+      - DISCORD_AUTH_REDIRECT=${DISCORD_AUTH_REDIRECT}
+      - GOOGLE_PRIVATE_KEY=${GOOGLE_PRIVATE_KEY}
+      - GOOGLE_CLIENT_EMAIL=${GOOGLE_CLIENT_EMAIL}
+      - GITHUB_OWNER=${GITHUB_OWNER}
+      - GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
+      - GITHUB_APP_ID=${GITHUB_APP_ID}
+      - GITHUB_PRIVATE_KEY=${GITHUB_PRIVATE_KEY}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - ACCESS_TOKEN_TTL=${ACCESS_TOKEN_TTL}
+      - REFRESH_TOKEN_TTL=${REFRESH_TOKEN_TTL}
+  redis:
+    image: redis
+    restart: always
+    container_name: redis
+    

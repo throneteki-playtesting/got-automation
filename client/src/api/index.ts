@@ -6,11 +6,12 @@ import { buildUrl, SemanticVersion } from "common/utils";
 import { clearUser } from "./authSlice";
 import { StatusCodes } from "http-status-codes";
 import { UUID } from "crypto";
-import { BatchRenderJob, IGetEndpoint, RefreshAuthResponse, SingleRenderJob } from "server/types";
+import type { BatchRenderJob, IGetEndpoint, RefreshAuthResponse, SingleRenderJob } from "server/types";
 import { ICardSuggestion, IPlaytestCard, IRenderCard } from "common/models/cards";
 import { IReviewCollection } from "common/collections/reviewCollection";
 import { IPlaytestReview } from "common/models/reviews";
 
+export const baseUrl = import.meta.env.VITE_SERVER_HOST || "";
 const tag = {
     Me: "Me",
     User: "User",
@@ -22,7 +23,7 @@ const tag = {
 };
 
 const baseQuery = fetchBaseQuery({
-    baseUrl: "/api/v1",
+    baseUrl: `${baseUrl}/api/v1`,
     credentials: "include"
 });
 
@@ -32,7 +33,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         let result = await baseQuery(args, api, extraOptions);
         if (result.meta?.response?.status === StatusCodes.UNAUTHORIZED) {
             // Attempt to refresh token
-            const baseAuthQuery = fetchBaseQuery({ baseUrl: "/auth", credentials: "include" }) as BaseQueryFn<string | FetchArgs, RefreshAuthResponse, FetchBaseQueryError, unknown, FetchBaseQueryMeta>;
+            const baseAuthQuery = fetchBaseQuery({ baseUrl: `${baseUrl}/auth`, credentials: "include" }) as BaseQueryFn<string | FetchArgs, RefreshAuthResponse, FetchBaseQueryError, unknown, FetchBaseQueryMeta>;
             const refreshResult = await baseAuthQuery("/refresh", api, extraOptions);
 
             if (refreshResult.data?.status === "success") {
@@ -42,7 +43,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
                 // Expired refresh token should result in reauthentication
                 if (refreshResult.meta?.response?.status === StatusCodes.FORBIDDEN) {
                     // TODO: Move this into a more stable process, possibly it's own api slice for /login & /logout
-                    window.location.href = `${import.meta.env.VITE_SERVER_HOST}/auth/discord`;
+                    window.location.href = `${baseUrl}/auth/discord`;
                 }
             }
         }

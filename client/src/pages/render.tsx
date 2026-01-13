@@ -4,7 +4,7 @@ import { useGetRenderJobQuery } from "../api";
 import CardPreview from "@agot/card-preview";
 import { IRenderCard } from "common/models/cards";
 import { JSX } from "react";
-import { BatchRenderJob, SingleRenderJob } from "server/types";
+import type { BatchRenderJob, SingleRenderJob } from "server/types";
 
 const Render = () => {
     const [searchParams] = useSearchParams();
