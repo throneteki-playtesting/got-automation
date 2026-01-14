@@ -32,8 +32,8 @@ RUN sed -i '1i // @ts-nocheck' ./server/src/types.ts
 
 WORKDIR /app/client
 ENV NODE_OPTIONS=--max-old-space-size=4096
-RUN npx vite build || (npx vite build 2>&1 && exit 1)
+RUN npx vite build > /app/build_error.log 2>&1 || true
 
 EXPOSE 5173
 
-CMD ["npm", "run", "start"]
+CMD ["sh", "-c", "if [ ! -d 'dist' ]; then cat /app/build_error.log; else npm run start; fi"]
