@@ -15,6 +15,9 @@ WORKDIR /app
 COPY common/package*.json ./common/
 COPY server/package*.json ./server/
 
+WORKDIR /app/common
+RUN npm install
+
 WORKDIR /app/server
 RUN npm install
 
