@@ -26,12 +26,13 @@ COPY common/ ./common/
 COPY client/ ./client/
 
 # Include server types, but only for reference
+RUN mkdir -p server/src
 COPY server/src/types.ts ./server/src/types.ts
 RUN sed -i '1i // @ts-nocheck' ./server/src/types.ts
 
 WORKDIR /app/client
 ENV NODE_OPTIONS=--max-old-space-size=4096
-RUN npm run build
+RUN npx vite build
 
 EXPOSE 5173
 
