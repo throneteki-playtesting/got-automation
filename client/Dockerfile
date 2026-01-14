@@ -32,7 +32,7 @@ RUN sed -i '1i // @ts-nocheck' ./server/src/types.ts
 
 WORKDIR /app/client
 ENV NODE_OPTIONS=--max-old-space-size=4096
-RUN npx vite build
+RUN npx vite build || (npx vite build 2>&1 && exit 1)
 
 EXPOSE 5173
 
