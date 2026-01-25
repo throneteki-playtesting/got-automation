@@ -2,8 +2,9 @@ import { Ability, Card, DeckLimit, Designer, Faction, Loyalty, Name, PlotStat, T
 import AutoSize from "../components/autoSize";
 import { px } from "../utils";
 import { CardComponentProps } from "../types";
+import { memo } from "react";
 
-const Plot = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
+const Plot = memo(({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (
         <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} style={style} {...props}>
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", height: px(40) }}>
@@ -37,6 +38,6 @@ const Plot = ({ card, scale, orientation, rounded, className, style, ...props }:
             </TextBox>
         </Card>
     );
-};
+});
 
 export default Plot;

@@ -57,6 +57,15 @@
 			"skipFiles": ["<node_internals>/**"],
 			"console": "internalConsole",
 			"sourceMaps": true
+		},
+		{
+			"name": "Preview Module (Watch)",
+			"type": "node",
+			"request": "launch",
+			"cwd": "${workspaceFolder}/@agotCardPreview",
+			"runtimeExecutable": "npm",
+			"runtimeArgs": ["run", "watch"],
+			"console": "internalConsole"
 		}
 	]
 }

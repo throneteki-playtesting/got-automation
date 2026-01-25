@@ -1,8 +1,9 @@
 import { Ability, Card, DeckLimit, Designer, Name, TextBox, Traits, Type, Watermark } from "../components/cardComponents";
 import AutoSize from "../components/autoSize";
 import { CardComponentProps } from "../types";
+import { memo } from "react";
 
-const Agenda = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
+const Agenda = memo(({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (
         <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} styles={{ inner: { display: "flex", flexDirection: "column" } }} style={style} {...props}>
             <div>
@@ -24,6 +25,6 @@ const Agenda = ({ card, scale, orientation, rounded, className, style, ...props 
             </TextBox>
         </Card>
     );
-};
+});
 
 export default Agenda;

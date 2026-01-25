@@ -1,67 +1,107 @@
 import classNames from "classnames";
 import { Cost as CostType, Strength as StrengthType, PlotValue as PlotValueType, ChallengeIcon, challengeIcons, DefaultDeckLimit, Faction as FactionType, PlotStat as PlotStatType, Type as TypeType, Watermark as WatermarkType, IRenderCard } from "common/models/cards";
 import AutoSize from "./autoSize";
-import { em, px } from "../utils";
+import { ASPECT_RATIO, BASE_HEIGHT, BASE_WIDTH, em, px } from "../utils";
 import { DeepPartial } from "common/types";
-import { CSSProperties, memo, useMemo } from "react";
+import { CSSProperties, memo, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BaseElementProps } from "../types";
-import ThronesIcon, { Icon } from "../../../client/src/components/thronesIcon";
 import { thronesColors } from "common/utils";
+import ThronesIcon, { Icon } from "./thronesIcon";
 
-const defaultOrientation = (type?: TypeType) => type === "plot" ? "horizontal" : "vertical";
-export const Card = memo(({ children, card, orientation = defaultOrientation(card.type), scale = 1, rounded = true, className, classNames: classGroups, style, styles: styleGroups, ...props }: CardProps) => {
-    const width = 240;
-    const height = 333;
+export const CardWrapper = memo(({ children, scale = 1, orientation = "vertical", rounded = false, className, classNames: classGroups, style, styles: styleGroups, ...props }: CardWrapperProps) => {
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const [renderedWidth, setRenderedWidth] = useState<number>(BASE_WIDTH * scale);
 
-    const wrapperWidth = orientation === "horizontal" ? height : width;
-    const wrapperHeight = orientation === "horizontal" ? width : height;
-    const innerWidth = card.type === "plot" ? height : width;
-    const innerHeight = card.type === "plot" ? width : height;
+    useLayoutEffect(() => {
+        const element = wrapperRef.current;
+        if (!element) return;
 
-    const rotate = orientation !== defaultOrientation(card.type);
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                // Use contentRect to get the actual available space
+                const width = entry.contentRect.width;
+                if (width > 0) {
+                    setRenderedWidth(width * scale);
+                }
+            }
+        });
 
-    const innerStyle = useMemo(() => {
-        const style: CSSProperties = {
-            borderColor: card.faction ? thronesColors[card.faction] : "white",
-            background: "white",
-            color: "black",
-            fontFamily: "Open Sans, sans-serif",
-            ...(scale !== 1 && { scale }),
-            ...((scale !== 1 || rotate) && { transformOrigin: "top left" }),
-            ...(rotate && { position: "relative", rotate: "270deg", top: "100%" }),
-            ...styleGroups?.inner
-        };
-        return style;
-    }, [card.faction, rotate, scale, styleGroups?.inner]);
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, [scale]);
+
+    const dynamicScale = useMemo(() => {
+        const baseWidth = orientation === "horizontal" ? BASE_HEIGHT : BASE_WIDTH;
+        return renderedWidth / baseWidth;
+    }, [orientation, renderedWidth]);
+    const aspectRatio = useMemo(() => orientation === "horizontal" ? `${ASPECT_RATIO.height}/${ASPECT_RATIO.width}` : `${ASPECT_RATIO.width}/${ASPECT_RATIO.height}`, [orientation]);
+
+    const wrapperStyle = useMemo<CSSProperties>(() => ({
+        overflow: "hidden",
+        position: "relative",
+        aspectRatio,
+        width: "100%",
+        height: "100%",
+        ...(rounded && { borderRadius: px(12 * dynamicScale) }),
+        ...style,
+        ...styleGroups?.wrapper
+    }), [aspectRatio, dynamicScale, rounded, style, styleGroups?.wrapper]);
+
+    const innerStyle = useMemo<CSSProperties>(() => ({
+        width: px(BASE_WIDTH),
+        height: px(BASE_HEIGHT),
+        transform: `scale(${dynamicScale})`,
+        transformOrigin: "top left",
+        position: "absolute",
+        top: 0,
+        left: 0,
+        ...styleGroups?.inner
+    }), [dynamicScale, styleGroups?.inner]);
 
     return (
-        <div
-            className={classNames(className, classGroups?.wrapper)}
-            style={{
-                overflow: "hidden",
-                width: px(wrapperWidth * scale),
-                height: px(wrapperHeight * scale),
-                ...(rounded && { borderRadius: px(12) }),
-                ...style,
-                ...styleGroups?.wrapper
-            }}
-            {...props}
-        >
-            <div
-                className={classGroups?.inner}
-                style={{
-                    width: px(innerWidth),
-                    height: px(innerHeight),
-                    borderWidth: px(12),
-                    ...innerStyle
-                }}
-            >
+        <div ref={wrapperRef} className={classNames(className, classGroups?.wrapper)} style={wrapperStyle} {...props}>
+            <div className={classGroups?.inner} style={innerStyle}>
                 {children}
             </div>
         </div>
     );
 });
-type CardProps = BaseElementProps & { classNames?: { wrapper?: string, inner?: string }, styles?: { wrapper?: CSSProperties, inner?: CSSProperties }, card: DeepPartial<IRenderCard>, orientation?: "vertical" | "horizontal", scale?: number, rounded?: boolean } & React.DOMAttributes<HTMLDivElement>;
+type CardWrapperProps = BaseElementProps & { classNames?: { wrapper?: string, inner?: string }, styles?: { wrapper?: CSSProperties, inner?: CSSProperties }, scale?: number, orientation?: "vertical" | "horizontal", rotated?: boolean, rounded?: boolean } & React.DOMAttributes<HTMLDivElement>;
+
+const defaultOrientation = (type?: TypeType) => type === "plot" ? "horizontal" : "vertical";
+export const Card = memo(({ children, card, orientation = defaultOrientation(card.type), rounded = true, scale = 1, className, classNames: classGroups, style, styles: styleGroups, ...props }: CardProps) => {
+    const innerWidth = card.type === "plot" ? BASE_HEIGHT : BASE_WIDTH;
+    const innerHeight = card.type === "plot" ? BASE_WIDTH : BASE_HEIGHT;
+    const rotated = orientation !== defaultOrientation(card.type);
+
+    const innerStyle = useMemo<CSSProperties>(() => ({
+        width: px(innerWidth),
+        height: px(innerHeight),
+        borderWidth: px(12),
+        borderColor: card.faction ? thronesColors[card.faction] : "white",
+        background: "white",
+        color: "black",
+        fontFamily: "Open Sans, sans-serif",
+        ...(rotated && { rotate: "270deg", top: "100%" }),
+        ...styleGroups?.inner
+    }), [card.faction, innerHeight, innerWidth, rotated, styleGroups?.inner]);
+
+    return (
+        <CardWrapper
+            className={className}
+            style={style}
+            classNames={classGroups}
+            styles={{ wrapper: styleGroups?.wrapper, inner: innerStyle }}
+            rounded={rounded}
+            scale={scale}
+            orientation={orientation}
+            {...props}
+        >
+            {children}
+        </CardWrapper>
+    );
+});
+type CardProps = BaseElementProps & { classNames?: { wrapper?: string, inner?: string }, styles?: { wrapper?: CSSProperties, inner?: CSSProperties }, scale?: number, card: DeepPartial<IRenderCard>, orientation?: "vertical" | "horizontal", rounded?: boolean } & React.DOMAttributes<HTMLDivElement>;
 
 
 export const Type = memo(({ children: type, className, style }: TypeProps) => {

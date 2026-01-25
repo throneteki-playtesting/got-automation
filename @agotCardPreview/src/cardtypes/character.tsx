@@ -3,8 +3,9 @@ import { Ability, Card, ChallengeIcons, Cost, DeckLimit, Designer, Faction, Loya
 import AutoSize from "../components/autoSize";
 import { CardComponentProps } from "../types";
 import { px } from "../utils";
+import { memo } from "react";
 
-const Character = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
+const Character = memo(({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (
         <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} styles={{ inner: { display: "flex", flexDirection: "column" } }} style={style} {...props}>
             <div style={{ display: "flex", flexGrow: 1 }}>
@@ -47,6 +48,6 @@ const Character = ({ card, scale, orientation, rounded, className, style, ...pro
             </TextBox>
         </Card>
     );
-};
+});
 
 export default Character;

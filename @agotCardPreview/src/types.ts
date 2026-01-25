@@ -12,5 +12,7 @@ export type CardComponentProps = Omit<BaseElementProps, "children"> & {
     card: DeepPartial<IRenderCard>,
     scale?: number,
     orientation?: "horizontal" | "vertical",
-    rounded?: boolean
+    rounded?: boolean,
+    classNames?: { wrapper?: string, inner?: string },
+    styles?: { wrapper?: CSSProperties, inner?: CSSProperties }
 } & React.DOMAttributes<HTMLDivElement>;

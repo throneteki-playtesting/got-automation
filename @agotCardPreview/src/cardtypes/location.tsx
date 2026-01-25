@@ -2,8 +2,9 @@ import { Ability, Card, Cost, DeckLimit, Designer, Faction, Loyalty, Name, TextB
 import AutoSize from "../components/autoSize";
 import { CardComponentProps } from "../types";
 import { px } from "../utils";
+import { memo } from "react";
 
-const Location = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
+const Location = memo(({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (
         <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} styles={{ inner: { display: "flex", flexDirection: "row" } }} style={style} {...props}>
             <div style={{ position: "relative", display: "flex", flexDirection: "column", width: px(35) }}>
@@ -41,6 +42,6 @@ const Location = ({ card, scale, orientation, rounded, className, style, ...prop
             </div>
         </Card>
     );
-};
+});
 
 export default Location;

@@ -2,8 +2,9 @@ import { Ability, Card, Cost, DeckLimit, Designer, Faction, Loyalty, Name, TextB
 import AutoSize from "../components/autoSize";
 import { CardComponentProps } from "../types";
 import { px } from "../utils";
+import { memo } from "react";
 
-const Attachment = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
+const Attachment = memo(({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     return (
         <Card scale={scale} card={card} orientation={orientation} rounded={rounded} className={className} styles={{ inner: { display: "flex", flexDirection: "column" } }} style={style} {...props}>
             <div style={{ display: "flex", flexGrow: 1 }}>
@@ -37,6 +38,6 @@ const Attachment = ({ card, scale, orientation, rounded, className, style, ...pr
             </div>
         </Card>
     );
-};
+});
 
 export default Attachment;

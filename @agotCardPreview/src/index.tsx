@@ -4,11 +4,11 @@ import Attachment from "./cardtypes/attachment";
 import Event from "./cardtypes/event";
 import Plot from "./cardtypes/plot";
 import Agenda from "./cardtypes/agenda";
-import { Card } from "./components/cardComponents";
-import { useMemo } from "react";
+import { Card, CardWrapper } from "./components/cardComponents";
+import { memo, useMemo } from "react";
 import { CardComponentProps } from "./types";
 
-const CardPreview = ({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
+export const CardPreview = memo(({ card, scale, orientation, rounded, className, style, ...props }: CardComponentProps) => {
     const CardComponent = useMemo(() => {
         switch (card.type) {
             case "character":
@@ -29,6 +29,6 @@ const CardPreview = ({ card, scale, orientation, rounded, className, style, ...p
     }, [card.type]);
 
     return <CardComponent card={card} scale={scale} orientation={orientation} rounded={rounded} className={className} style={style} {...props} />;
-};
+});
 
-export default CardPreview;
+export const CardBlank = CardWrapper;
