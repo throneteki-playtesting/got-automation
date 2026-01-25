@@ -120,7 +120,7 @@ export const TraitsInput = ({ className, style, value: traits, setValue: setTrai
         setTraits(cleanedItems);
     };
     return (
-        <ComboBox name="traits" className={className} style={style} label="Traits" values={traits} placeholder="Type and press enter" onChange={setValue} isDisabled={isDisabled} chip={{ color: "default", variant: "flat", className: "rounded-sm p-0 pr-0.5" }}/>
+        <ComboBox name="traits" className={className} style={style} label="Traits" values={traits} placeholder="Type and press enter" onChange={setValue} isDisabled={isDisabled} chip={{ color: "default", variant: "flat", className: "rounded-sm p-0 pr-0.5" }} addKeys={["Enter", "."]}/>
     );
 };
 

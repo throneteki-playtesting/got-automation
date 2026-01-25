@@ -3,12 +3,11 @@ import { celebrate, Joi, Segments } from "celebrate";
 import { Permission, User } from "common/models/user";
 import asyncHandler from "express-async-handler";
 import express, { Request } from "express";
-import { DeepPartial } from "common/types";
 import { ICardSuggestion } from "common/models/cards";
 import { dataService } from "@/services";
 import { hasPermission, validate } from "common/utils";
 import { validateRequest } from "@/middleware/permissions";
-import { IGetEndpoint } from "@/types";
+import { IGetEndpoint, IGetResponse } from "@/types";
 import { StatusCodes } from "http-status-codes";
 
 const router = express.Router();
@@ -24,11 +23,16 @@ const handleGetSuggestions = [
             })
         }
     }, { allowUnknown: true }),
-    asyncHandler<unknown, unknown, unknown, IGetEndpoint<ICardSuggestion>>(async (req, res, next) => {
+    asyncHandler<{ result: string[] }, unknown, unknown, IGetEndpoint<ICardSuggestion>>(async (req, res, next) => {
         const { filter, orderBy, page, perPage } = req.query;
         const result = await dataService.suggestions.read(filter, orderBy, page, perPage);
+        const count = await dataService.suggestions.count(filter);
 
-        req.body = result;
+        const response: IGetResponse<ICardSuggestion> = {
+            total: count,
+            data: result
+        };
+        req["response"] = response;
         next();
     })
 ];
@@ -39,7 +43,13 @@ router.get("/tags", asyncHandler<unknown, unknown, unknown, unknown>(async (req,
     res.json(result);
 }));
 
-router.get("/", ...handleGetSuggestions, (req, res) => res.json(req.body));
+router.get("/",
+    ...handleGetSuggestions,
+    (req, res) => {
+        const response = req["response"] as IGetResponse<ICardSuggestion>;
+        res.status(StatusCodes.OK).json(response);
+    }
+);
 
 router.get("/:id",
     celebrate({
@@ -63,7 +73,10 @@ router.get("/:id",
         }
     },
     ...handleGetSuggestions,
-    (req, res) => res.json(req.body[0] ?? {})
+    (req, res) => {
+        const response = req["response"] as IGetResponse<ICardSuggestion>;
+        res.status(StatusCodes.OK).json(response.data[0]);
+    }
 );
 
 router.get("/:userDiscordId",
@@ -88,7 +101,10 @@ router.get("/:userDiscordId",
         }
     },
     ...handleGetSuggestions,
-    (req, res) => res.json(req.body)
+    (req, res) => {
+        const response = req["response"] as IGetResponse<ICardSuggestion>;
+        res.status(StatusCodes.OK).json(response);
+    }
 );
 
 // Create suggestion
@@ -96,7 +112,7 @@ router.post("/",
     validateRequest((user: User) => validate(user, Permission.MAKE_SUGGESTIONS)),
     celebrate({
         [Segments.BODY]: Schemas.CardSuggestion.Draft.options({ abortEarly: false })
-    }), asyncHandler<unknown, unknown, Omit<ICardSuggestion, "_id" | "updated" | "created">, unknown>(async (req, res) => {
+    }), asyncHandler<unknown, unknown, Omit<ICardSuggestion, "id" | "updated" | "created">, unknown>(async (req, res) => {
         const body = req.body;
 
         const created = new Date();
@@ -147,9 +163,7 @@ router.delete("/:id",
     }),
     asyncHandler<{ id: string }, unknown, unknown, unknown>(async (req, res) => {
         const { id } = req.params;
-        const filter: DeepPartial<ICardSuggestion> = { id };
-
-        const result = await dataService.suggestions.destroy(filter);
+        const result = await dataService.suggestions.destroy({ id });
 
         res.send({
             deleted: result

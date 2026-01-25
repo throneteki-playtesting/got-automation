@@ -11,7 +11,7 @@ export async function updateFormData(...projectNumbers: number[]) {
 
     const projects = await dataService.projects.read(projectNumbers.map((number) => ({ number })));
     for (const project of projects) {
-        const cards = await dataService.cards.read({ project: project.number });
+        const cards = await dataService.cards.collection({ project: project.number });
         const cardNames = cards.latest.map((card) => `${card.number} - ${card.toString()}`);
 
         const client = new GasClient();

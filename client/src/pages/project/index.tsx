@@ -1,22 +1,20 @@
 import { Navigate, useParams } from "react-router-dom";
 import ProjectDetail from "./projectDetail";
+import { useMemo } from "react";
 
-const Project = ({ isCreating }: ProjectProps) => {
+const Project = ({ isCreating = false }: ProjectProps) => {
     const { number } = useParams();
 
-    if (!isCreating) {
-        const project = parseInt(number ?? "0");
-        if (!number || isNaN(project)) {
-            return <Navigate to="/" replace />;
-        }
-        return (
-            <ProjectDetail className="p-2" project={project}/>
-        );
+    const project = useMemo(() => {
+        const parsed = parseInt(number ?? "0");
+        return !number || isNaN(parsed) ? undefined : parsed;
+    }, [number]);
+
+    if (!isCreating && !project) {
+        return <Navigate to="/" replace />;
     }
     return (
-        <div>
-            TODO: Create project
-        </div>
+        <ProjectDetail key={project} project={project}/>
     );
 };
 

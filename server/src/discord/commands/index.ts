@@ -1,12 +1,12 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
 import { dataService, logger } from "@/services";
-import refresh from "./refresh";
+// import refresh from "./refresh";
 import sync from "./sync";
 import finalise from "./finalise";
 
 export const commands = {
     sync,
-    refresh,
+    // refresh,
     finalise
 };
 
@@ -49,7 +49,7 @@ export class AutoCompleteHelper {
                     const projects = await dataService.projects.read();
                     choices = projects
                         .filter((p) => p.active && p.name.toLowerCase().includes(focusedValue))
-                        .map((p) => ({ name: p.name, value: p.code.toString() }));
+                        .map((p) => ({ name: p.name, value: p.number.toString() }));
                 }
                 break;
             case "card":

@@ -17,10 +17,16 @@ export interface Role {
 export enum Permission {
     /** Can create new projects */
     CREATE_PROJECTS = "CREATE_PROJECTS",
+    /** Can edit existing projects */
+    EDIT_PROJECTS = "EDIT_PROJECTS",
+    /** Can delete existing projects */
+    DELETE_PROJECTS = "DELETE_PROJECTS",
     /** Can view all projects */
     READ_ALL_PROJECTS = "READ_ALL_PROJECTS",
     /** Can view active projects */
     READ_PROJECTS = "READ_PROJECTS",
+    /** Can initialise draft projects (eg. confirm starting lineups) */
+    INITIALISE_PROJECTS = "INITIALISE_PROJECTS",
     /** Can view playtesting cards */
     READ_CARDS = "READ_CARDS",
     /** Can edit playtesting cards */

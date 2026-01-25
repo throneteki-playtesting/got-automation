@@ -1,7 +1,6 @@
 {
-  "name": "got_automation",
+  "name": "server",
   "version": "1.0.0",
-  "description": "Automatic processes related to the aGoT LCG 2nd edition community design & playtesting team, under the Global Operations Team.",
   "scripts": {
     "dev": "tsx src/app.ts",
     "start": "node --import tsx ./src/app.ts",
@@ -34,6 +33,7 @@
     "joi": "^17.13.3",
     "joi-to-swagger": "^6.2.0",
     "jsonwebtoken": "^9.0.2",
+    "lodash-es": "^4.17.22",
     "mongodb": "^6.8.0",
     "next": "^14.2.5",
     "octokit": "^4.0.2",
@@ -45,6 +45,7 @@
     "semver": "^7.6.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "uuid": "^13.0.0",
     "winston": "^3.17.0",
     "zod": "^4.0.5"
   },
@@ -64,6 +65,7 @@
     "@types/express-partials": "^0.0.35",
     "@types/google-apps-script": "^1.0.83",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/lodash-es": "^4.17.12",
     "@types/node": "^22.10.2",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",

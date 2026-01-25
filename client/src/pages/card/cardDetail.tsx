@@ -1,4 +1,4 @@
-import { BreadcrumbItem, Breadcrumbs, Button, ButtonGroup, Skeleton, Spacer } from "@heroui/react";
+import { addToast, BreadcrumbItem, Breadcrumbs, Button, ButtonGroup, Skeleton, Spacer } from "@heroui/react";
 import { BaseElementProps } from "../../types";
 import { useCallback, useMemo, useState } from "react";
 import { useGetCardQuery, useGetProjectQuery } from "../../api";
@@ -56,8 +56,8 @@ const CardDetail = ({ className, style, project: projectNumber, number }: CardDe
                     {cardDetails()}
                 </div>
             </div>
-            <EditCardModal isOpen={!!editing} card={editing} onClose={() => setEditing(undefined)} onSave={() => setEditing(undefined)}/>
-            <DeleteCardModal isOpen={!!deleting} card={deleting} onClose={() => setDeleting(undefined)} onDelete={() => setDeleting(undefined)}/>
+            <EditCardModal isOpen={!!editing} card={editing} onClose={() => setEditing(undefined)} onSave={(card) => addToast({ title: "Successfully saved", color: "success", description: `'${card.name}' ver. ${card.version} has been ${collection?.draft ? "edited" : "created"}` })}/>
+            <DeleteCardModal isOpen={!!deleting} card={deleting} onClose={() => setDeleting(undefined)} onDelete={(card) => addToast({ title: "Successfully deleted", color: "success", description: `'${card.name}' ver. ${card.version} has been deleted` })}/>
         </>
     );
 };

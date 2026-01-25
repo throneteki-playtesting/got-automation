@@ -4,7 +4,7 @@ import { IPlaytestCard } from "common/models/cards";
 import { Button, Chip, Link, Skeleton } from "@heroui/react";
 import { IProject } from "common/models/projects";
 import { useGetCardVersionReviewsQuery } from "../../api";
-import CardPreview from "@agot/card-preview";
+import { CardPreview } from "@agot/card-preview";
 import { renderPlaytestingCard } from "common/utils";
 import CardVersionReviewStats from "./cardVersionReviewStats";
 import dismoji, { emojis } from "../../emojis";
@@ -58,7 +58,7 @@ const CardVersionDetail = ({ className, style, card, project, onEdit, onDelete, 
 
     return (
         <div className={classNames("flex flex-col md:flex-row flex-wrap gap-5 p-4 bg-default-100 rounded-2xl", className)} style={style}>
-            <CardPreview className="self-center" card={renderPlaytestingCard(card)}/>
+            <CardPreview className="self-center max-w-64" card={renderPlaytestingCard(card)}/>
             <div className="flex-grow flex flex-col gap-1">
                 <div className="flex flex-col">
                     <div className="text-2xl p-1 text-bold">{title}</div>

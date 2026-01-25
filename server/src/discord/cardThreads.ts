@@ -2,13 +2,13 @@ import { BaseMessageOptions, EmbedBuilder, ForumChannel, ForumThreadChannel, Gui
 import fs from "fs";
 import path from "path";
 import ejs from "ejs";
-import Project from "../data/models/project";
 import { emojis, icons, discordify, colors, cardAsAttachment } from "./utilities";
 import { fileURLToPath } from "url";
 import { dataService, discordService, logger } from "@/services";
 import { factions } from "common/models/cards";
 import PlaytestingCard from "@/data/models/cards/playtestingCard";
 import CardCollection from "common/collections/cardCollection";
+import { IProject } from "common/models/projects";
 
 export default class CardThreads {
     public static async sync<T extends PlaytestingCard>(guild: Guild, canCreate: boolean, cards: CardCollection<T>) {
@@ -165,7 +165,7 @@ export default class CardThreads {
         return null;
     }
 
-    private static async validateGuild(guild: Guild, ...projects: Project[]) {
+    private static async validateGuild(guild: Guild, ...projects: IProject[]) {
         const forumName = "card-forum";
 
         const errors = [];

@@ -1,11 +1,12 @@
 import MongoDataSource from "./dataSources/mongoDataSource";
-import { MongoClient } from "mongodb";
+import { MongoClient, Sort } from "mongodb";
 import { DeepPartial, SingleOrArray, Sortable } from "common/types";
 import { ICardSuggestion } from "common/models/cards";
 import { asArray } from "common/utils";
 import { flatten } from "flat";
+import { IRepository } from "@/types";
 
-export default class SuggestionsRepository {
+export default class SuggestionsRepository implements IRepository<ICardSuggestion> {
     private database: MongoDataSource<ICardSuggestion>;
     constructor(mongoClient: MongoClient) {
         this.database = new MongoDataSource<ICardSuggestion>(mongoClient, "suggestions", { id: 1 });
@@ -22,7 +23,14 @@ export default class SuggestionsRepository {
     }
 
     public async read(reading?: SingleOrArray<DeepPartial<ICardSuggestion>>, orderBy?: Sortable<ICardSuggestion>, page?: number, perPage?: number) {
-        return await this.database.read(reading, { sort: orderBy ? flatten(orderBy) : undefined, limit: perPage, skip: page * perPage });
+        const sort = orderBy ? flatten(orderBy) as Sort : undefined;
+        const limit = perPage;
+        const skip = (page - 1) * perPage;
+        return await this.database.read(reading, { sort, limit, skip });
+    }
+
+    public async count(counting?: SingleOrArray<DeepPartial<ICardSuggestion>>) {
+        return await this.database.count(counting);
     }
 
     public async update(updating: ICardSuggestion, upsert?: boolean): Promise<ICardSuggestion>;

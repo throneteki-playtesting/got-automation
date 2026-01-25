@@ -3,9 +3,9 @@ import ejs from "ejs";
 import { emojis, githubify } from "./utils";
 import path from "path";
 import { fileURLToPath } from "url";
-import Project from "../data/models/project";
 import { NoteType } from "common/models/cards";
 import PlaytestingCard from "@/data/models/cards/playtestingCard";
+import { IProject } from "common/models/projects";
 
 export type GeneratedIssue = {
     title: string,
@@ -23,7 +23,7 @@ export type GeneratedPullRequest = {
 type NotePackage = { icons: string, title: string, text: string };
 
 export class Issue {
-    static forCard(project: Project, card: PlaytestingCard) {
+    static forCard(project: IProject, card: PlaytestingCard) {
         const milestone = project.milestone;
         const type = card.note?.type || (card.isPreTesting && card.implementStatus !== "implemented" ? "implemented" : null);
         if (!type) {
@@ -80,7 +80,7 @@ export class Issue {
             default: throw Error(`"${type}" is not a valid note type`);
         }
     }
-    static forUpdate(project: Project, cards: PlaytestingCard[]) {
+    static forUpdate(project: IProject, cards: PlaytestingCard[]) {
         if (cards.length === 0) {
             return null;
         }

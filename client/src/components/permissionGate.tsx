@@ -1,4 +1,4 @@
-import { ReactElement } from "react";
+import { ReactNode } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../api/store";
 import { SingleOrArray } from "common/types";
@@ -15,5 +15,5 @@ const PermissionGate = ({ children, requires }: PermissionGateProps) => {
     return null;
 };
 
-type PermissionGateProps = { children?: SingleOrArray<ReactElement>, requires?: SingleOrArray<ValidationStep> }
+type PermissionGateProps = { children?: SingleOrArray<ReactNode>, requires?: SingleOrArray<ValidationStep> }
 export default PermissionGate;

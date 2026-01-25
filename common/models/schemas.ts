@@ -118,7 +118,8 @@ export const PlaytestingCard = {
         release: Joi.object({
             short: Joi.string().required(),
             number: Joi.number().required()
-        })
+        }),
+        suggestionId: Joi.string()
     }),
     Partial: Card.Partial.keys({
         project: Joi.number(),
@@ -136,7 +137,8 @@ export const PlaytestingCard = {
         release: Joi.object({
             short: Joi.string(),
             number: Joi.number()
-        })
+        }),
+        suggestionId: Joi.string()
     }),
     Draft: Card.Full.keys({
         project: Joi.number().required(),
@@ -157,7 +159,8 @@ export const PlaytestingCard = {
         release: Joi.object({
             short: Joi.string().required(),
             number: Joi.number().required()
-        })
+        }),
+        suggestionId: Joi.string()
     })
 };
 
@@ -233,28 +236,80 @@ export const Project = {
         name: Joi.string().required(),
         code: Joi.string().required(),
         active: Joi.boolean().required(),
-        script: Joi.string().required(),
-        short: Joi.string().required(),
+        draft: Joi.boolean().required(),
+        description: Joi.string().allow(""),
+        script: Joi.string(),
         type: Joi.string().required().valid(...Projects.types),
-        perFaction: Joi.number().required(),
-        neutral: Joi.number().required(),
-        releases: Joi.number().required(),
-        milestone: Joi.number().required(),
-        formUrl: Joi.string().required(),
-        emoji: Joi.string()
+        cardCount: Joi.object({
+            baratheon: Joi.number().required(),
+            greyjoy: Joi.number().required(),
+            lannister: Joi.number().required(),
+            martell: Joi.number().required(),
+            thenightswatch: Joi.number().required(),
+            stark: Joi.number().required(),
+            targaryen: Joi.number().required(),
+            tyrell: Joi.number().required(),
+            neutral: Joi.number().required()
+        }).required(),
+        version: Joi.number().required(),
+        milestone: Joi.number(),
+        mandateUrl: Joi.string(),
+        formUrl: Joi.string(),
+        emoji: Joi.string(),
+        created: Joi.date().required(),
+        updated: Joi.date().required()
     }),
     Partial: Joi.object({
         number: Joi.number(),
         name: Joi.string(),
         code: Joi.string(),
         active: Joi.boolean(),
+        draft: Joi.boolean(),
+        description: Joi.string().allow(""),
         script: Joi.string(),
-        short: Joi.string(),
         type: Joi.string().valid(...Projects.types),
-        perFaction: Joi.number(),
-        neutral: Joi.number(),
-        releases: Joi.number(),
+        cardCount: Joi.object({
+            baratheon: Joi.number(),
+            greyjoy: Joi.number(),
+            lannister: Joi.number(),
+            martell: Joi.number(),
+            thenightswatch: Joi.number(),
+            stark: Joi.number(),
+            targaryen: Joi.number(),
+            tyrell: Joi.number(),
+            neutral: Joi.number()
+        }),
+        version: Joi.number(),
         milestone: Joi.number(),
+        mandateUrl: Joi.string(),
+        formUrl: Joi.string(),
+        emoji: Joi.string(),
+        created: Joi.date(),
+        updated: Joi.date()
+    }),
+    Draft: Joi.object({
+        number: Joi.number().required(),
+        name: Joi.string().required(),
+        code: Joi.string().required(),
+        active: Joi.boolean().required(),
+        draft: Joi.boolean().required(),
+        description: Joi.string(),
+        script: Joi.string(),
+        type: Joi.string().required().valid(...Projects.types),
+        cardCount: Joi.object({
+            baratheon: Joi.number().required(),
+            greyjoy: Joi.number().required(),
+            lannister: Joi.number().required(),
+            martell: Joi.number().required(),
+            thenightswatch: Joi.number().required(),
+            stark: Joi.number().required(),
+            targaryen: Joi.number().required(),
+            tyrell: Joi.number().required(),
+            neutral: Joi.number().required()
+        }).required(),
+        version: Joi.number().required(),
+        milestone: Joi.number(),
+        mandateUrl: Joi.string(),
         formUrl: Joi.string(),
         emoji: Joi.string()
     })

@@ -2,8 +2,9 @@ import { Avatar, Select, SelectItem, SharedSelection } from "@heroui/react";
 import { User } from "common/models/user";
 import { useGetUsersQuery } from "../../api";
 import { useCallback } from "react";
+import { BaseElementProps } from "../../types";
 
-const UserFilter = ({ label = "Users", setUsers, users = [] }: UserFilterProps) => {
+const UserFilter = ({ className, style, label = "Users", setUsers, users = [] }: UserFilterProps) => {
     const { data, isLoading } = useGetUsersQuery();
 
     const handleSelectionChange = useCallback((keys: SharedSelection) => {
@@ -27,6 +28,8 @@ const UserFilter = ({ label = "Users", setUsers, users = [] }: UserFilterProps) 
             ))}
         </div>}
         onSelectionChange={handleSelectionChange}
+        className={className}
+        style={style}
     >
         {
             (user) => <SelectItem key={user.discordId} startContent={<Avatar src={user.avatarUrl}/>}>{user.displayname}</SelectItem>
@@ -34,6 +37,6 @@ const UserFilter = ({ label = "Users", setUsers, users = [] }: UserFilterProps) 
     </Select>;
 };
 
-type UserFilterProps = { label?: string, setUsers: (users: User[]) => void, users?: User[] }
+type UserFilterProps = Omit<BaseElementProps, "children"> & { label?: string, setUsers: (users: User[]) => void, users?: User[] }
 
 export default UserFilter;

@@ -1,8 +1,9 @@
-import { NoteType, noteTypes } from "common/models/cards";
+import { NoteDetails, NoteType, noteTypes } from "common/models/cards";
 import { Select, SelectItem, Textarea } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { faAnglesUp, faArrowRightArrowLeft, faArrowRotateLeft, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { DeepPartial } from "common/types";
 
 const NoteEditor = ({ note: initial, onChange }: NoteEditorProps) => {
     const [type, setType] = useState<NoteType>();
@@ -114,6 +115,6 @@ const NoteEditor = ({ note: initial, onChange }: NoteEditorProps) => {
     );
 };
 
-type NoteEditorProps = { note?: { type?: NoteType, text?: string }, onChange: (data: { type?: NoteType, text?: string }) => void }
+type NoteEditorProps = { note?: DeepPartial<NoteDetails>, onChange: (data: DeepPartial<NoteDetails>) => void }
 
 export default NoteEditor;

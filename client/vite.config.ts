@@ -33,6 +33,9 @@ export default defineConfig(({ mode }) => {
         },
         define: {
             __APP_ENV__: env
+        },
+        optimizeDeps: {
+            exclude: ["@agot/card-preview"]
         }
     };
 });

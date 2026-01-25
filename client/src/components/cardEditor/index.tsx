@@ -46,11 +46,11 @@ const CardEditor = ({ /*ref, */className, style, card: initial, inputOptions = {
         return { ...card, ...defaults };
     };
 
-    const handleChange = (field: keyof ICard, value: unknown) => {
+    const handleChange = useCallback((field: keyof ICard, value: unknown) => {
         const updated = applyDefaults({ ...card, [field]: value });
         setCard(updated);
         onUpdate(updated);
-    };
+    }, [card, onUpdate]);
 
     // Update visibility
     useEffect(() => {
@@ -85,7 +85,7 @@ const CardEditor = ({ /*ref, */className, style, card: initial, inputOptions = {
     }, [card.faction, card.type]);
 
     return (
-        <div className={classNames("space-y-2", className)} style={style}>
+        <div className={classNames("space-y-2 w-full", className)} style={style}>
             <div className="flex flex-col gap-2 sm:flex-row md:flex-col lg:flex-row lg:min-w-98">
                 {isVisible("type") && <TypeSelect className="basis-1/3" value={card.type} setValue={(value) => handleChange("type", value)} isDisabled={isDisabled("type")}/>}
                 <div className="flex gap-1 grow">

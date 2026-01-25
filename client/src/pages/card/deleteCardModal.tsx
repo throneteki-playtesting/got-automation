@@ -1,10 +1,11 @@
-import { addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { addToast } from "@heroui/react";
 import { BaseElementProps } from "../../types";
 import { IPlaytestCard } from "common/models/cards";
 import { useDeleteDraftMutation } from "../../api";
 import { useCallback } from "react";
+import ConfirmModal from "../../components/confirmModal";
 
-const DeleteCardModal = ({ isOpen, card, onClose: onModalClose, onDelete }: DeleteCardModalProps) => {
+const DeleteCardModal = ({ isOpen, card, onClose: onModalClose = () => true, onDelete = () => true }: DeleteCardModalProps) => {
     const [deleteDraft, { isLoading: isDeleting }] = useDeleteDraftMutation();
 
     const onSubmit = useCallback(async () => {
@@ -13,31 +14,24 @@ const DeleteCardModal = ({ isOpen, card, onClose: onModalClose, onDelete }: Dele
         }
         try {
             await deleteDraft(card).unwrap();
-            if (onDelete) {
-                onDelete(card);
-            }
-
-            addToast({ title: "Successfully deleted", color: "success", description: `'${card.name}' ver. ${card.version} has been deleted` });
+            onDelete(card);
+            onModalClose();
         } catch (err) {
             // TODO: Better error handling from redux (eg. use ApiError.message for description)
-            addToast({ title: "Failed to delete", color: "danger", description: "An unknown error has occurred" });
+            addToast({ title: "Error", color: "danger", description: "An unknown error has occurred" });
         }
-    }, [card, deleteDraft, onDelete]);
+    }, [card, deleteDraft, onDelete, onModalClose]);
 
-    return <Modal isOpen={isOpen} placement="top-center" onOpenChange={(isOpen) => !isOpen && onModalClose && onModalClose() } size="sm">
-        <ModalContent>
-            {(onClose) => (
-                <>
-                    <ModalHeader>{`Delete draft version for ${card?.name}?`}</ModalHeader>
-                    <ModalBody>This is permanent and cannot be undone.</ModalBody>
-                    <ModalFooter>
-                        <Button color="danger" isLoading={isDeleting} onPress={onSubmit}>Delete</Button>
-                        <Button color="default" onPress={onClose}>Back</Button>
-                    </ModalFooter>
-                </>
-            )}
-        </ModalContent>
-    </Modal>;
+    return <ConfirmModal
+        isOpen={isOpen}
+        isLoading={isDeleting}
+        title={`Delete draft version for ${card?.name}`}
+        content={"This is permanent and cannot be undone."}
+        confirmContent="Delete"
+        cancelContent="Back"
+        onConfirm={onSubmit}
+        onClose={onModalClose}
+    />;
 };
 
 type DeleteCardModalProps = Omit<BaseElementProps, "children"> & { isOpen: boolean, card?: IPlaytestCard, onClose?: () => void, onDelete?: (card: IPlaytestCard) => void }

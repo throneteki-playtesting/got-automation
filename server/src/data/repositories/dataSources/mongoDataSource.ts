@@ -71,6 +71,12 @@ export default class MongoDataSource<T> {
         return result;
     }
 
+    public async count(counting?: SingleOrArray<DeepPartial<T>>) {
+        const query = this.buildFilterQuery(counting);
+        const result = await this.total(query);
+        return result;
+    }
+
     public async update(updating: SingleOrArray<T>, options?: BulkWriteOptions & { upsert?: boolean }) {
         const docs = asArray(updating);
         const result = await this.bulkWrite(docs, options);
@@ -115,6 +121,13 @@ export default class MongoDataSource<T> {
 
         logger.verbose(`[Mongo] Read ${result ? "1" : "0"} documents from ${this.name} collection`);
         return this.withoutId(result);
+    }
+
+    protected async total(query: MongoFilter<T>) {
+        const result = await this.collection.countDocuments(query);
+
+        logger.verbose(`[Mongo] Counted ${result} documents from ${this.name} collection`);
+        return result;
     }
 
     protected async bulkWrite(docs: T[], { upsert, ...options }: BulkWriteOptions & { upsert?: boolean } = { upsert: true }) {

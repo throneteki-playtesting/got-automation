@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { DeepPartial } from "common/types";
 import CardEditor from "../../components/cardEditor";
 import { renderCardSuggestion } from "common/utils";
-import CardPreview from "@agot/card-preview";
+import { CardPreview } from "@agot/card-preview";
 import { Wizard, WizardBack, WizardNext, WizardPage, WizardPages } from "../../components/wizard";
 import { CardSuggestion } from "common/models/schemas";
 import ComboBox from "../../components/combobox";
@@ -40,7 +40,7 @@ const EditSuggestionModal = ({ isOpen, suggestion: initial, onClose: onModalClos
         }
     }, [isNew, onSave, submitSuggestion, updateSuggestion]);
 
-    return <Modal isOpen={isOpen} placement="top-center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="3xl">
+    return <Modal isOpen={isOpen} placement="center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="3xl">
         <ModalContent>
             {(onClose) => (
                 <Wizard
@@ -52,7 +52,7 @@ const EditSuggestionModal = ({ isOpen, suggestion: initial, onClose: onModalClos
                     <ModalHeader>Card Suggestion Editor</ModalHeader>
                     <ModalBody>
                         <div className="flex flex-col md:flex-row gap-2">
-                            <CardPreview card={renderCardSuggestion(suggestion)} className="self-center md:self-start shrink-0"/>
+                            <CardPreview card={renderCardSuggestion(suggestion)} className="self-center md:self-start shrink-0 max-w-64"/>
                             <WizardPages>
                                 <WizardPage data={{ card: suggestion.card }}>
                                     <CardEditor className="w-full" card={suggestion.card} onUpdate={(card) => setSuggestion((prev) => ({ ...prev, card }))} inputOptions={{ designer: "hidden" }}/>

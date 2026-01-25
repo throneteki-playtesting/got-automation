@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DeepPartial } from "common/types";
-import { UUID } from "crypto";
 import { createContext, useContext } from "react";
 
 export const WizardContext = createContext<WizardContextProps<any> | null>(null);
@@ -14,7 +13,7 @@ export function useWizard<T>(): WizardContextProps<T> {
 }
 
 export type WizardContextProps<T> = {
-    id: UUID,
+    id: string,
     currentPage: number,
     totalPages: number,
     setTotalPages: React.Dispatch<React.SetStateAction<number>>,

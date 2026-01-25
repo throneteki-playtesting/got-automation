@@ -1,18 +1,18 @@
 import { IPlaytestCard } from "common/models/cards";
 import { BaseElementProps } from "../../types";
 import { addToast, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
-import { usePutDraftMutation } from "../../api";
+import { usePutDraftCardMutation } from "../../api";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DeepPartial } from "common/types";
 import CardEditor from "../../components/cardEditor";
 import { getBaseCardValues, isPreview, renderPlaytestingCard } from "common/utils";
-import CardPreview from "@agot/card-preview";
+import { CardPreview } from "@agot/card-preview";
 import { PlaytestingCard } from "common/models/schemas";
 import { Wizard, WizardBack, WizardNext, WizardPage, WizardPages } from "../../components/wizard";
 import NoteEditor from "./noteEditor";
 
 const EditCardModal = ({ isOpen, card: initial, onClose: onModalClose = () => true, onSave = () => true }: EditCardModalProps) => {
-    const [putDraft, { isLoading: isPuttingDraft }] = usePutDraftMutation();
+    const [putDraft, { isLoading: isPuttingDraft }] = usePutDraftCardMutation();
     const [card, setCard] = useState<DeepPartial<IPlaytestCard>>({});
 
     useEffect(() => {
@@ -26,13 +26,12 @@ const EditCardModal = ({ isOpen, card: initial, onClose: onModalClose = () => tr
             // Saves the version
             setCard(newCard);
             onSave(newCard);
-
-            addToast({ title: "Successfully saved", color: "success", description: `'${newCard.name}' ver. ${newCard.version} has been created` });
+            onModalClose();
         } catch (err) {
         // TODO: Better error handling from redux (eg. use ApiError.message for description)
             addToast({ title: "Failed to save", color: "danger", description: "An unknown error has occurred" });
         }
-    }, [onSave, putDraft]);
+    }, [onModalClose, onSave, putDraft]);
 
     const renderDraftCard = useMemo(() => {
         const render = renderPlaytestingCard(card);
@@ -40,7 +39,7 @@ const EditCardModal = ({ isOpen, card: initial, onClose: onModalClose = () => tr
         return render;
     }, [card]);
 
-    return <Modal isOpen={isOpen} placement="top-center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="3xl">
+    return <Modal isOpen={isOpen} placement="center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="3xl">
         <ModalContent>
             {(onClose) => (
                 <Wizard
@@ -52,10 +51,10 @@ const EditCardModal = ({ isOpen, card: initial, onClose: onModalClose = () => tr
                     <ModalHeader>Draft Card Editor</ModalHeader>
                     <ModalBody>
                         <div className="flex flex-col md:flex-row gap-2">
-                            <CardPreview card={renderDraftCard} className="self-center md:self-start shrink-0"/>
+                            <CardPreview card={renderDraftCard} className="self-center md:self-start shrink-0 max-w-64"/>
                             <WizardPages>
                                 <WizardPage data={getBaseCardValues(card)}>
-                                    <CardEditor card={card} onUpdate={setCard} inputOptions={{ designer: "hidden" }}/>
+                                    <CardEditor card={card} onUpdate={setCard} inputOptions={{ faction: "disabled", designer: "hidden" }}/>
                                 </WizardPage>
                                 {!isPreview(card) &&
                                     <WizardPage data={{ note: card.note ?? {} }}>

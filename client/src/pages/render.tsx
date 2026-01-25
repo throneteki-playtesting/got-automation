@@ -1,7 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 import { UUID } from "crypto";
 import { useGetRenderJobQuery } from "../api";
-import CardPreview from "@agot/card-preview";
+import { CardPreview } from "@agot/card-preview";
 import { IRenderCard } from "common/models/cards";
 import { JSX } from "react";
 import type { BatchRenderJob, SingleRenderJob } from "server/types";
@@ -23,7 +23,7 @@ const Render = () => {
         const orientation = job.options?.orientation;
         const rounded = job.options?.rounded;
         return job.data.map(({ id, card }) =>
-            <div data-card-id={id} className="flex w-fit h-fit">
+            <div data-card-id={id} className="w-[240px] h-[333px]">
                 <CardPreview card={card} rounded={rounded ?? false} orientation={orientation}/>
             </div>
         );

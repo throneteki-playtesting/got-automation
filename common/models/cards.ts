@@ -68,7 +68,8 @@ export interface IPlaytestCard extends ICard {
     note?: NoteDetails,
     playtesting?: SemanticVersion,
     github?: GithubDetails,
-    release?: ReleaseDetails
+    release?: ReleaseDetails,
+    suggestionId?: string
 }
 
 export interface IRenderCard extends Omit<ICard, "code"> {
@@ -125,6 +126,8 @@ export interface ICardSuggestion {
     likedBy: string[],
     /** Discord Id of user who approved this suggestion */
     approvedBy?: string,
+    /** Reason for this suggestion to be archived, or undefined if not archived */
+    archivedReason?: string,
     /** Additional tags related to this suggestion */
     tags: string[],
     /** Card design */

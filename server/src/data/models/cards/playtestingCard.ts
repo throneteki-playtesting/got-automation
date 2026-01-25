@@ -13,6 +13,7 @@ class PlaytestingCard extends BaseCard implements IPlaytestCard {
     public playtesting?: SemanticVersion;
     public github?: GithubDetails;
     public release?: ReleaseDetails;
+    public suggestionId?: string;
 
     constructor(data: IPlaytestCard) {
         super(data);
@@ -23,6 +24,7 @@ class PlaytestingCard extends BaseCard implements IPlaytestCard {
         this.playtesting = data.playtesting;
         this.github = data.github;
         this.release = data.release;
+        this.suggestionId = data.suggestionId;
     }
 
     toString() {
@@ -46,7 +48,8 @@ class PlaytestingCard extends BaseCard implements IPlaytestCard {
             ...(this.note !== undefined && { note: this.note }),
             playtesting: this.playtesting,
             ...(this.github !== undefined && { github: this.github }),
-            ...(this.release !== undefined && { release: this.release })
+            ...(this.release !== undefined && { release: this.release }),
+            ...(this.suggestionId !== undefined && { suggestionId: this.suggestionId })
         } as IPlaytestCard;
         return obj;
     }
@@ -78,7 +81,8 @@ class PlaytestingCard extends BaseCard implements IPlaytestCard {
             release: this.release ? {
                 short: this.release.short,
                 number: this.release.number
-            } : undefined
+            } : undefined,
+            suggestionId: this.suggestionId
         };
 
         return new PlaytestingCard(data);

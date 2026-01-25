@@ -1,6 +1,5 @@
 import { BaseMessageOptions, EmbedBuilder, ForumChannel, Guild, GuildForumTag, GuildMember, Message } from "discord.js";
 import Review from "../data/models/review";
-import Project from "../data/models/project";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -10,6 +9,7 @@ import { dataService, discordService, logger } from "@/services";
 import { StatementQuestions } from "common/models/reviews";
 import { factions } from "common/models/cards";
 import PlaytestingCard from "@/data/models/cards/playtestingCard";
+import { IProject } from "common/models/projects";
 
 export default class ReviewThreads {
     public static async sync(guild: Guild, canCreate: boolean, ...reviews: Review[]) {
@@ -27,7 +27,7 @@ export default class ReviewThreads {
 
             for (const review of reviews) {
                 try {
-                    const [card] = await dataService.cards.read({ number: review.number, version: review.version });
+                    const [card] = await dataService.cards.collection({ number: review.number, version: review.version });
                     const project = projects.find((p) => p.number === card.number);
                     let thread = await findReviewThreadFor(card, review);
                     const threadTitle = titleFunc(card, review);
@@ -116,7 +116,7 @@ export default class ReviewThreads {
         return { created, updated, failed };
     }
 
-    private static async validateGuild(guild: Guild, ...projects: Project[]) {
+    private static async validateGuild(guild: Guild, ...projects: IProject[]) {
         const forumName = "playtesting-reviews";
 
         const errors = [];
@@ -154,7 +154,7 @@ export default class ReviewThreads {
         return { channel, projectTags, factionTags };
     }
 
-    private static generateInitial(review: Review, card: PlaytestingCard, project: Project, member?: GuildMember) {
+    private static generateInitial(review: Review, card: PlaytestingCard, project: IProject, member?: GuildMember) {
         try {
             const content = ReviewThreads.renderTemplate({ review, card, project, member, template: "initial" });
             const allowedMentions = { parse: ["users"] };
@@ -216,7 +216,7 @@ export default class ReviewThreads {
         }
     }
 
-    private static generateUpdated(review: Review, card: PlaytestingCard, project: Project, changed: string[], member: GuildMember) {
+    private static generateUpdated(review: Review, card: PlaytestingCard, project: IProject, changed: string[], member: GuildMember) {
 
         try {
             const content = ReviewThreads.renderTemplate({ review, card, project, member, changed, template: "updated" });

@@ -1,4 +1,4 @@
-import { BulkWriteOptions, MongoClient } from "mongodb";
+import { BulkWriteOptions, MongoClient, Sort } from "mongodb";
 import { dataService, logger } from "@/services";
 import { asArray, groupBy } from "common/utils";
 import * as CardsController from "gas/controllers/cardsController";
@@ -6,11 +6,13 @@ import { CardSheet } from "gas/spreadsheets/serializers/cardSerializer";
 import MongoDataSource from "./dataSources/mongoDataSource";
 import GASDataSource from "./dataSources/GASDataSource";
 import { IPlaytestCard } from "common/models/cards";
-import CardCollection from "../../../../common/collections/cardCollection";
+import { DeepPartial, SingleOrArray, Sortable } from "common/types";
+import { flatten } from "flat";
+import { IRepository } from "@/types";
 import PlaytestingCard from "../models/cards/playtestingCard";
-import { DeepPartial, SingleOrArray } from "common/types";
+import CardCollection from "common/collections/cardCollection";
 
-export default class CardsRepository {
+export default class CardsRepository implements IRepository<IPlaytestCard> {
     public database: CardMongoDataSource;
     public spreadsheet: CardDataSource;
     constructor(mongoClient: MongoClient) {
@@ -26,19 +28,20 @@ export default class CardsRepository {
         return Array.isArray(creating) ? result : result[0];
     }
 
-    public async read(reading?: SingleOrArray<DeepPartial<IPlaytestCard>>, hard = false) {
-        // let cards: IPlaytestCard[];
-        // // Force hard refresh from spreadsheet (slow)
-        // if (hard) {
-        //     const fetched = await this.spreadsheet.read(reading);
-        //     await this.database.update(fetched);
-        //     cards = fetched;
-        // } else {
-        //     // Otherwise, use database (fast)...
-        //     cards = await this.database.read(reading);
-        // }
-        const cards = await this.database.read(reading);
-        return new CardCollection(cards.map((card) => new PlaytestingCard(card)));
+    public async read(reading?: SingleOrArray<DeepPartial<IPlaytestCard>>, orderBy?: Sortable<IPlaytestCard>, page?: number, perPage?: number) {
+        const sort = orderBy ? flatten(orderBy) as Sort : undefined;
+        const limit = perPage;
+        const skip = (page - 1) * perPage;
+        return await this.database.read(reading, { sort, limit, skip });
+    }
+
+    public async count(counting?: SingleOrArray<DeepPartial<IPlaytestCard>>) {
+        return await this.database.count(counting);
+    }
+
+    public async collection(reading?: SingleOrArray<DeepPartial<IPlaytestCard>>, orderBy?: Sortable<IPlaytestCard>, page?: number, perPage?: number) {
+        const result = await this.read(reading, orderBy, page, perPage);
+        return new CardCollection(result.map((card) => new PlaytestingCard(card)));
     }
 
     public async update(updating: IPlaytestCard, upsert?: boolean): Promise<IPlaytestCard>;

@@ -25,10 +25,19 @@ export interface RefreshAuthResponse {
 }
 
 export interface IRepository<T> {
-    create(creating: SingleOrArray<T>): Promise<unknown>;
-    read(reading?: SingleOrArray<DeepPartial<T>>): Promise<unknown>;
-    update(updating: SingleOrArray<T>): Promise<unknown>;
-    destroy(destroying: SingleOrArray<DeepPartial<T>>): Promise<unknown>;
+    create(creating: T): Promise<T>;
+    create(creating: T[]): Promise<T[]>;
+    create(creating: SingleOrArray<T>): Promise<T> | Promise<T[]>;
+
+    read(reading?: SingleOrArray<DeepPartial<T>>, orderBy?: Sortable<T>, page?: number, perPage?: number): Promise<T[]>;
+
+    count(counting?: SingleOrArray<DeepPartial<T>>): Promise<number>;
+
+    update(updating: T, upsert?: boolean): Promise<T>;
+    update(updating: T[], upsert?: boolean): Promise<T[]>;
+    update(updating: SingleOrArray<T>, upsert?: boolean): Promise<T> | Promise<T[]>;
+
+    destroy(destroying: SingleOrArray<DeepPartial<T>>): Promise<number>;
 }
 
 export type RenderType = "single" | "batch";
@@ -39,3 +48,4 @@ export interface BatchRenderJob extends RenderJob { type: "batch", options?: Bat
 export type BatchRenderJobOptions = { copies?: number, perPage?: number, rounded?: boolean };
 
 export interface IGetEndpoint<T> { filter?: SingleOrArray<DeepPartial<T>>, orderBy?: Sortable<T>, page?: number, perPage?: number }
+export interface IGetResponse<T> { total: number, data: T[] }

@@ -15,23 +15,23 @@ const sync = {
         return new SlashCommandBuilder()
             .setName("sync")
             .setDescription("Sync specific data for a project")
-            .addSubcommand(subcommand =>
-                subcommand
-                    .setName("cards")
-                    .setDescription("Sync card data for a project")
-                    .addStringOption(option =>
-                        option.setName("project")
-                            .setDescription("Project for card")
-                            .setRequired(true)
-                            .setAutocomplete(true)
-                    )
-                    .addStringOption(option =>
-                        option.setName("card")
-                            .setDescription("Card to push")
-                            .setRequired(false)
-                            .setAutocomplete(true)
-                    )
-            )
+            // .addSubcommand(subcommand =>
+            //     subcommand
+            //         .setName("cards")
+            //         .setDescription("Sync card data for a project")
+            //         .addStringOption(option =>
+            //             option.setName("project")
+            //                 .setDescription("Project for card")
+            //                 .setRequired(true)
+            //                 .setAutocomplete(true)
+            //         )
+            //         .addStringOption(option =>
+            //             option.setName("card")
+            //                 .setDescription("Card to push")
+            //                 .setRequired(false)
+            //                 .setAutocomplete(true)
+            //         )
+            // )
             .addSubcommand(subcommand =>
                 subcommand
                     .setName("cardforum")
@@ -164,11 +164,11 @@ const sync = {
     },
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply({ ephemeral: true });
-        const subcommand = interaction.options.getSubcommand() as "cards" | "cardforum" | "issues" | "pullrequests" | "images" | "pdfs" | "form" | "reviews";
+        const subcommand = interaction.options.getSubcommand() as /*"cards" | */"cardforum" | "issues" | "pullrequests" | "images" | "pdfs" | "form" | "reviews";
         try {
             switch (subcommand) {
-                case "cards":
-                    return await command.cards.execute(interaction);
+                // case "cards":
+                //     return await command.cards.execute(interaction);
                 case "cardforum":
                     return await command.cardforum.execute(interaction);
                 case "issues":
@@ -198,21 +198,21 @@ const sync = {
 
 // TODO: Add a new FollowUpHelper to send incremental updates to user on what's currently happening (eg. Reading from spreadsheet...; Saving to database...)
 const command = {
-    cards: {
-        async execute(interaction: ChatInputCommandInteraction) {
-            const projectId = parseInt(interaction.options.getString("project"));
-            const number = parseInt(interaction.options.getString("card")) || undefined;
+    // cards: {
+    //     async execute(interaction: ChatInputCommandInteraction) {
+    //         const projectId = parseInt(interaction.options.getString("project"));
+    //         const number = parseInt(interaction.options.getString("card")) || undefined;
 
-            if (number === undefined) {
-                await dataService.cards.database.destroy({ project: projectId });
-            }
-            const cards = await dataService.cards.read({ project: projectId, number }, true);
+    //         if (number === undefined) {
+    //             await dataService.cards.database.destroy({ project: projectId });
+    //         }
+    //         const cards = await dataService.cards.read({ project: projectId, number }, true);
 
-            const content = `Successfully synced ${cards.all.length} card(s)`;
+    //         const content = `Successfully synced ${cards.all.length} card(s)`;
 
-            await FollowUpHelper.success(interaction, content);
-        }
-    },
+    //         await FollowUpHelper.success(interaction, content);
+    //     }
+    // },
     cardforum: {
         async execute(interaction: ChatInputCommandInteraction) {
             const guild = interaction.guild;
@@ -220,7 +220,7 @@ const command = {
             const number = parseInt(interaction.options.getString("card")) || undefined;
             const canCreate = interaction.options.getBoolean("create") || true;
 
-            const cards = await dataService.cards.read({ project: projectId, number });
+            const cards = await dataService.cards.collection({ project: projectId, number });
             const { created, updated, failed } = await CardThreads.sync(guild, canCreate, cards);
 
             const results = [];
@@ -241,7 +241,7 @@ const command = {
             const projectId = parseInt(interaction.options.getString("project"));
             const number = parseInt(interaction.options.getString("card")) || undefined;
 
-            const cards = await dataService.cards.read({ project: projectId, number });
+            const cards = await dataService.cards.collection({ project: projectId, number });
             const [project] = await dataService.projects.read({ number: projectId });
             const issues = await githubService.syncIssues(project, cards);
 
@@ -253,7 +253,7 @@ const command = {
         async execute(interaction: ChatInputCommandInteraction) {
             const projectId = parseInt(interaction.options.getString("project"));
 
-            const cards = await dataService.cards.read({ project: projectId });
+            const cards = await dataService.cards.collection({ project: projectId });
             const [project] = await dataService.projects.read({ number: projectId });
             await renderService.syncPDFs(project, cards, true);
             try {
@@ -272,8 +272,7 @@ const command = {
             const number = parseInt(interaction.options.getString("card")) || undefined;
             const override = interaction.options.getBoolean("override") || true;
 
-            const cards = await dataService.cards.read({ project: projectId, number });
-
+            const cards = await dataService.cards.collection({ project: projectId, number });
             await renderService.syncImages(cards, override);
 
             const content = `Successfully synced ${cards.latest.length} card images`;
@@ -286,7 +285,7 @@ const command = {
             const override = interaction.options.getBoolean("override") || true;
 
             const [project] = await dataService.projects.read({ number: projectId });
-            const cards = await dataService.cards.read({ project: projectId });
+            const cards = await dataService.cards.collection({ project: projectId });
 
             await renderService.syncPDFs(project, cards, override);
 

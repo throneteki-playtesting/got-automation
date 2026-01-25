@@ -2,8 +2,9 @@ import { Select, SelectItem } from "@heroui/react";
 import { Type, types as allTypes } from "common/models/cards";
 import { typeNames } from "common/utils";
 import ThronesIcon, { Icon } from "../thronesIcon";
+import { BaseElementProps } from "../../types";
 
-const TypeFilter = ({ label = "Type", setTypes, types = [] }: TypeFilterProps) => {
+const TypeFilter = ({ className, style, label = "Type", setTypes, types = [] }: TypeFilterProps) => {
     const items = allTypes.map((type) => ({ key: type, label: typeNames[type] }));
     return <Select
         label={label}
@@ -16,6 +17,8 @@ const TypeFilter = ({ label = "Type", setTypes, types = [] }: TypeFilterProps) =
             ))}
         </div>}
         onSelectionChange={(keys) => setTypes([...keys] as Type[])}
+        className={className}
+        style={style}
     >
         {
             (type) => <SelectItem key={type.key} startContent={<ThronesIcon name={type.key} />}>{type.label}</SelectItem>
@@ -23,6 +26,6 @@ const TypeFilter = ({ label = "Type", setTypes, types = [] }: TypeFilterProps) =
     </Select>;
 };
 
-type TypeFilterProps = { label?: string, setTypes: (types: Type[]) => void, types?: Type[] }
+type TypeFilterProps = Omit<BaseElementProps, "children"> & { label?: string, setTypes: (types: Type[]) => void, types?: Type[] }
 
 export default TypeFilter;

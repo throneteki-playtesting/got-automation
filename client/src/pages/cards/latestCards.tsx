@@ -4,7 +4,7 @@ import { BaseElementProps } from "../../types";
 import { useGetCardsQuery } from "../../api";
 import { renderPlaytestingCard } from "common/utils";
 import CardGrid from "../../components/cardGrid";
-import CardPreview from "@agot/card-preview";
+import { CardPreview } from "@agot/card-preview";
 
 const LatestCards = ({ className, style, filter }: LatestCardsProps) => {
     const { data: cards, isLoading, error } = useGetCardsQuery({ filter, latest: true });

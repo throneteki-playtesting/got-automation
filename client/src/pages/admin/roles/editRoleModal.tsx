@@ -32,7 +32,7 @@ const EditRoleModal = ({ role, onOpenChange, onSave: onRoleSave }: EditRoleModal
         setPermissions(new Set(role?.permissions.map((p) => p.toString()) ?? []));
     }, [role]);
 
-    return <Modal isOpen={!!role} placement="top-center" onOpenChange={onOpenChange}>
+    return <Modal isOpen={!!role} placement="center" onOpenChange={onOpenChange}>
         <ModalContent>
             {(onClose) => (
                 <>

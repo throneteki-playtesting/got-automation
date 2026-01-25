@@ -1,9 +1,7 @@
 import fs from "fs";
 import path from "path";
 import puppeteer, { Viewport } from "puppeteer";
-import Project from "../data/models/project";
 import PlaytestingCard from "@/data/models/cards/playtestingCard";
-import RenderedCard from "@/data/models/cards/renderedCard";
 import CardCollection from "common/collections/cardCollection";
 import { dataService, logger } from "@/services";
 import { asArray, renderPlaytestingCard } from "common/utils";
@@ -11,6 +9,7 @@ import { SingleOrArray } from "common/types";
 import { randomUUID } from "crypto";
 import { BatchRenderJob, BatchRenderJobOptions, RenderType, SingleRenderJob, SingleRenderJobOptions } from "@/types";
 import { IPlaytestCard, IRenderCard } from "common/models/cards";
+import { IProject } from "common/models/projects";
 
 type PNGResponse = { filename: string, buffer: Buffer<ArrayBufferLike> };
 
@@ -40,7 +39,7 @@ class RenderingService {
 
         await Promise.allSettled(promises);
     }
-    public async syncPDFs<T extends PlaytestingCard>(project: Project, cards: CardCollection<T>, override = false) {
+    public async syncPDFs<T extends PlaytestingCard>(project: IProject, cards: CardCollection<T>, override = false) {
         const all = cards.latest;
         const updated = cards.latest.filter((card) => card.isChanged);
         const filePathFunc = (collection: "all"|"updated") => `./public/pdf/${project.number}/${project.version + 1}_${collection}.pdf`;
@@ -97,7 +96,7 @@ class RenderingService {
         }
     }
 
-    public async asPDF(data: SingleOrArray<RenderedCard>, options?: BatchRenderJobOptions) {
+    public async asPDF(data: SingleOrArray<IRenderCard>, options?: BatchRenderJobOptions) {
         const cards = asArray(data);
         const job = await this.createJob("batch", cards, options);
         const browser = await this.launchPuppeteer({

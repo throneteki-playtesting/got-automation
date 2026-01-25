@@ -126,6 +126,18 @@ export const thronesColors = {
     "reserve": "#f0623f"
 };
 
+export const thronesFontColors = {
+    "baratheon": "#000000",
+    "greyjoy": "#ffffff",
+    "lannister": "#ffffff",
+    "martell": "#ffffff",
+    "thenightswatch": "#ffffff",
+    "stark": "#000000",
+    "targaryen": "#ffffff",
+    "tyrell": "#ffffff",
+    "neutral": "#ffffff"
+};
+
 export function parseCardCode(isReleasable: boolean, project: number, number: number) {
     if (isReleasable) {
         return `${project}${number.toString().padStart(3, "0")}` as Cards.Code;
@@ -259,6 +271,16 @@ export function renderCardSuggestion(suggestion: DeepPartial<Cards.ICardSuggesti
             bottom: "Card Suggestion"
         }
     } as DeepPartial<Cards.IRenderCard>;
+}
+
+export function suggestionToPlaytestCard(suggestion: Cards.ICardSuggestion, project: number, number: number, version: SemanticVersion = "0.0.0") {
+    return {
+        project,
+        number,
+        version,
+        suggestionId: suggestion.id,
+        ...suggestion.card
+    } as Cards.IPlaytestCard;
 }
 
 export const abilityIcons: { [key: string]: string } = {

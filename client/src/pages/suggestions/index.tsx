@@ -1,45 +1,22 @@
 import { ReactElement, useState } from "react";
-import { Faction, ICard, ICardSuggestion, Type } from "common/models/cards";
-import { useDeleteSuggestionMutation, useGetSuggestionsQuery, useRenderImageMutation } from "../../api";
-import FactionFilter from "../../components/data/factionFilter";
-import TypeFilter from "../../components/data/typeFilter";
-import { useFilters } from "../../api/hooks";
-import UserFilter from "../../components/data/userFilter";
+import { ICardSuggestion } from "common/models/cards";
+import { useDeleteSuggestionMutation, useRenderImageMutation } from "../../api";
 import { Permission, User } from "common/models/user";
 import EditSuggestionModal from "./editSuggestionModal";
-import { Accordion, AccordionItem, addToast, Badge, Button, Spinner } from "@heroui/react";
-import { DeepPartial, SingleOrArray, Sortable } from "common/types";
+import { addToast, Button, Spinner } from "@heroui/react";
+import { DeepPartial, SingleOrArray } from "common/types";
 import PermissionGate from "../../components/permissionGate";
 import { hasPermission, renderCardSuggestion, ValidationStep } from "common/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileExport, faFileImage, faFileImport, faPencil, faX } from "@fortawesome/free-solid-svg-icons";
-import TagFilter from "../../components/data/tagFilter";
 import classNames from "classnames";
 import { download } from "../../utilities";
-import CardGrid from "../../components/cardGrid";
-import CardPreview from "@agot/card-preview";
-import OrderBySelector from "../../components/data/orderBy";
+import { CardPreview } from "@agot/card-preview";
+import SuggestionsGrid from "./suggestionsGrid";
 
-const SortOptions = {
-    "name": "Name",
-    "faction": "Faction",
-    "type": "Card Type",
-    "cost": "Cost"
-};
 
 const Suggestions = () => {
     const [editing, setEditing] = useState<DeepPartial<ICardSuggestion>>();
-
-    // Filters
-    const [factions, setFactions] = useState<Faction[]>([]);
-    const [types, setTypes] = useState<Type[]>([]);
-    const [users, setUsers] = useState<User[]>([]);
-    const [tags, setTags] = useState<string[]>([]);
-    const filters = useFilters({ faction: factions, type: types, user: users.map((user) => ({ discordId: user.discordId })), tags: tags.map((tag) => [tag]) });
-
-    const [orderBy, setOrderBy] = useState<Sortable<ICard>>();
-
-    const { data: suggestions, isLoading } = useGetSuggestionsQuery({ filter: filters, orderBy: { card: orderBy } });
     const [deleteSuggestion, { isLoading: isDeleting, originalArgs: deleting }] = useDeleteSuggestionMutation();
     const [renderImage, { isLoading: isRenderingImage, originalArgs: renderingImage }] = useRenderImageMutation();
 
@@ -82,39 +59,14 @@ const Suggestions = () => {
     const CardButton = ({ isLoading, children, onPress, requires }: { isLoading?: boolean, children: ReactElement, onPress: () => void, requires?: SingleOrArray<ValidationStep> }) => {
         return (
             <PermissionGate requires={requires}>
-                <Button isLoading={isLoading} isIconOnly={true} radius="full" variant="faded" size="sm" onPress={onPress}>
+                <Button isLoading={isLoading} isIconOnly radius="full" variant="faded" size="sm" onPress={onPress}>
                     {children}
                 </Button>
             </PermissionGate>
         );
     };
-    const filterTitle = () => {
-        const totalFilters = factions.length + types.length + users.length + tags.length;
-        return (
-            <Badge content={totalFilters} color="danger" isInvisible={totalFilters === 0}>
-                Filters
-            </Badge>
-        );
-    };
     return (
         <div className="flex flex-col gap-2 lg:flex-row">
-            <div className="flex flex-col gap-2 lg:w-98">
-                <Accordion>
-                    <AccordionItem title={filterTitle()}>
-                        <div className="flex flex-col gap-2">
-                            <div className="flex lg:flex-col gap-2">
-                                <FactionFilter factions={factions} setFactions={setFactions}/>
-                                <TypeFilter types={types} setTypes={setTypes}/>
-                            </div>
-                            <UserFilter label="Suggested By" users={users} setUsers={setUsers}/>
-                            <TagFilter label="Tags" tags={tags} setTags={setTags}/>
-                        </div>
-                    </AccordionItem>
-                    <AccordionItem title={"Order By"}>
-                        <OrderBySelector options={SortOptions} orderBy={orderBy} setOrderBy={setOrderBy}/>
-                    </AccordionItem>
-                </Accordion>
-            </div>
             <div className='flex flex-col gap-2 flex-grow'>
                 <div className="flex gap-1">
                     <PermissionGate requires={Permission.IMPORT_SUGGESTIONS}>
@@ -133,7 +85,7 @@ const Suggestions = () => {
                         </Button>
                     </PermissionGate>
                 </div>
-                <CardGrid cards={suggestions ?? []} isLoading={isLoading}>
+                <SuggestionsGrid>
                     {(suggestion) => (
                         <div key={suggestion.id} className="relative">
                             {isDeletingSuggestion(suggestion) && <div className="absolute right-0 w-full h-full z-2 flex justify-center items-center"><Spinner size="lg"/></div>}
@@ -155,7 +107,7 @@ const Suggestions = () => {
                                 className={classNames("relative transition-all", { "blur-xs": isDeletingSuggestion(suggestion) })}
                             />
                         </div>)}
-                </CardGrid>
+                </SuggestionsGrid>
             </div>
             <EditSuggestionModal isOpen={!!editing} suggestion={editing} onClose={() => setEditing(undefined)} onSave={() => setEditing(undefined)}/>
         </div>

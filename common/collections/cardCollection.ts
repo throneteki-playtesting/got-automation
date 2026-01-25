@@ -12,7 +12,7 @@ class CardCollection<T extends IPlaytestCard> implements ICardCollection<T> {
     public all: T[] = [];
     public playtesting: T[] = [];
     public draft: T[] = [];
-    [number: number]: ICardVersionCollection<T>;
+    [number: number]: ICardVersionCollection<T> | undefined;
 
     constructor(items: T[]) {
         const nMap = new Map<number, ICardVersionCollection<T>>();
@@ -74,7 +74,7 @@ export interface ICardCollection<T> {
     all: T[],
     playtesting: T[],
     draft: T[],
-    [number: number]: ICardVersionCollection<T>
+    [number: number]: ICardVersionCollection<T> | undefined
 }
 
 export interface ICardVersionCollection<T> {

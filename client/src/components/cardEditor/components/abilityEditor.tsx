@@ -2,7 +2,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import Document from "@tiptap/extension-document";
 import Text from "@tiptap/extension-text";
 import { BaseElementProps } from "../../../types";
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useEffect } from "react";
 import { Button } from "@heroui/react";
 import ThronesIcon, { Icon } from "../../thronesIcon";
 import { AbilityIcon, AutoTextConversions, NewLine, Trait, TriggeredAbility } from "./abilityEditorExtensions";
@@ -10,7 +10,7 @@ import classNames from "classnames";
 import { abilityIcons } from "common/utils";
 
 function convertIncomingText(text?: string) {
-    return text?.replace(/\n/g, "<br>");
+    return text?.replace(/\n/g, "<br>") ?? "";
 }
 
 function convertOutgoingHtml(html: string) {
@@ -36,6 +36,21 @@ export const AbilityEditor = ({ value: text, setValue: setText, isDisabled, erro
             }
         }
     });
+
+    useEffect(() => {
+        if (!editor) {
+            return;
+        }
+        if (typeof isDisabled !== "undefined") {
+            editor.setEditable(!isDisabled);
+        }
+        const currentPlain = editor.getText();
+        const incomingPlain = text ?? "";
+
+        if (!editor.isFocused && incomingPlain !== currentPlain) {
+            editor.commands.setContent(convertIncomingText(incomingPlain));
+        }
+    }, [text, editor, isDisabled]);
 
     const EditorButton = ({ className, style, command, children }: BaseElementProps & { key: string, command: () => boolean }) => {
         return (

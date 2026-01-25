@@ -2,8 +2,9 @@ import { Select, SelectItem } from "@heroui/react";
 import { Faction, factions as allFactions } from "common/models/cards";
 import { factionNames } from "common/utils";
 import ThronesIcon, { Icon } from "../thronesIcon";
+import { BaseElementProps } from "../../types";
 
-const FactionFilter = ({ label = "Factions", setFactions, factions = [] }: FactionFilterProps) => {
+const FactionFilter = ({ className, style, label = "Factions", setFactions, factions = [] }: FactionFilterProps) => {
     const items = allFactions.map((faction) => ({ key: faction, label: factionNames[faction] }));
     return <Select
         label={label}
@@ -16,6 +17,8 @@ const FactionFilter = ({ label = "Factions", setFactions, factions = [] }: Facti
             ))}
         </div>}
         onSelectionChange={(keys) => setFactions([...keys] as Faction[])}
+        className={className}
+        style={style}
     >
         {
             (faction) => <SelectItem key={faction.key} startContent={<ThronesIcon name={faction.key} />}>{faction.label}</SelectItem>
@@ -23,6 +26,6 @@ const FactionFilter = ({ label = "Factions", setFactions, factions = [] }: Facti
     </Select>;
 };
 
-type FactionFilterProps = { label?: string, setFactions: (factions: Faction[]) => void, factions?: Faction[] }
+type FactionFilterProps = Omit<BaseElementProps, "children"> & { label?: string, setFactions: (factions: Faction[]) => void, factions?: Faction[] }
 
 export default FactionFilter;

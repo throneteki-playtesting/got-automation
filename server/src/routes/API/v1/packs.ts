@@ -19,7 +19,7 @@ router.get("/:project/development", celebrate({
 
     // TODO: Error if project does not exist
     const [pack] = await dataService.projects.read({ number: project });
-    const cards = await dataService.cards.read({ project });
+    const cards = await dataService.cards.collection({ project });
     const latest = cards.latest.filter((card) => !card.isReleasable);
     const developmentPack = new Pack(pack.code, pack.name, latest);
 
@@ -40,7 +40,7 @@ router.get("/:project/release", celebrate({
     const { short, name, release } = req.query;
 
     // TODO: Error if project does not exist
-    const cards = await dataService.cards.read({ project });
+    const cards = await dataService.cards.collection({ project });
     const releasing = cards.latest.filter((card) => card.release?.short === short);
     // TODO: Add validation
     const releasePack = new Pack(short, name, releasing, release);

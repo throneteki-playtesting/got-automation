@@ -81,10 +81,13 @@ projects.find({}).forEach(project => {
     // 5. Set created/updated epoch
     project.created = project.updated = new Date();
 
-    // 6. Replace _id with new ObjectId
+    // 6. Add new fields
+    project.draft = false;
+
+    // 7. Replace _id with new ObjectId
     const newId = new ObjectId();
 
-    // 7. Apply update
+    // 8. Apply update
     projects.deleteOne({ _id: project._id });
     projects.insertOne({
         ...project,

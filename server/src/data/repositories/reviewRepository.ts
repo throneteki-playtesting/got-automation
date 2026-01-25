@@ -1,47 +1,59 @@
 import MongoDataSource from "./dataSources/mongoDataSource";
-import { MongoClient } from "mongodb";
+import { MongoClient, Sort } from "mongodb";
 import { dataService, logger } from "@/services";
 import { IPlaytestReview } from "common/models/reviews";
 import { asArray, groupBy } from "common/utils";
 import * as ReviewsController from "gas/controllers/reviewsController";
 import GASDataSource from "./dataSources/GASDataSource";
-import ReviewCollection from "../../../../common/collections/reviewCollection";
-import { DeepPartial, SingleOrArray } from "common/types";
+import { DeepPartial, SingleOrArray, Sortable } from "common/types";
+import { IRepository } from "@/types";
+import { flatten } from "flat";
+import Review from "../models/review";
+import ReviewCollection from "common/collections/reviewCollection";
 
-export default class ReviewsRepository {
+export default class ReviewsRepository implements IRepository<IPlaytestReview> {
     public database: MongoDataSource<IPlaytestReview>;
     public spreadsheet: ReviewDataSource;
     constructor(mongoClient: MongoClient) {
         this.database = new MongoDataSource<IPlaytestReview>(mongoClient, "reviews", { project: 1, number: 1, version: 1, reviewer: 1 });
         this.spreadsheet = new ReviewDataSource();
     }
+
+    public async create(creating: IPlaytestReview): Promise<IPlaytestReview>;
+    public async create(creating: IPlaytestReview[]): Promise<IPlaytestReview[]>;
     public async create(creating: SingleOrArray<IPlaytestReview>) {
-        await this.database.create(creating);
-        await this.spreadsheet.create(creating);
+        const result = await this.database.create(creating);
+        // await this.spreadsheet.create(creating);
+        return Array.isArray(creating) ? result : result[0];
     }
 
-    public async read(reading?: SingleOrArray<DeepPartial<IPlaytestReview>>, hard = false) {
-        let reviews: IPlaytestReview[];
-        // Force hard refresh from spreadsheet (slow)
-        if (hard) {
-            const fetched = await this.spreadsheet.read(reading);
-            await this.database.update(fetched);
-            reviews = fetched;
-        } else {
-            // Otherwise, use database (fast)...
-            reviews = await this.database.read(reading);
-        }
-        return new ReviewCollection(reviews);
+    public async read(reading?: SingleOrArray<DeepPartial<IPlaytestReview>>, orderBy?: Sortable<IPlaytestReview>, page?: number, perPage?: number) {
+        const sort = orderBy ? flatten(orderBy) as Sort : undefined;
+        const limit = perPage;
+        const skip = (page - 1) * perPage;
+        return await this.database.read(reading, { sort, limit, skip });
     }
 
+    public async collection(reading?: SingleOrArray<DeepPartial<IPlaytestReview>>, orderBy?: Sortable<IPlaytestReview>, page?: number, perPage?: number) {
+        const result = await this.read(reading, orderBy, page, perPage);
+        return new ReviewCollection(result.map((review) => new Review(review)));
+    }
+
+    public async count(counting?: SingleOrArray<DeepPartial<IPlaytestReview>>) {
+        return await this.database.count(counting);
+    }
+
+    public async update(updating: IPlaytestReview, upsert?: boolean): Promise<IPlaytestReview>;
+    public async update(updating: IPlaytestReview[], upsert?: boolean): Promise<IPlaytestReview[]>;
     public async update(updating: SingleOrArray<IPlaytestReview>, upsert = true) {
-        await this.database.update(updating, { upsert });
-        await this.spreadsheet.update(updating, { upsert });
+        const result = await this.database.update(updating, { upsert });
+        return Array.isArray(updating) ? result : result[0];
+        // await this.spreadsheet.update(updating, { upsert });
     }
 
     public async destroy(destroying: SingleOrArray<DeepPartial<IPlaytestReview>>) {
-        await this.database.destroy(destroying);
-        await this.spreadsheet.destroy(destroying);
+        return await this.database.destroy(destroying);
+        // await this.spreadsheet.destroy(destroying);
     }
 }
 

@@ -12,7 +12,7 @@ export async function finalise(projectNumber: number) {
     if (!await githubService.isLatestPRMerged(project)) {
         throw Error(`Playtesting Update ${project.version + 1} PR either does not exist, or is not merged into playtesting branch`);
     }
-    const cards = await dataService.cards.read({ project: projectNumber });
+    const cards = await dataService.cards.collection({ project: projectNumber });
     for (const latest of cards) {
         // If card has any sort of change, it must be marked to update and/or archive
         if (latest.isChanged || latest.implementStatus === "recently implemented") {

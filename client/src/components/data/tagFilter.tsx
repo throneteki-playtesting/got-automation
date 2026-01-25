@@ -1,8 +1,9 @@
 import { Chip, Select, SelectItem, SharedSelection } from "@heroui/react";
 import { useGetTagsQuery } from "../../api";
 import { useCallback } from "react";
+import { BaseElementProps } from "../../types";
 
-const TagFilter = ({ label, tags, setTags }: TagFilterProps) => {
+const TagFilter = ({ className, style, label, tags, setTags }: TagFilterProps) => {
     const { data, isLoading } = useGetTagsQuery();
 
     const handleSelectionChange = useCallback((keys: SharedSelection) => {
@@ -22,12 +23,14 @@ const TagFilter = ({ label, tags, setTags }: TagFilterProps) => {
             selectedKeys={tags}
             renderValue={(items) => <div className="py-1 flex flex-wrap gap-1">{items.map((item) => <Chip key={item.data?.tag} color="primary">{item.data?.tag}</Chip>)}</div>}
             onSelectionChange={handleSelectionChange}
+            className={className}
+            style={style}
         >
             {({ tag }) => <SelectItem key={tag}>{tag}</SelectItem>}
         </Select>
     );
 };
 
-type TagFilterProps = { label?: string, tags: string[], setTags: (tags: string[]) => void };
+type TagFilterProps = Omit<BaseElementProps, "children"> & { label?: string, tags: string[], setTags: (tags: string[]) => void };
 
 export default TagFilter;

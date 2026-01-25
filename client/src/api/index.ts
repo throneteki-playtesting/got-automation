@@ -6,7 +6,7 @@ import { buildUrl, SemanticVersion } from "common/utils";
 import { clearUser } from "./authSlice";
 import { StatusCodes } from "http-status-codes";
 import { UUID } from "crypto";
-import type { BatchRenderJob, IGetEndpoint, RefreshAuthResponse, SingleRenderJob } from "server/types";
+import type { BatchRenderJob, IGetEndpoint, IGetResponse, RefreshAuthResponse, SingleRenderJob } from "server/types";
 import { ICardSuggestion, IPlaytestCard, IRenderCard } from "common/models/cards";
 import { IReviewCollection } from "common/collections/reviewCollection";
 import { IPlaytestReview } from "common/models/reviews";
@@ -160,7 +160,7 @@ const api = createApi({
                 ] : [];
             }
         }),
-        putDraft: builder.mutation<IPlaytestCard, IPlaytestCard>({
+        putDraftCard: builder.mutation<IPlaytestCard, IPlaytestCard>({
             query: (card) => {
                 const url = buildUrl(`cards/${card.project}/${card.number}/draft`);
                 const body = card;
@@ -186,21 +186,21 @@ const api = createApi({
             }
         }),
         // Suggestions API
-        getSuggestions: builder.query<ICardSuggestion[], IGetEndpoint<ICardSuggestion> | void>({
+        getSuggestions: builder.query<IGetResponse<ICardSuggestion>, IGetEndpoint<ICardSuggestion> | void>({
             query: (options) => {
                 const url = buildUrl("suggestions", options);
                 return { url, method: "GET" };
             },
             providesTags: [{ type: tag.Suggestion, id: "LIST" }]
         }),
-        getSuggestionsBy: builder.query<ICardSuggestion[], { discordId: string, filter?: SingleOrArray<DeepPartial<ICardSuggestion>> }>({
+        getSuggestionsBy: builder.query<IGetResponse<ICardSuggestion>, { discordId: string, filter?: SingleOrArray<DeepPartial<ICardSuggestion>> }>({
             query: (options) => {
                 const url = buildUrl(`suggestions/${options.discordId}`, { filter: options?.filter });
                 return { url, method: "GET" };
             },
             providesTags: (result) => {
-                return result && result.length > 0 ? [
-                    { type: tag.Suggestion, id: result[0].user.discordId }
+                return result && result.data.length > 0 ? [
+                    { type: tag.Suggestion, id: result.data[0].user.discordId }
                 ] : [];
             }
         }),
@@ -296,6 +296,59 @@ const api = createApi({
                 ] : [];
             }
         }),
+        createProject: builder.mutation<IProject, Omit<IProject, "created" | "updated">>({
+            query: (project) => {
+                const url = buildUrl("projects");
+                const body = project;
+                return { url, method: "POST", body };
+            },
+            invalidatesTags: (_result, _error, arg) => {
+                return [
+                    { type: tag.Project, id: arg.number },
+                    { type: tag.Project, id: "LIST" }
+                ];
+            }
+        }),
+        updateProject: builder.mutation<IProject, IProject>({
+            query: (project) => {
+                const url = buildUrl("projects");
+                const body = project;
+                return { url, method: "PUT", body };
+            },
+            invalidatesTags: (_result, _error, arg) => {
+                return [
+                    { type: tag.Project, id: arg.number },
+                    { type: tag.Project, id: "LIST" },
+                    { type: tag.Card, id: "LIST" }
+                ];
+            }
+        }),
+        deleteProject: builder.mutation<number, IProject>({
+            query: (project) => {
+                const url = buildUrl(`projects/${project.number}`);
+                return { url, method: "DELETE" };
+            },
+            invalidatesTags: (_result, _error, arg) => {
+                return [
+                    { type: tag.Project, id: arg.number },
+                    { type: tag.Project, id: "LIST" },
+                    { type: tag.Card, id: "LIST" }
+                ];
+            }
+        }),
+        initialiseProject: builder.mutation<IProject, IProject>({
+            query: (project) => {
+                const url = buildUrl(`projects/${project.number}/initialise`);
+                return { url, method: "POST" };
+            },
+            invalidatesTags: (_result, _error, arg) => {
+                return [
+                    { type: tag.Project, id: arg.number },
+                    { type: tag.Project, id: "LIST" },
+                    { type: tag.Card, id: "LIST" }
+                ];
+            }
+        }),
         // Reviews API
         getCardReviews: builder.query<IReviewCollection<IPlaytestReview>, { project: number, number: number }>({
             query: (options) => {
@@ -315,26 +368,37 @@ const api = createApi({
 export const {
     useLoginMutation,
     useLogoutMutation,
+
     useGetUsersQuery,
     useGetUserQuery,
     useUpdateUserMutation,
+
     useGetRolesQuery,
     useUpdateRoleMutation,
+
     useGetCardsQuery,
     useGetCardQuery,
-    usePutDraftMutation,
+    usePutDraftCardMutation,
     useDeleteDraftMutation,
     // usePushCardsMutation,
+
     useGetSuggestionsQuery,
     useGetSuggestionsByQuery,
     useSubmitSuggestionMutation,
     useUpdateSuggestionMutation,
     useDeleteSuggestionMutation,
     useGetTagsQuery,
+
     useRenderImageMutation,
     useGetRenderJobQuery,
+
     useGetProjectsQuery,
     useGetProjectQuery,
+    useCreateProjectMutation,
+    useUpdateProjectMutation,
+    useDeleteProjectMutation,
+    useInitialiseProjectMutation,
+
     useGetCardReviewsQuery,
     useGetCardVersionReviewsQuery
 } = api;

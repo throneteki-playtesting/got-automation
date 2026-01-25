@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BaseElementProps } from "../types";
 import classNames from "classnames";
 
-const ComboBox = ({ name, className, style, classNames: classGroups, label, placeholder, chip, values: initialValues, onChange, isDisabled }: ComboBoxProps) => {
+const ComboBox = ({ name, className, style, classNames: classGroups, label, placeholder, chip, values: initialValues, onChange, isDisabled, addKeys = ["Enter"] }: ComboBoxProps) => {
     const [values, setValues] = useState<string[]>(initialValues ?? []);
     const [inputValue, setInputValue] = useState("");
     const inputRef = useRef<HTMLInputElement | null>(null);
@@ -36,14 +36,14 @@ const ComboBox = ({ name, className, style, classNames: classGroups, label, plac
         if (e.key === " " && inputValue.trim() !== "") {
             e.preventDefault();
             setInputValue(prev => prev + " ");
-        } else if ((e.key === "Enter") && inputValue.trim() !== "") {
+        } else if ((addKeys.includes(e.key)) && inputValue.trim() !== "") {
             e.preventDefault();
             addItem(inputValue);
         } else if (e.key === "Backspace" && inputValue === "" && values.length > 0) {
             e.preventDefault();
             removeItem(values.length - 1);
         }
-    }, [addItem, inputValue, removeItem, values.length]);
+    }, [addItem, addKeys, inputValue, removeItem, values.length]);
 
     const renderInput = useCallback(() => {
         return (
@@ -102,6 +102,7 @@ const ComboBox = ({ name, className, style, classNames: classGroups, label, plac
                 style={style}
                 isDisabled={isDisabled}
                 onClick={() => inputRef.current?.focus()}
+                onFocus={() => inputRef.current?.focus()}
             >
                 {renderedItems.map((item) => <SelectItem key={item} textValue={item}>{item}</SelectItem>)}
             </Select>
@@ -109,6 +110,6 @@ const ComboBox = ({ name, className, style, classNames: classGroups, label, plac
     );
 };
 
-type ComboBoxProps = Omit<BaseElementProps, "children"> & { name?: string, label?: React.ReactNode, placeholder?: string, chip?: ChipProps, values?: string[], onChange?: (items: string[]) => void, classNames?: { wrapper?: string, input?: string, chip?: string }, isDisabled?: boolean }
+type ComboBoxProps = Omit<BaseElementProps, "children"> & { name?: string, label?: React.ReactNode, placeholder?: string, chip?: ChipProps, values?: string[], onChange?: (items: string[]) => void, classNames?: { wrapper?: string, input?: string, chip?: string }, isDisabled?: boolean, addKeys?: string[] }
 
 export default ComboBox;

@@ -6,17 +6,14 @@ import ReviewThreads from "@/discord/reviewThreads";
 import * as Schemas from "common/models/schemas";
 import { IPlaytestReview } from "common/models/reviews";
 import { asArray, Regex, SemanticVersion } from "common/utils";
-import { SingleOrArray } from "common/types";
 import { StatusCodes } from "http-status-codes";
 
 const router = express.Router();
 
-type ReviewBody = SingleOrArray<IPlaytestReview>;
-
 // TODO: More endpoint options (post = create, put = complete update, patch = partial update)
 router.post("/", celebrate({
     [Segments.BODY]: Joi.array().items(Schemas.PlaytestingReview)
-}), asyncHandler<unknown, unknown, ReviewBody, unknown>(async (req, res) => {
+}), asyncHandler<unknown, unknown, IPlaytestReview[], unknown>(async (req, res) => {
     const body = req.body;
 
     await dataService.reviews.update(body, true);
@@ -63,7 +60,7 @@ router.get("/:project/:number/:version", celebrate({
 }), asyncHandler<{ project: number, number: number, version: SemanticVersion }, unknown, unknown, unknown>(async (req, res) => {
     const { project, number, version } = req.params;
 
-    const reviews = await dataService.reviews.read({ project, number, version });
+    const reviews = await dataService.reviews.collection({ project, number, version });
 
     res.status(StatusCodes.OK).json(reviews.all);
 }));

@@ -4,9 +4,9 @@ import { components } from "@octokit/openapi-types";
 import { Octokit } from "@octokit/core";
 import { Issue } from "./issues";
 import { dataService, logger } from "@/services";
-import Project from "@/data/models/project";
 import CardCollection from "common/collections/cardCollection";
 import PlaytestingCard from "@/data/models/cards/playtestingCard";
+import { IProject } from "common/models/projects";
 
 export type IssueDetail = { number: number, state: string, html_url: string, body: string };
 export type PullRequestDetail = { number: number, state: string, html_url: string, body: string };
@@ -37,7 +37,7 @@ class GithubService {
         return app.getInstallationOctokit(installation.id);
     }
 
-    public async syncIssues<T extends PlaytestingCard>(project: Project, cards: CardCollection<T>): Promise<IssueDetail[]> {
+    public async syncIssues<T extends PlaytestingCard>(project: IProject, cards: CardCollection<T>): Promise<IssueDetail[]> {
         const issues = await this.getIssues(project);
 
         const promises: { card: PlaytestingCard, promise: Promise<IssueDetail> }[] = [];
@@ -147,7 +147,7 @@ class GithubService {
         return responses.map((r) => r.response).filter((r) => r);
     }
 
-    private async getIssues(project: Project) {
+    private async getIssues(project: IProject) {
         const results: components["schemas"]["issue-search-result-item"][] = [];
         const queryList = [
             `repo:${this.repoDetails.owner}/${this.repoDetails.repo}`,
@@ -173,7 +173,7 @@ class GithubService {
         return results;
     }
 
-    public async syncPullRequest<T extends PlaytestingCard>(project: Project, cards: CardCollection<T>): Promise<PullRequestDetail> {
+    public async syncPullRequest<T extends PlaytestingCard>(project: IProject, cards: CardCollection<T>): Promise<PullRequestDetail> {
         // Filter cards which either have changes, or have been implemented in the latest update
         const changes = cards.latest.filter((card) => card.isChanged || (card.implementStatus === "recently implemented"));
         const prs = await this.getPullRequests(project);
@@ -235,7 +235,7 @@ class GithubService {
         return null;
     }
 
-    private async getPullRequests(project: Project, includeTitle: boolean = false) {
+    private async getPullRequests(project: IProject, includeTitle: boolean = false) {
         const results: components["schemas"]["issue-search-result-item"][] = [];
         const queryList = [
             `repo:${this.repoDetails.owner}/${this.repoDetails.repo}`,
@@ -264,7 +264,7 @@ class GithubService {
         return results;
     }
 
-    public async isLatestPRMerged(project: Project) {
+    public async isLatestPRMerged(project: IProject) {
         const prs = await this.getPullRequests(project, true);
         return prs.some((pr) => pr.state === "closed");
     }
