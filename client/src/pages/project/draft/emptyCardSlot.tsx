@@ -33,7 +33,7 @@ const EmptyCardSlot = memo(({ code, faction, onNew = () => true, onSuggestion = 
         if (actions.length === 0) {
             return null;
         }
-        const radius = 35;
+        //const radius = 35;
         return (
             <>
                 <Button

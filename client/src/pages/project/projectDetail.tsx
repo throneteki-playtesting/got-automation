@@ -1,9 +1,9 @@
 import { CardPreview } from "@agot/card-preview";
-import { useGetCardsQuery, useGetProjectQuery, useInitialiseProjectMutation } from "../../api";
+import { useGetCardsQuery, useGetProjectQuery } from "../../api";
 import CardGrid from "../../components/cardGrid";
 import { BaseElementProps } from "../../types";
 import { renderPlaytestingCard } from "common/utils";
-import { addToast, Button, ButtonGroup, Card, Chip, CircularProgress, Divider, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Skeleton } from "@heroui/react";
+import { addToast, Button, ButtonGroup, Card, Chip, CircularProgress, Divider, Link, Skeleton } from "@heroui/react";
 import dismoji from "../../emojis";
 import { useEffect, useMemo, useState } from "react";
 import { IProject } from "common/models/projects";
