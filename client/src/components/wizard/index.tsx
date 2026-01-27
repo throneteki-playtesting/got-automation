@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { cloneElement, FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import React, { Children, cloneElement, FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import classNames from "classnames";
 import { Button, ButtonProps, Form } from "@heroui/react";
 import Joi from "joi";
@@ -132,13 +132,13 @@ export const WizardPages = ({ className, style, children: pages }: WizardPagesPr
     const { currentPage, setTotalPages } = useWizard();
 
     useEffect(() => {
-        const pagesArr = React.Children.toArray(pages);
+        const pagesArr = Children.toArray(pages);
         setTotalPages(pagesArr.filter((page) => React.isValidElement(page)).length);
     }, [pages, setTotalPages]);
 
     const pageElements = useMemo(() => {
         let totalPages = 0;
-        return React.Children.map(pages, (page) => {
+        return Children.map(pages, (page) => {
             if (React.isValidElement(page)) {
                 return cloneElement(page, {
                     ...page.props,
