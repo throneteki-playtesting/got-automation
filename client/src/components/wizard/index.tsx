@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { Children, cloneElement, FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import React, { Children, cloneElement, FormEvent, ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import classNames from "classnames";
 import { Button, ButtonProps, Form } from "@heroui/react";
 import Joi from "joi";
@@ -131,6 +131,10 @@ type WizardProps<T> = {
 export const WizardPages = ({ className, style, children: pages }: WizardPagesProps) => {
     const { currentPage, setTotalPages } = useWizard();
 
+    const containerRef = useRef<HTMLDivElement>(null);
+    const activeWrapperRef = useRef<HTMLDivElement>(null);
+    const [measuredHeight, setMeasuredHeight] = useState<number>();
+
     useEffect(() => {
         const pagesArr = Children.toArray(pages);
         setTotalPages(pagesArr.filter((page) => React.isValidElement(page)).length);
@@ -148,15 +152,60 @@ export const WizardPages = ({ className, style, children: pages }: WizardPagesPr
             return page;
         });
     }, [pages]);
+
+    useLayoutEffect(() => {
+        const measure = () => {
+            const activePage = activeWrapperRef.current;
+            if (activePage) {
+                setMeasuredHeight(activePage.offsetHeight);
+            } else {
+                setMeasuredHeight(undefined);
+            }
+        };
+
+        measure();
+
+        let observer: ResizeObserver | undefined;
+        const activePage = activeWrapperRef.current;
+        if (activePage && typeof ResizeObserver !== "undefined") {
+            observer = new ResizeObserver(measure);
+            observer.observe(activePage);
+        }
+
+        return () => {
+            if (observer) {
+                observer.disconnect();
+            }
+        };
+    }, [currentPage, pageElements]);
+
     return (
-        <div className={classNames("relative w-full overflow-hidden", className)} style={style}>
+        <div
+            ref={containerRef}
+            className={classNames("relative w-full overflow-hidden transition-height", className)}
+            style={{ ...style, height: measuredHeight ? `${measuredHeight}px` : undefined }}
+        >
             <div
-                className="flex flex-row transition-transform duration-500 ease-in-out"
+                className="flex flex-row items-start transition-transform duration-500 ease-in-out"
                 style={{
                     transform: `translateX(-${(currentPage - 1) * 100}%)`
                 }}
             >
-                {pageElements}
+                {Children.map(pageElements, (page) => {
+                    if (!React.isValidElement(page)) {
+                        return page;
+                    }
+                    const props = page.props as WizardPageProps;
+                    return (
+                        <div
+                            key={props.pageNo!}
+                            ref={props.pageNo === currentPage ? activeWrapperRef : null}
+                            className="flex-shrink-0 w-full"
+                        >
+                            {page}
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
@@ -192,7 +241,7 @@ export const WizardPage = ({ className, style, children, data, pageNo, allowEmpt
     return (
         <Form
             id={`${id}_page_${pageNo ?? 0}`}
-            className={classNames("flex-shrink-0 w-full h-full p-1", className)}
+            className={classNames("flex-shrink-0 w-full p-1", className)}
             style={style}
             validationErrors={validationErrors}
             onSubmit={onSubmit}

@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 import { BaseElementProps } from "../types";
 
 const ConfirmModal = ({ isOpen, isLoading = false, title, content, confirmContent = "Confirm", cancelContent = "Cancel", onClose: onModalClose = () => true, onConfirm = () => true }: ConfirmModalProps) => {
-    return <Modal isOpen={isOpen} placement="center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="sm">
+    return <Modal isOpen={isOpen} placement="top-center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="sm">
         <ModalContent>
             {(onClose) => (
                 <>

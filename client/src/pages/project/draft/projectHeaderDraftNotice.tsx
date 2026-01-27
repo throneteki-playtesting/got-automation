@@ -39,7 +39,7 @@ const ProjectHeaderDraftNotice = ({ className, style, project, cards }: ProjectH
             <PermissionGate requires={Permission.INITIALISE_PROJECTS}>
                 <Divider className="my-2"/>
                 <Button variant="flat" className="w-full md:text-lg font-bold" onPress={() => setIsModalOpen(true)}>Initialise</Button>
-                <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="lg" placement="center">
+                <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="lg" placement="top-center">
                     <ModalContent>
                         {(onClose) => (
                             <>

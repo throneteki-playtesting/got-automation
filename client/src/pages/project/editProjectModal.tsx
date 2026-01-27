@@ -37,7 +37,7 @@ const EditProjectModal = ({ isOpen, project: initial, onClose: onModalClose = ()
         }
     }, [createProject, isNew, onModalClose, onSave, updateProject]);
 
-    return <Modal isOpen={isOpen} placement="center" onOpenChange={(isOpen) => !isOpen && onModalClose() } hideCloseButton={isNew}>
+    return <Modal isOpen={isOpen} placement="top-center" onOpenChange={(isOpen) => !isOpen && onModalClose() } hideCloseButton={isNew}>
         <ModalContent>
             {(onClose) => (
                 <Wizard

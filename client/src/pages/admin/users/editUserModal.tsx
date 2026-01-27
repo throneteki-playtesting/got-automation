@@ -32,7 +32,7 @@ const EditUserModal = ({ user, onOpenChange, onSave: onUserSave }: EditUserModal
         setPermissions(new Set(user?.permissions.map((p) => p.toString()) ?? []));
     }, [user]);
 
-    return <Modal isOpen={!!user} placement="center" onOpenChange={onOpenChange}>
+    return <Modal isOpen={!!user} placement="top-center" onOpenChange={onOpenChange}>
         <ModalContent>
             {(onClose) => (
                 <>

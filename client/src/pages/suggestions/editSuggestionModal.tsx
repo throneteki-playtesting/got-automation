@@ -40,7 +40,7 @@ const EditSuggestionModal = ({ isOpen, suggestion: initial, onClose: onModalClos
         }
     }, [isNew, onSave, submitSuggestion, updateSuggestion]);
 
-    return <Modal isOpen={isOpen} placement="center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="3xl">
+    return <Modal isOpen={isOpen} placement="top-center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="3xl">
         <ModalContent>
             {(onClose) => (
                 <Wizard

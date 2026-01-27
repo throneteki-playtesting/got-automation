@@ -37,7 +37,7 @@ const SelectSuggestionModal = ({ isOpen, project, number, faction, unselectable 
     }, [onModalClose, onSave, putDraft]);
 
     return (
-        <Modal isOpen={isOpen} placement="center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="3xl">
+        <Modal isOpen={isOpen} placement="top-center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="3xl">
             <ModalContent>
                 {(onClose) => (
                     <Wizard

@@ -39,7 +39,7 @@ const EditCardModal = ({ isOpen, card: initial, onClose: onModalClose = () => tr
         return render;
     }, [card]);
 
-    return <Modal isOpen={isOpen} placement="center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="3xl">
+    return <Modal isOpen={isOpen} placement="top-center" onOpenChange={(isOpen) => !isOpen && onModalClose() } size="3xl">
         <ModalContent>
             {(onClose) => (
                 <Wizard
