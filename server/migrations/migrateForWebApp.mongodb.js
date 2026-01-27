@@ -18,37 +18,37 @@ const factionMap = {
 const cards = db.getCollection("cards");
 
 cards.find({}).forEach(card => {
-    // 1. Faction mapping
+    // Faction mapping
     if (card.faction && factionMap[card.faction]) {
         card.faction = factionMap[card.faction];
     }
 
-    // 2. Lowercase type
+    // Lowercase type
     if (card.type) {
         card.type = card.type.toLowerCase();
     }
 
-    // 3. Lowercase note.type
+    // Lowercase note.type
     if (card.note?.type) {
         card.note.type = card.note.type.toLowerCase();
         delete card["note.type"];
     }
 
-    // 4. Rename projectId to project
+    // Rename projectId to project
     if (card.projectId) {
         card.project = card.projectId;
         delete card.projectId;
     }
 
-    // 5. Clean \r from card text
+    // Clean \r from card text
     if (card.text) {
         card.text = card.text.replace("\r", "");
     }
 
-    // 6. Replace _id with new ObjectId
+    // Replace _id with new ObjectId
     const newId = new ObjectId();
 
-    // 7. Apply update
+    // Apply update
     cards.deleteOne({ _id: card._id });
     const { project, ...other } = card;
     cards.insertOne({
@@ -64,30 +64,46 @@ cards.createIndex({ project: 1, version: 1, number: 1 }, { unique: true });
 const projects = db.getCollection("projects");
 
 projects.find({}).forEach(project => {
-    // 1. Add number as code
+    // Add number as code
     project.number = project.code;
 
-    // 2. Set code to short
+    // Set code to short
     project.code = project.short;
     delete project.short;
 
-    // 3. Lowercase type
+    // Lowercase type
     project.type = project.type.toLowerCase();
 
-    // 4. Set version to releases
+    // Set version to releases
     project.version = project.releases;
     delete project.releases;
 
-    // 5. Set created/updated epoch
+    // Set created/updated date
     project.created = project.updated = new Date();
 
-    // 6. Add new fields
-    project.draft = false;
+    // Add new fields
+    project.draft = !project.active;
+    project.cardCount = {
+        baratheon: project.perFaction,
+        greyjoy: project.perFaction,
+        lannister: project.perFaction,
+        martell: project.perFaction,
+        thenightswatch: project.perFaction,
+        stark: project.perFaction,
+        targaryen: project.perFaction,
+        tyrell: project.perFaction,
+        neutral: project.neutral
+    };
+    delete project.perFaction;
+    delete project.neutral;
 
-    // 7. Replace _id with new ObjectId
+    // Update emoji styling (remove start/end :)
+    project.emoji = project.emoji.replaceAll(":", "");
+
+    // Replace _id with new ObjectId
     const newId = new ObjectId();
 
-    // 8. Apply update
+    // Apply update
     projects.deleteOne({ _id: project._id });
     projects.insertOne({
         ...project,
@@ -101,23 +117,22 @@ projects.createIndex({ number: 1 }, { unique: true });
 const reviews = db.getCollection("reviews");
 
 reviews.find({}).forEach(review => {
-    // 1. Replace projectId with project
+    // Replace projectId with project
     review.project = review.projectId;
     delete review.projectId;
 
-    // 2. Replace epoch with created/updated
-    review.created = new Date(review.epoch);
-    review.updated = new Date(review.epoch);
+    // Replace epoch with created/updated
+    review.created = review.updated = new Date(review.epoch);
     delete review.epoch;
 
-    // 3. Remove unnecessary properties;
+    // Remove unnecessary properties;
     delete review.faction;
     delete review.name;
 
-    // 4. Replace _id with new ObjectId
+    // Replace _id with new ObjectId
     const newId = new ObjectId();
 
-    // 5. Apply update
+    // Apply update
     reviews.deleteOne({ _id: review._id });
     reviews.insertOne({
         ...review,
